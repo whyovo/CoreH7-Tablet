@@ -1,0 +1,76 @@
+# 根级通配
+*.bak
+*.dep
+*.d
+*.crf
+*.o
+*.obj
+*.lnp
+*.lst
+*.map
+*.iex
+*.fed
+*.sct.log
+*.scvd
+*.uvguix.*
+*.uvoptx
+*.uvprojx.bak
+*.uvoptx.bak
+*.cprj
+*.clog
+
+# 整个目录
+**/Listings/
+**/Objects/
+**/Release/
+**/CMSIS/
+**/ RTE/
+**/.RTE/
+**/uv5/
+**/MDK-ARM/uv5/
+**/ARMCC/
+**/ARMCLANG/
+
+# 调试/下载日志
+*.ini
+*.dbgconf
+JLinkLog.txt
+JLinkSettings.ini
+*.hex
+*.bin
+*.elf
+*.axf
+*.lib
+*.pack
+*.pack.txt
+
+# 临时 & 本地用户设置
+*.tmp
+*.temp
+*.i
+*.sct.bak
+*.lnp.bak
+*.plg
+*.tra
+*.uvmpw.uvmpw
+*.uvmpw
+*.uvguix.*.xml
+*.uvoptx.xml
+
+# Windows 桌面隐藏文件
+Thumbs.db
+desktop.ini
+
+# macOS
+.DS_Store
+
+# VSCode 可选
+.vscode/settings.json
+.vscode/launch.json
+.vscode/ipch
+
+# CubeMX 生成备份
+.ioc.bak
+.mxproject.bak
+Makefile.bak
+cmake.bak
