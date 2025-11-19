@@ -1,0 +1,42 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+       {
+            "name": "Bootloader_release",
+            "type": "cortex-debug",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "executable": "${workspaceFolder}/Bootloader/build/bootloader.elf",
+            "servertype": "openocd",
+            "configFiles": [
+                "interface/stlink.cfg",
+                "target/stm32h7x.cfg"
+            ],
+            "svdPath": "${workspaceFolder}/STM32H750x.svd",
+            "runToEntryPoint": "main",
+            "showDevDebugOutput": "none",
+        },
+        {
+            "name": "main_debug",
+            "type": "cortex-debug",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "executable": "${workspaceFolder}/build/Debug/4k_music_game.elf",
+            "servertype": "openocd",
+            "configFiles": [
+                "interface/stlink.cfg",
+                "target/stm32h7x.cfg"
+
+            ],
+                "serverArgs": [
+                "-c", "init",
+                "-c", "reset init",
+                "-c", "halt",
+                "-c", "flash bank ext_qspi stmqspi 0x90000000 0x2000000 0 0 $_CHIPNAME.cpu0 ${workspaceFolder}/STM32H750XBH6_qspi.axf"
+            ],
+            "svdPath": "${workspaceFolder}/STM32H750x.svd",
+            "runToEntryPoint": "main",
+            "showDevDebugOutput": "none"
+        }
+    ]
+}

@@ -1,0 +1,195 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "烧录 Bootloader",
+            "type": "shell",
+            "command": "openocd",
+            "args": [
+                "-f", "interface/stlink.cfg",
+                "-f", "target/stm32h7x.cfg",
+                "-c", "init",
+                "-c", "reset halt",
+                "-c", "program {${workspaceFolder}/Bootloader/build/bootloader.elf} verify reset",
+                "-c", "shutdown"
+            ],
+            "problemMatcher": [],
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "烧录主程序",
+            "type": "shell",
+            "command": "openocd",
+            "args": [
+                "-f", "interface/stlink.cfg",
+                "-f", "target/stm32h7x.cfg",
+                "-c", "init",
+                "-c", "reset halt",
+                "-c", "flash bank ext_qspi stmqspi 0x90000000 0x2000000 0 0 $_CHIPNAME.cpu0 {${workspaceFolder}/qspi_loader.axf}",
+                "-c", "program {${workspaceFolder}/build/4k_music_game.elf} verify reset",
+                "-c", "shutdown"
+            ],
+            "problemMatcher": [],
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "烧录全部（Bootloader + 主程序）",
+            "type": "shell",
+            "dependsOn": ["烧录 Bootloader", "烧录主程序"],
+            "dependsOrder": "sequence",
+            "problemMatcher": []
+        },
+        {
+            "label": "CMake 配置 Bootloader (Release)",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "-S", "Bootloader",
+                "-B", "Bootloader/build",
+                "-G", "Ninja",
+                "-DCMAKE_BUILD_TYPE=Release"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": ["$gcc"]
+        },
+        {
+            "label": "Ninja 构建 Bootloader (Release)",
+            "type": "shell",
+            "command": "ninja",
+            "args": ["-C", "Bootloader/build"],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": ["$gcc"]
+        },
+        {
+            "label": "编译 Bootloader",
+            "type": "shell",
+            "dependsOn": ["CMake 配置 Bootloader (Release)", "Ninja 构建 Bootloader (Release)"],
+            "dependsOrder": "sequence",
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+
+        {
+            "label": "CMake 配置 (Debug)",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "-S", ".",
+                "-B", "build",
+                "-G", "Ninja",
+                "-DCMAKE_BUILD_TYPE=Debug"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": ["$gcc"]
+        },
+        {
+            "label": "Ninja 构建 (Debug)",
+            "type": "shell",
+            "command": "ninja",
+            "args": ["-C", "build"],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": ["$gcc"]
+        },
+        {
+            "label": "编译主程序 (Debug)",
+            "type": "shell",
+            "dependsOn": ["CMake 配置 (Debug)", "Ninja 构建 (Debug)"],
+            "dependsOrder": "sequence",
+            "problemMatcher": []
+        },
+        {
+            "label": "CMake 配置 (Release)",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "-S", ".",
+                "-B", "build",
+                "-G", "Ninja",
+                "-DCMAKE_BUILD_TYPE=Release"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": ["$gcc"]
+        },
+        {
+            "label": "Ninja 构建 (Release)",
+            "type": "shell",
+            "command": "ninja",
+            "args": ["-C", "build"],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": ["$gcc"]
+        },
+        {
+            "label": "编译主程序 (Release)",
+            "type": "shell",
+            "dependsOn": ["CMake 配置 (Release)", "Ninja 构建 (Release)"],
+            "dependsOrder": "sequence",
+            "problemMatcher": []
+        },
+        {
+            "label": "清理构建文件",
+            "type": "shell",
+            "command": "powershell",
+            "args": [
+                "-Command",
+                "Remove-Item -Recurse -Force ${workspaceFolder}/Bootloader/build, ${workspaceFolder}/build -ErrorAction SilentlyContinue"
+            ],
+            "windows": {
+                "command": "powershell"
+            }
+        },
+        {
+            "label": "编译 + 烧录主程序 (Debug)",
+            "type": "shell",
+            "dependsOn": [ "编译主程序 (Debug)", "烧录主程序"],
+            "dependsOrder": "sequence",
+            "problemMatcher": []
+        },
+        {
+            "label": "编译 + 烧录主程序 (Release)",
+            "type": "shell",
+            "dependsOn": ["编译主程序 (Release)", "烧录主程序"],
+            "dependsOrder": "sequence",
+            "problemMatcher": []
+        },
+        {
+            "label": "擦除芯片",
+            "type": "shell",
+            "command": "openocd",
+            "args": [
+                "-f", "interface/stlink.cfg",
+                "-f", "target/stm32h7x.cfg",
+                "-c", "init",
+                "-c", "reset halt",
+                "-c", "flash erase_all",
+                "-c", "reset run",
+                "-c", "shutdown"
+            ],
+            "problemMatcher": []
+        }
+    ]
+}

@@ -30,16 +30,13 @@
 **/MDK-ARM/uv5/
 **/ARMCC/
 **/ARMCLANG/
+**/build/
 
 # 调试/下载日志
 *.ini
 *.dbgconf
 JLinkLog.txt
 JLinkSettings.ini
-*.hex
-*.bin
-*.elf
-*.axf
 *.lib
 *.pack
 *.pack.txt
@@ -64,13 +61,9 @@ desktop.ini
 # macOS
 .DS_Store
 
-# VSCode 可选
-.vscode/settings.json
-.vscode/launch.json
-.vscode/ipch
-
 # CubeMX 生成备份
 .ioc.bak
 .mxproject.bak
 Makefile.bak
 cmake.bak
+
