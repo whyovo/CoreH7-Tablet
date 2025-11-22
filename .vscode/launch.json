@@ -1,6 +1,83 @@
 {
     "version": "0.2.0",
     "configurations": [
+{
+    "name": "main_debug",
+    "type": "cppdbg",
+    "request": "launch",
+    "program": "${workspaceFolder}/build/4k_music_game.elf",
+    "args": [],
+    "stopAtEntry": false,
+    "cwd": "${fileDirname}",
+    "environment": [],
+    "externalConsole": false,
+    "MIMode": "gdb",
+    "miDebuggerPath": "arm-none-eabi-gdb",
+    // "miDebuggerServerAddress": "localhost:3333",
+    // "preLaunchTask": "编译主程序 (Debug)",
+    
+"setupCommands": [
+    {
+        "description": "先连 OpenOCD",
+        "text": "target extended-remote localhost:3333",
+        "ignoreFailures": false
+    },
+    {
+        "description": "加载 Bootloader 符号",
+        "text": "-file-exec-and-symbols E:/CODE_b/stm32ai/4k_music_game/Bootloader/build/bootloader.elf",
+        "ignoreFailures": true
+    },
+    {
+        "description": "加载主程序符号",
+        "text": "-file-exec-and-symbols E:/CODE_b/stm32ai/4k_music_game/build/4k_music_game.elf",
+        "ignoreFailures": false
+    },
+    {
+        "description": "由 OpenOCD 执行复位并初始化 (初始化 QSPI 和时钟)",
+        "text": "monitor reset init",
+        "ignoreFailures": false
+    },
+    {
+        "description": "烧录 Bootloader",
+        "text": "monitor program E:/CODE_b/stm32ai/4k_music_game/Bootloader/build/bootloader.elf",
+        "ignoreFailures": true
+    },
+    {
+        "description": "烧录主程序",
+        "text": "monitor program E:/CODE_b/stm32ai/4k_music_game/build/4k_music_game.elf",
+        "ignoreFailures": true
+    },
+    {
+        "description": "再次复位并初始化环境",
+        "text": "monitor reset init",
+        "ignoreFailures": false
+    },
+    {
+        "description": "定义 QSPI 为只读，强制使用硬件断点",
+        "text": "mem 0x90000000 0x9FFFFFFF ro",
+        "ignoreFailures": false
+    },
+    {
+        "description": "强制设置 SP 为 App 栈顶 ",
+        "text": "set $sp = *0x90000000",
+        "ignoreFailures": false
+    },
+    {
+        "description": "强制设置 PC 为 App 复位入口 ",
+        "text": "set $pc = *0x90000004",
+        "ignoreFailures": false
+    },
+    {
+        "description": "设置临时硬件断点停在 main",
+        "text": "thbreak main",
+        "ignoreFailures": false
+    }
+],
+    "logging": {
+        "engineLogging": true
+    }
+},
+
        {
             "name": "Bootloader_release",
             "type": "cortex-debug",
@@ -16,27 +93,6 @@
             "runToEntryPoint": "main",
             "showDevDebugOutput": "none",
         },
-        {
-            "name": "main_debug",
-            "type": "cortex-debug",
-            "request": "launch",
-            "cwd": "${workspaceFolder}",
-            "executable": "${workspaceFolder}/build/Debug/4k_music_game.elf",
-            "servertype": "openocd",
-            "configFiles": [
-                "interface/stlink.cfg",
-                "target/stm32h7x.cfg"
-
-            ],
-                "serverArgs": [
-                "-c", "init",
-                "-c", "reset init",
-                "-c", "halt",
-                "-c", "flash bank ext_qspi stmqspi 0x90000000 0x2000000 0 0 $_CHIPNAME.cpu0 ${workspaceFolder}/STM32H750XBH6_qspi.axf"
-            ],
-            "svdPath": "${workspaceFolder}/STM32H750x.svd",
-            "runToEntryPoint": "main",
-            "showDevDebugOutput": "none"
-        }
+        
     ]
 }

@@ -26,11 +26,10 @@
             "type": "shell",
             "command": "openocd",
             "args": [
-                "-f", "interface/stlink.cfg",
-                "-f", "target/stm32h7x.cfg",
-                "-c", "init",
-                "-c", "reset halt",
-                "-c", "flash bank ext_qspi stmqspi 0x90000000 0x2000000 0 0 $_CHIPNAME.cpu0 {${workspaceFolder}/qspi_loader.axf}",
+
+                "-f", "./qspi_flash.cfg",
+                "-c", "init", 
+                "-c", "reset init", 
                 "-c", "program {${workspaceFolder}/build/4k_music_game.elf} verify reset",
                 "-c", "shutdown"
             ],
@@ -190,6 +189,6 @@
                 "-c", "shutdown"
             ],
             "problemMatcher": []
-        }
+        },
     ]
 }

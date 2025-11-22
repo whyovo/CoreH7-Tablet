@@ -49,7 +49,6 @@ target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user sources here
      "${CMAKE_CURRENT_SOURCE_DIR}/Drivers/User/Src/qspi_flash.c"
-     "${CMAKE_CURRENT_SOURCE_DIR}/Drivers/User/Src/sdram.c"
 )
 
 # Add include paths

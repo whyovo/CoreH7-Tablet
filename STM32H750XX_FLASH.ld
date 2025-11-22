@@ -66,8 +66,8 @@ RAM (xrw)      : ORIGIN = 0x24000000, LENGTH = 512K
 RAM_D2 (xrw)      : ORIGIN = 0x30000000, LENGTH = 288K
 RAM_D3 (xrw)      : ORIGIN = 0x38000000, LENGTH = 64K
 ITCMRAM (xrw)      : ORIGIN = 0x00000000, LENGTH = 64K
-QSPI_FLASH (rx)   : ORIGIN = 0x90000000, LENGTH = 29M  
-FLASH (rx)      : ORIGIN = 0x8000000, LENGTH = 128K
+FLASH (rx)   : ORIGIN = 0x90000000, LENGTH = 32M  
+/* FLASH (rx)      : ORIGIN = 0x8000000, LENGTH = 128K */
 }
 
 /* Define output sections */
@@ -79,7 +79,7 @@ SECTIONS
     . = ALIGN(4);
     KEEP(*(.isr_vector)) /* Startup code */
     . = ALIGN(4);
-  } >QSPI_FLASH
+  } >FLASH
 
   /* The program code and other data goes into FLASH */
   .text :
@@ -96,7 +96,7 @@ SECTIONS
 
     . = ALIGN(4);
     _etext = .;        /* define a global symbols at end of code */
-  } >QSPI_FLASH
+  } >FLASH
 
   /* Constant data goes into FLASH */
   .rodata :
@@ -105,14 +105,14 @@ SECTIONS
     *(.rodata)         /* .rodata sections (constants, strings, etc.) */
     *(.rodata*)        /* .rodata* sections (constants, strings, etc.) */
     . = ALIGN(4);
-  } >QSPI_FLASH
+  } >FLASH
 
   .ARM.extab : /* The "READONLY" keyword is only supported in GCC11 and later, remove it if using GCC10 or earlier. */
   {
     . = ALIGN(4);
     *(.ARM.extab* .gnu.linkonce.armextab.*)
     . = ALIGN(4);
-  } >QSPI_FLASH
+  } >FLASH
 
   .ARM : /* The "READONLY" keyword is only supported in GCC11 and later, remove it if using GCC10 or earlier. */
   {
@@ -121,7 +121,7 @@ SECTIONS
     *(.ARM.exidx*)
     __exidx_end = .;
     . = ALIGN(4);
-  } >QSPI_FLASH
+  } >FLASH
 
   .preinit_array : /* The "READONLY" keyword is only supported in GCC11 and later, remove it if using GCC10 or earlier. */
   {
@@ -130,7 +130,7 @@ SECTIONS
     KEEP (*(.preinit_array*))
     PROVIDE_HIDDEN (__preinit_array_end = .);
     . = ALIGN(4);
-  } >QSPI_FLASH
+  } >FLASH
 
   .init_array : /* The "READONLY" keyword is only supported in GCC11 and later, remove it if using GCC10 or earlier. */
   {
@@ -140,7 +140,7 @@ SECTIONS
     KEEP (*(.init_array*))
     PROVIDE_HIDDEN (__init_array_end = .);
     . = ALIGN(4);
-  } >QSPI_FLASH
+  } >FLASH
 
   .fini_array : /* The "READONLY" keyword is only supported in GCC11 and later, remove it if using GCC10 or earlier. */
   {
@@ -150,7 +150,7 @@ SECTIONS
     KEEP (*(.fini_array*))
     PROVIDE_HIDDEN (__fini_array_end = .);
     . = ALIGN(4);
-  } >QSPI_FLASH
+  } >FLASH
 
   /* used by the startup to initialize data */
   _sidata = LOADADDR(.data);
