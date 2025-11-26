@@ -251,8 +251,8 @@ void SPI_LCD_Init(void)
 	LCD_WriteCommand(0x29); // 打开显示
 
 	// 以下进行一些驱动的默认设置
-	LCD_SetDirection(Direction_V); //	设置显示方向
-	LCD_SetBackColor(LCD_BLACK);   // 设置背景色
+        LCD_SetDirection(Direction_V_Flip); //	设置显示方向
+        LCD_SetBackColor(LCD_BLACK);   // 设置背景色
 	LCD_SetColor(LCD_WHITE);	   // 设置画笔色
 	LCD_Clear();				   // 清屏
 	LCD_SetTextFont(24);

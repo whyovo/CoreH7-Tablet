@@ -42,11 +42,11 @@
         "text": "monitor program E:/CODE_b/stm32ai/4k_music_game/Bootloader/build/bootloader.elf",
         "ignoreFailures": true
     },
-    {
-        "description": "烧录主程序",
-        "text": "monitor program E:/CODE_b/stm32ai/4k_music_game/build/4k_music_game.elf",
-        "ignoreFailures": true
-    },
+    // {
+    //     "description": "烧录主程序",
+    //     "text": "monitor program E:/CODE_b/stm32ai/4k_music_game/build/4k_music_game.elf",
+    //     "ignoreFailures": true
+    // },
     {
         "description": "再次复位并初始化环境",
         "text": "monitor reset init",

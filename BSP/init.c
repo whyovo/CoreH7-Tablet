@@ -78,7 +78,7 @@ void init_all(void)
 #ifdef FLASH_FONT_ENABLE
     FlashFont_Init();
 #endif
-
+    DEBUG_INFO("Ω¯»Î∆¨Õ‚flash£°");
 #ifdef DMIC_ENABLE
     DMIC_Init();
 #endif /* DMIC_ENABLE */

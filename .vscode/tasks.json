@@ -30,7 +30,7 @@
                 "-f", "./qspi_flash.cfg",
                 "-c", "init", 
                 "-c", "reset init", 
-                "-c", "program {${workspaceFolder}/build/4k_music_game.elf} verify reset",
+                "-c", "program {${workspaceFolder}/build/4k_music_game.elf} ",
                 "-c", "shutdown"
             ],
             "problemMatcher": [],
@@ -126,6 +126,7 @@
                 "-B", "build",
                 "-G", "Ninja",
                 "-DCMAKE_BUILD_TYPE=Release"
+
             ],
             "options": {
                 "cwd": "${workspaceFolder}"
@@ -190,5 +191,14 @@
             ],
             "problemMatcher": []
         },
+        
+        {
+            "label": "查看使用大小",
+            "type": "shell",
+            "command": "arm-none-eabi-size",
+            "args": ["-Ax", "${workspaceFolder}/build/${workspaceFolderBasename}.elf"],
+            "group": "build",
+            "problemMatcher": []
+            }
     ]
 }

@@ -81,6 +81,26 @@ LoopCopyDataInit:
   adds r4, r0, r3
   cmp r4, r1
   bcc CopyDataInit
+
+
+/* Copy the dtcm text segment initializers from flash to dtcmRAM */
+  ldr r0, =_sdtcm_text
+  ldr r1, =_edtcm_text
+  ldr r2, =_sidtcm_text
+  movs r3, #0
+  b LoopCopydtcmInit
+
+CopydtcmInit:
+  ldr r4, [r2, r3]
+  str r4, [r0, r3]
+  adds r3, r3, #4
+
+LoopCopydtcmInit:
+  adds r4, r0, r3
+  cmp r4, r1
+  bcc CopydtcmInit
+
+
 /* Zero fill the bss segment. */
   ldr r2, =_sbss
   ldr r4, =_ebss

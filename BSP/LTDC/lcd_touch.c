@@ -71,6 +71,7 @@ void GT9XX_Reset(void)
 	Touch_IIC_Delay(20000);											  /* 延时 */
 }
 
+
 /**
  * @brief  GT911寄存器写操作处理
  * @param  addr: 要操作的寄存器地址（16位）
@@ -277,8 +278,8 @@ uint8_t Touch_Init(void)
 	/* 识别硬件版本（仅对V1.1之前的硬件有效） */
 	PanelRecognition();
 
-	Touch_IIC_GPIO_Config(); /* 初始化IIC引脚 */
-	GT9XX_Reset();			 /* 复位GT911芯片 */
+        Touch_IIC_GPIO_Config(); /* 初始化IIC引脚 */
+	  GT9XX_Reset();			 /* 复位GT911芯片 */
 
 	/* 读取触摸屏IC信息和配置版本 */
 	GT9XX_ReadReg(GT9XX_ID_ADDR, 11, GT9XX_Info);  /* 读IC信息 */
