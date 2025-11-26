@@ -52,12 +52,6 @@
 /* Entry Point */
 ENTRY(Reset_Handler)
 
-/* Highest address of the user mode stack */
-_estack = ORIGIN(RAM) + LENGTH(RAM);    /* end of RAM */
-/* Generate a link error if heap and stack don't fit into RAM */
-_Min_Heap_Size = 0x1000;      /* required amount of heap  */
-_Min_Stack_Size = 0x1000; /* required amount of stack */
-
 /* Specify the memory areas */
 MEMORY
 {
@@ -68,6 +62,12 @@ RAM_D3 (xrw)      : ORIGIN = 0x38000000, LENGTH = 64K
 ITCMRAM (xrw)      : ORIGIN = 0x00000000, LENGTH = 64K
 FLASH (rx)   : ORIGIN = 0x90000000, LENGTH = 32M  
 }
+
+/* Highest address of the user mode stack */
+_estack = ORIGIN(RAM) + LENGTH(RAM);    /* end of RAM */
+/* Generate a link error if heap and stack don't fit into RAM */
+_Min_Heap_Size = 0x1000;      /* required amount of heap  */
+_Min_Stack_Size = 0x1000; /* required amount of stack */
 
 /* Define output sections */
 SECTIONS
@@ -105,6 +105,12 @@ SECTIONS
     *(.rodata*)        /* .rodata* sections (constants, strings, etc.) */
     . = ALIGN(4);
   } >FLASH
+
+
+
+  
+
+
   /* ITCM section code */
   .dtcm_text :
   {
@@ -119,22 +125,6 @@ SECTIONS
 
   _sidtcm_text = LOADADDR(.dtcm_text);
   
-  .ARM.extab : /* The "READONLY" keyword is only supported in GCC11 and later, remove it if using GCC10 or earlier. */
-  {
-    . = ALIGN(4);
-    *(.ARM.extab* .gnu.linkonce.armextab.*)
-    . = ALIGN(4);
-  } >FLASH
-
-  .ARM : /* The "READONLY" keyword is only supported in GCC11 and later, remove it if using GCC10 or earlier. */
-  {
-    . = ALIGN(4);
-    __exidx_start = .;
-    *(.ARM.exidx*)
-    __exidx_end = .;
-    . = ALIGN(4);
-  } >FLASH
-
   .preinit_array : /* The "READONLY" keyword is only supported in GCC11 and later, remove it if using GCC10 or earlier. */
   {
     . = ALIGN(4);
@@ -208,7 +198,23 @@ SECTIONS
     . = ALIGN(8);
   } >DTCMRAM
 
+  /* TLS 符号定义 - 解决 starm-clang 库的 TLS 依赖 */
+  .tdata :
+  {
+    __tls_base = .;
+    *(.tdata*)
+    __tdata_end = .;
+  } >RAM
 
+  .tbss :
+  {
+    __tbss_start = .;
+    *(.tbss*)
+    __tbss_end = .;
+  } >RAM
+
+  /* 定义 TLS 相关符号 */
+  __arm32_tls_tcb_offset = 0;
 
   /* Remove information from the standard libraries */
   /DISCARD/ :
@@ -216,6 +222,8 @@ SECTIONS
     libc.a ( * )
     libm.a ( * )
     libgcc.a ( * )
+    *(.ARM.exidx*)
+    *(.ARM.extab*)
   }
 
 }
