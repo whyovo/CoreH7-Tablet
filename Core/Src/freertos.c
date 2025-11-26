@@ -194,8 +194,8 @@ void StartTouchTask(void *argument) {
   disp_disable_update(); /* 禁用显示刷新 */
   // DEBUG_INFO("5");
   /* 加载官方Widget Demo */
-  lv_demo_widgets();
-  // lv_demo_benchmark();
+  // lv_demo_widgets();
+  lv_demo_benchmark();
   // DEBUG_INFO("6");
   /* ===== 启用显示更新 ===== */
   disp_enable_update();

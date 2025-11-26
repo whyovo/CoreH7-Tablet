@@ -48,10 +48,11 @@ set(CMAKE_ASM_FLAGS "${COMMON_FLAGS} -x assembler-with-cpp -MMD -MP")
 
 # 优化标志
 set(CMAKE_C_FLAGS_DEBUG "-O0 -g3")
-set(CMAKE_C_FLAGS_RELEASE "-O3 -ffast-math -g0 -fomit-frame-pointer")
+set(CMAKE_C_FLAGS_RELEASE "-O3 -ffast-math -g0 -fomit-frame-pointer  -fno-strict-aliasing")
 set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g3")
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -ffast-math -g0 -fomit-frame-pointer")
-
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -ffast-math -g0 -fomit-frame-pointer  -fno-strict-aliasing")
+# 添加链接时优化
+set(CMAKE_C_LINK_FLAGS "${CMAKE_C_LINK_FLAGS} -flto -fuse-linker-plugin")
 # 链接标志
 set(CMAKE_C_LINK_FLAGS "${TARGET_FLAGS}")
 set(CMAKE_C_LINK_FLAGS "${CMAKE_C_LINK_FLAGS} -T \"${CMAKE_SOURCE_DIR}/STM32H750XX_FLASH.ld\"")

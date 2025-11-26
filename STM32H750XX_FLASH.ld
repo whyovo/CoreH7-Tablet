@@ -118,7 +118,17 @@ SECTIONS
     _sdtcm_text = .;
     *(.dtcm_text)
     *(.dtcm_text*)
+        /* 将 LVGL 渲染核心放入高速 RAM */
+    *lv_draw*.o (.text*)
+    *lv_refr*.o (.text*)
+    *lv_img*.o (.text*)
+    *lv_blen*.o (.text*)
+        /* FreeRTOS 关键函数 */
+    *tasks*.o (.text.xTaskIncrementTick* .text.vTaskSwitchContext*)
     
+    /* 数学库优化 */
+    *lv_math*.o (.text*)
+    *lv_color*.o (.text*)
     . = ALIGN(4);
     _edtcm_text = .;
   } >DTCMRAM AT> FLASH
