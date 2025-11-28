@@ -1,25 +1,8 @@
 /**
  ******************************************************************************
  * @file    flash_font.c
- * @author  ²Ë²Ëwhy£¨BÕ¾£º²Ë²Ëwhyy£©
- * @brief   Flash×Ö¿âÇı¶¯ÊµÏÖÎÄ¼ş£¨ÄÚ´æÓ³ÉäÄ£Ê½£©
- ******************************************************************************
- * @attention
- *
- * ±¾ÎÄ¼şÊµÏÖ£º
- * - ×Ö¿âÊı¾İ·ÃÎÊ£¨´¿ÄÚ´æÓ³ÉäÄ£Ê½£©
- * - GB2312×ÖÄ£Êı¾İ·ÃÎÊ
- * - ×Ö¿âÍêÕûĞÔĞ£Ñé
- *
- * Ê¹ÓÃÇ°Ìá£º
- * - ×Ö¿âÒÑÍ¨¹ıSTM32CubeProgrammerÔ¤ÉÕÂ¼µ½QSPI Flash
- * - QSPIÒÑÅäÖÃÎªÄÚ´æÓ³ÉäÄ£Ê½£¨ÓÉÍâ²¿Ä£¿é¸ºÔğ£©
- * - ×Ö¿âÊı¾İ¿ÉÍ¨¹ı W25Qxx_Mem_Addr Ö±½Ó·ÃÎÊ
- *
- * ĞÔÄÜËµÃ÷£º
- * - ¶ÁÈ¡ËÙ¶È: >50MB/s (½öÊÜQSPIÊ±ÖÓºÍCacheÓ°Ïì)
- * - Áã¿½±´·ÃÎÊ£¬ÎŞĞè¶îÍâ»º³åÇø
- *
+ * @author  èœèœwhyï¼ˆBç«™ï¼šèœèœwhyyï¼‰
+ * @brief   Flashå­—åº“é©±åŠ¨å®ç°æ–‡ä»¶ï¼ˆå†…å­˜æ˜ å°„æ¨¡å¼ï¼‰
  ******************************************************************************
  */
 
@@ -29,157 +12,254 @@
 #ifdef FLASH_FONT_ENABLE
 
 /*******************************************************************************
- *                              Ë½ÓĞºê¶¨Òå
+ *                              ç§æœ‰å®å®šä¹‰
  ******************************************************************************/
-#define FLAG_MAGIC 0x464C4147 /*!< ±êÖ¾Î»Ä§Êı "FLAG" */
-#define FONT_MAGIC 0x47423332 /*!< ×Ö¿âÄ§Êı "GB23" (GB2312) */
-#define FLASHFONT_OK 0        /*!< ²Ù×÷³É¹¦ */
+#define FLAG_MAGIC 0x464C4147 /*!< æ ‡å¿—ä½é­”æ•° "FLAG" */
+#define FONT_MAGIC 0x47423332 /*!< å­—åº“é­”æ•° "GB23" (GB2312) */
+#define FLASHFONT_OK 0        /*!< æ“ä½œæˆåŠŸ */
 
 /*******************************************************************************
- *                              Ë½ÓĞº¯ÊıÓë±äÁ¿ÉùÃ÷
+ *                              ç§æœ‰å‡½æ•°ä¸å˜é‡å£°æ˜
  ******************************************************************************/
 static uint32_t GetFontBaseAddr(uint8_t font_size);
 
-static GB2312_TableHeader_t g_table_header; /*!< ¶ÔÕÕ±íÍ·ĞÅÏ¢»º´æ */
-static uint8_t g_font_initialized = 0;      /*!< ³õÊ¼»¯±êÖ¾ */
+static uint8_t g_font_initialized = 0;      /*!< åˆå§‹åŒ–æ ‡å¿— */
 
 /*******************************************************************************
- *                              Ë½ÓĞº¯ÊıÊµÏÖ
+ *                              ç§æœ‰å‡½æ•°å®ç°
  ******************************************************************************/
 
 /**
- * @brief  »ñÈ¡×ÖÌå´æ´¢»ùµØÖ·
- * @param  font_size: ×ÖÌå´óĞ¡(12/16/20/24/32)
- * @retval FlashµØÖ·Æ«ÒÆ, 0±íÊ¾ÎŞĞ§³ß´ç
+ * @brief  è·å–å­—ä½“å­˜å‚¨åŸºåœ°å€
+ * @param  font_size: å­—ä½“å¤§å°(12/16/20/24/32)
+ * @retval Flashåœ°å€åç§», 0è¡¨ç¤ºæ— æ•ˆå°ºå¯¸
  */
-static uint32_t GetFontBaseAddr(uint8_t font_size)
-{
-    switch (font_size)
-    {
-    case 12:
-        return FONT_12x12_ADDR;
-    case 16:
-        return FONT_16x16_ADDR;
-    case 20:
-        return FONT_20x20_ADDR;
-    case 24:
-        return FONT_24x24_ADDR;
-    case 32:
-        return FONT_32x32_ADDR;
-    default:
-        return 0;
-    }
+static uint32_t GetFontBaseAddr(uint8_t font_size) {
+  switch (font_size) {
+  case 12:
+    return FONT_12x12_ADDR;
+  case 16:
+    return FONT_16x16_ADDR;
+  case 20:
+    return FONT_20x20_ADDR;
+  case 24:
+    return FONT_24x24_ADDR;
+  case 32:
+    return FONT_32x32_ADDR;
+  default:
+    return 0;
+  }
 }
 
 /*******************************************************************************
- *                              µ¼³öº¯ÊıÊµÏÖ
+ *                              å¯¼å‡ºå‡½æ•°å®ç°
  ******************************************************************************/
 
 /**
- * @brief  ³õÊ¼»¯Flash×Ö¿âÇı¶¯
- * @retval 0-³É¹¦, <0-Ê§°Ü
- * @note   Ç°Ìá£ºQSPIÒÑ¿ªÆôÄÚ´æÓ³ÉäÄ£Ê½£¬×Ö¿âÒÑÔ¤ÉÕÂ¼
+ * @brief  åˆå§‹åŒ–Flashå­—åº“é©±åŠ¨
+ * @retval 0-æˆåŠŸ, <0-å¤±è´¥
+ * @note   å‰æï¼šQSPIå·²å¼€å¯å†…å­˜æ˜ å°„æ¨¡å¼ï¼Œå­—åº“å·²é¢„çƒ§å½•
  */
-int8_t FlashFont_Init(void)
-{
-    const FontWriteFlag_t *flag;
-    const GB2312_TableHeader_t *table_header;
+int8_t FlashFont_Init(void) {
+  const FontWriteFlag_t *flag;
+  // é€šè¿‡å†…å­˜æ˜ å°„è¯»å–æ ‡å¿—ä½
+  flag = (const FontWriteFlag_t *)(W25Qxx_Mem_Addr + FONT_FLAG_ADDR);
 
-    // Í¨¹ıÄÚ´æÓ³Éä¶ÁÈ¡±êÖ¾Î»
-    flag = (const FontWriteFlag_t *)(W25Qxx_Mem_Addr + FONT_FLAG_ADDR);
+  // éªŒè¯æ ‡å¿—ä½é­”æ•°
+  if (flag->magic != FLAG_MAGIC) {
+    DEBUG_ERROR("å­—åº“æ ‡å¿—æ— æ•ˆï¼Œå­—åº“å¯èƒ½æœªçƒ§å½•");
+    return -1;
+  }
 
-    // ÑéÖ¤±êÖ¾Î»Ä§Êı
-    if (flag->magic != FLAG_MAGIC)
-    {
-        DEBUG_ERROR("×Ö¿â±êÖ¾ÎŞĞ§£¬×Ö¿â¿ÉÄÜÎ´ÉÕÂ¼");
-        return -1;
-    }
+  g_font_initialized = 1;
 
-    // Í¨¹ıÄÚ´æÓ³Éä¶ÁÈ¡GB2312¶ÔÕÕ±íÍ·²¿
-    table_header = (const GB2312_TableHeader_t *)(W25Qxx_Mem_Addr + GB2312_TABLE_ADDR);
-
-    // ÑéÖ¤¶ÔÕÕ±íÄ§Êı
-    if (table_header->magic != 0x54424C47) // "TBLG"
-    {
-        DEBUG_ERROR("GB2312¶ÔÕÕ±í±êÖ¾ÎŞĞ§£¬¶ÔÕÕ±í¿ÉÄÜÎ´ÉÕÂ¼");
-        return -2;
-    }
-
-    // »º´æ¶ÔÕÕ±íÍ·ĞÅÏ¢
-    memcpy(&g_table_header, table_header, sizeof(GB2312_TableHeader_t));
-    g_font_initialized = 1;
-
-    return FLASHFONT_OK;
+  return FLASHFONT_OK;
 }
 
 /**
- * @brief  ÑéÖ¤Ö¸¶¨×Ö¿âÊÇ·ñÒÑÉÕÂ¼
- * @param  font_size: ×ÖÌå´óĞ¡(12/16/20/24/32)
- * @retval 1-ÒÑÉÕÂ¼, 0-Î´ÉÕÂ¼
+ * @brief  è·å–æŒ‡å®šå­—ä½“æ¯å­—ç¬¦å ç”¨çš„å­—èŠ‚æ•°
+ * @param  font_size: å­—ä½“å¤§å°(12/16/20/24/32)
+ * @retval >=0: æ¯å­—ç¬¦å­—èŠ‚æ•°, <0: æ— æ•ˆå­—ä½“å¤§å°
  */
-int8_t FlashFont_IsValid(uint8_t font_size)
-{
-    uint32_t base_addr = GetFontBaseAddr(font_size);
-    const FontHeader_GB2312_t *header;
+int16_t FlashFont_BytesPerChar(uint8_t font_size) {
+  switch (font_size) {
+  case 12:
+    return 24;
+  case 16:
+    return 32;
+  case 20:
+    return 60;
+  case 24:
+    return 72;
+  case 32:
+    return 128;
+  default:
+    return -1;
+  }
+}
+/*******************************************************************************
+ *                          GB2312å¯¹ç…§è¡¨Flashè®¿é—®å®ç°
+ ******************************************************************************/
 
-    if (base_addr == 0)
-    {
-        return 0;
+/**
+ * @brief  ä»FlashæŸ¥æ‰¾æ±‰å­—å¯¹åº”çš„å­—åº“ç´¢å¼•(çº¿æ€§æŸ¥æ‰¾)
+ * @param  text: æ±‰å­—å­—ç¬¦ä¸²(GBKç¼–ç ï¼Œ2å­—èŠ‚)
+ * @retval å­—åº“ç´¢å¼•(0-7463), æœªæ‰¾åˆ°è¿”å›-1
+ * @note   ä½¿ç”¨çº¿æ€§æŸ¥æ‰¾ï¼Œæ—¶é—´å¤æ‚åº¦O(n)
+ * @note   è‹¥éœ€è¦é«˜æ€§èƒ½ï¼Œå¯æ”¹ç”¨äºŒåˆ†æŸ¥æ‰¾
+ */
+int16_t GB2312_FindIndex_Flash(const char *text) {
+  uint16_t search_gbk;
+  const uint8_t *pData;
+  const GB2312_TableEntry_t *pEntry;
+
+  if (!g_font_initialized) {
+    DEBUG_ERROR("GB2312_FindIndex_Flash: å­—åº“æœªåˆå§‹åŒ–");
+    return -1;
+  }
+
+  // å°†è¾“å…¥å­—ç¬¦è½¬ä¸ºGBKç 
+  search_gbk = ((uint16_t)text[0] << 8) | (uint8_t)text[1];
+
+  // è®¡ç®—æ•°æ®åŒºèµ·å§‹åœ°å€(å†…å­˜æ˜ å°„)
+  pData = (const uint8_t *)(W25Qxx_Mem_Addr + GB2312_TABLE_ADDR +
+                            12);
+  pEntry = (const GB2312_TableEntry_t *)pData;
+
+  // çº¿æ€§æŸ¥æ‰¾
+  for (uint32_t i = 0; i < 7464; i++) {
+    if (pEntry[i].gbk_code == 0xFFFF) {
+      break; // é‡åˆ°ç‰¹æ®Šæ ‡è®°ï¼Œæå‰ç»“æŸ
     }
 
-    // Í¨¹ıÄÚ´æÓ³Éä¶ÁÈ¡×Ö¿âÍ·ĞÅÏ¢
-    header = (const FontHeader_GB2312_t *)(W25Qxx_Mem_Addr + base_addr);
+    if (pEntry[i].gbk_code == search_gbk) {
+      return pEntry[i].index; // æ‰¾åˆ°
+    }
+  }
 
-    // ÑéÖ¤Ä§Êı
-    return (header->magic == FONT_MAGIC) ? 1 : 0;
+  return -1; // æœªæ‰¾åˆ°
+}
+
+/**
+ * @brief  ä»FlashæŸ¥æ‰¾æ±‰å­—å¹¶è¿”å›å­—æ¨¡æ•°æ®æŒ‡é’ˆ
+ * @param  text: æ±‰å­—å­—ç¬¦ä¸²(GBKç¼–ç ï¼Œ2å­—èŠ‚)
+ * @param  font_size: å­—ä½“å¤§å°(12/16/20/24/32)
+ * @retval å­—æ¨¡æ•°æ®æŒ‡é’ˆï¼ŒæŸ¥æ‰¾å¤±è´¥è¿”å›NULL
+ */
+const uint8_t *GB2312_FindFont_Flash(const char *text, uint8_t font_size) {
+  int16_t index = GB2312_FindIndex_Flash(text);
+  if (index < 0) {
+    return NULL;
+  }
+
+  uint32_t font_offset = GetFontBaseAddr(font_size);
+  uint16_t bytes_per_char = FlashFont_BytesPerChar(font_size);
+
+  if (font_offset == 0) {
+    return NULL;
+  }
+
+  return (const uint8_t *)(W25Qxx_Mem_Addr + font_offset + 18 +
+                           index * bytes_per_char);
 }
 
 /*******************************************************************************
- *                          GB2312¶ÔÕÕ±íFlash·ÃÎÊÊµÏÖ
+ *                          utf8å¯¹ç…§è¡¨Flashè®¿é—®å®ç°
  ******************************************************************************/
-
 /**
- * @brief  ´ÓFlash²éÕÒºº×Ö¶ÔÓ¦µÄ×Ö¿âË÷Òı(ÏßĞÔ²éÕÒ)
- * @param  text: ºº×Ö×Ö·û´®(GBK±àÂë£¬2×Ö½Ú)
- * @retval ×Ö¿âË÷Òı(0-7463), Î´ÕÒµ½·µ»Ø-1
- * @note   Ê¹ÓÃÏßĞÔ²éÕÒ£¬Ê±¼ä¸´ÔÓ¶ÈO(n)
- * @note   ÈôĞèÒª¸ßĞÔÄÜ£¬¿É¸ÄÓÃ¶ş·Ö²éÕÒ
+ * @brief  ä»FlashæŸ¥æ‰¾UTF8å­—ç¬¦å¯¹åº”çš„å­—åº“ç´¢å¼•(çº¿æ€§æŸ¥æ‰¾)
+ * @param  utf8_text: UTF8å­—ç¬¦å­—ç¬¦ä¸²(1-4å­—èŠ‚)
+ * @param  utf8_len: UTF8å­—ç¬¦çš„å­—èŠ‚é•¿åº¦(1-4)
+ * @retval å­—åº“ç´¢å¼•, æœªæ‰¾åˆ°è¿”å›-1
  */
-int16_t GB2312_FindIndex_Flash(const char *text)
-{
-    uint16_t search_gbk;
-    const uint8_t *pData;
-    const GB2312_TableEntry_t *pEntry;
+int16_t UTF8_FindIndex_Flash(const uint8_t *utf8_text, uint8_t utf8_len) {
+  const uint8_t *pData;
+  const UTF8_TableEntry_t *pEntry;
 
-    if (!g_font_initialized)
-    {
-        DEBUG_ERROR("GB2312_FindIndex_Flash: ×Ö¿âÎ´³õÊ¼»¯");
-        return -1;
-    }
+  if (!g_font_initialized) {
+    DEBUG_ERROR("UTF8_FindIndex_Flash: å­—åº“æœªåˆå§‹åŒ–");
+    return -1;
+  }
 
-    // ½«ÊäÈë×Ö·û×ªÎªGBKÂë
-    search_gbk = ((uint16_t)text[0] << 8) | (uint8_t)text[1];
+  if (utf8_len < 1 || utf8_len > 4 || utf8_text == NULL) {
+    DEBUG_ERROR("UTF8_FindIndex_Flash: æ— æ•ˆçš„UTF8å‚æ•°");
+    return -1;
+  }
 
-    // ¼ÆËãÊı¾İÇøÆğÊ¼µØÖ·(ÄÚ´æÓ³Éä)
-    pData = (const uint8_t *)(W25Qxx_Mem_Addr + GB2312_TABLE_ADDR +
-                              g_table_header.data_offset);
-    pEntry = (const GB2312_TableEntry_t *)pData;
+  // è®¡ç®—æ•°æ®åŒºèµ·å§‹åœ°å€(å†…å­˜æ˜ å°„)
+  pData = (const uint8_t *)(W25Qxx_Mem_Addr + UTF8_TABLE_ADDR +
+                            12);
+  pEntry = (const UTF8_TableEntry_t *)pData;
 
-    // ÏßĞÔ²éÕÒ
-    for (uint32_t i = 0; i < g_table_header.char_count; i++)
-    {
-        if (pEntry[i].gbk_code == 0xFFFF)
-        {
-            break; // Óöµ½ÌØÊâ±ê¼Ç£¬ÌáÇ°½áÊø
+  // çº¿æ€§æŸ¥æ‰¾
+  for (uint32_t i = 0; i < 7464; i++) {
+    // æ£€æŸ¥UTF8é•¿åº¦æ˜¯å¦åŒ¹é…
+    if (pEntry[i].utf8_len == utf8_len) {
+      // æ¯”è¾ƒUTF8ç¼–ç 
+      uint8_t match = 1;
+      for (uint8_t j = 0; j < utf8_len; j++) {
+        if (pEntry[i].utf8[j] != utf8_text[j]) {
+          match = 0;
+          break;
         }
-
-        if (pEntry[i].gbk_code == search_gbk)
-        {
-            return pEntry[i].index; // ÕÒµ½
-        }
+      }
+      if (match) {
+        return pEntry[i].index; // æ‰¾åˆ°
+      }
     }
+  }
 
-    return -1; // Î´ÕÒµ½
+  return -1; // æœªæ‰¾åˆ°
 }
 
+/**
+ * @brief  è·å–UTF-8å­—ç¬¦çš„å­—èŠ‚é•¿åº¦
+ * @note   å†…éƒ¨ç§æœ‰å‡½æ•°
+ */
+static uint8_t GetUTF8CharLen(const uint8_t *pText) {
+  if (pText == NULL)
+    return 0;
+
+  uint8_t first_byte = *pText;
+
+  // æ ¹æ®UTF-8ç¼–ç è§„åˆ™åˆ¤æ–­å­—ç¬¦é•¿åº¦
+  if ((first_byte & 0x80) == 0x00) {
+    return 1; // 0xxxxxxx - ASCIIå­—ç¬¦
+  } else if ((first_byte & 0xE0) == 0xC0) {
+    return 2; // 110xxxxx - 2å­—èŠ‚UTF-8
+  } else if ((first_byte & 0xF0) == 0xE0) {
+    return 3; // 1110xxxx - 3å­—èŠ‚UTF-8
+  } else if ((first_byte & 0xF8) == 0xF0) {
+    return 4; // 11110xxx - 4å­—èŠ‚UTF-8
+  }
+
+  return 1; // é»˜è®¤è¿”å›1
+}
+
+/**
+ * @brief  ä»FlashæŸ¥æ‰¾UTF8å­—ç¬¦å¹¶è¿”å›å­—æ¨¡æ•°æ®æŒ‡é’ˆ
+ * @param  utf8_text: UTF8å­—ç¬¦å­—ç¬¦ä¸²(1-4å­—èŠ‚)
+ * @param  font_size: å­—ä½“å¤§å°(12/16/20/24/32)
+ * @retval å­—æ¨¡æ•°æ®æŒ‡é’ˆï¼ŒæŸ¥æ‰¾å¤±è´¥è¿”å›NULL
+ * @note   è‡ªåŠ¨è¯†åˆ«UTF-8å­—ç¬¦é•¿åº¦
+ */
+const uint8_t *UTF8_FindFont_Flash(const uint8_t *utf8_text,
+                                   uint8_t font_size) {
+  uint8_t utf8_len = GetUTF8CharLen(utf8_text); // è‡ªåŠ¨è·å–UTF-8é•¿åº¦
+  int16_t index = UTF8_FindIndex_Flash(utf8_text, utf8_len);
+
+  if (index < 0) {
+    return NULL;
+  }
+
+  uint32_t font_offset = GetFontBaseAddr(font_size);
+  uint16_t bytes_per_char = FlashFont_BytesPerChar(font_size);
+
+  if (font_offset == 0) {
+    return NULL;
+  }
+
+  return (const uint8_t *)(W25Qxx_Mem_Addr + font_offset + 18 +
+                           index * bytes_per_char);
+}
 #endif // FLASH_FONT_ENABLE

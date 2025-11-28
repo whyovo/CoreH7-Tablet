@@ -1,20 +1,20 @@
 /**
  ******************************************************************************
  * @file    lcd_touch.c
- * @author  ²Ë²Ëwhy£¨BÕ¾£º²Ë²Ëwhyy£©
- * @brief   ´¥ÃşÆÁÇı¶¯ÊµÏÖÎÄ¼ş
+ * @author  èœèœwhyï¼ˆBç«™ï¼šèœèœwhyyï¼‰
+ * @brief   è§¦æ‘¸å±é©±åŠ¨å®ç°æ–‡ä»¶
  ******************************************************************************
  * @attention
  *
- * ±¾ÎÄ¼şÊµÏÖ£º
- * - GT911µçÈİÊ½´¥ÃşÆÁµÄ³õÊ¼»¯ºÍ¸´Î»
- * - Í¨¹ıÄ£ÄâIIC½øĞĞ¼Ä´æÆ÷¶ÁĞ´
- * - ´¥ÃşÊı¾İµÄ²É¼¯¡¢½âÎöºÍ×ø±êÓ³Éä
- * - Ó²¼ş°æ±¾×Ô¶¯Ê¶±ğºÍ·Ö±æÂÊÊÊÅä
+ * æœ¬æ–‡ä»¶å®ç°ï¼š
+ * - GT911ç”µå®¹å¼è§¦æ‘¸å±çš„åˆå§‹åŒ–å’Œå¤ä½
+ * - é€šè¿‡æ¨¡æ‹ŸIICè¿›è¡Œå¯„å­˜å™¨è¯»å†™
+ * - è§¦æ‘¸æ•°æ®çš„é‡‡é›†ã€è§£æå’Œåæ ‡æ˜ å°„
+ * - ç¡¬ä»¶ç‰ˆæœ¬è‡ªåŠ¨è¯†åˆ«å’Œåˆ†è¾¨ç‡é€‚é…
  *
- * Ó²¼ş°æ±¾ÅĞ¶Ï£º
- * - V1.1Ö®Ç°£ºRSTºÍINTÒı½ÅÎ´Á¬½Ó£¬´¥Ãş·Ö±æÂÊ1024¡Á600
- * - V1.1¼°ÒÔºó£ºRSTºÍINTÒı½ÅÒÑÁ¬½Ó£¬´¥Ãş·Ö±æÂÊ¿ÉÊ¶±ğ
+ * ç¡¬ä»¶ç‰ˆæœ¬åˆ¤æ–­ï¼š
+ * - V1.1ä¹‹å‰ï¼šRSTå’ŒINTå¼•è„šæœªè¿æ¥ï¼Œè§¦æ‘¸åˆ†è¾¨ç‡1024Ã—600
+ * - V1.1åŠä»¥åï¼šRSTå’ŒINTå¼•è„šå·²è¿æ¥ï¼Œè§¦æ‘¸åˆ†è¾¨ç‡å¯è¯†åˆ«
  *
  ******************************************************************************
  */
@@ -22,75 +22,75 @@
 #include "lcd_touch.h"
 
 /*******************************************************************************
- *                              È«¾Ö±äÁ¿¶¨Òå
+ *                              å…¨å±€å˜é‡å®šä¹‰
  *******************************************************************************/
 
 /**
- * @brief È«¾Ö´¥ÃşĞÅÏ¢½á¹¹Ìå
- * @note ÓÉTouch_Scan()º¯Êı¸üĞÂ£¬Ó¦ÓÃ²ã¿É´Ó´Ë½á¹¹Ìå¶ÁÈ¡´¥ÃşÊı¾İ
+ * @brief å…¨å±€è§¦æ‘¸ä¿¡æ¯ç»“æ„ä½“
+ * @note ç”±Touch_Scan()å‡½æ•°æ›´æ–°ï¼Œåº”ç”¨å±‚å¯ä»æ­¤ç»“æ„ä½“è¯»å–è§¦æ‘¸æ•°æ®
  */
 volatile TouchStructure touchInfo;
 
 /**
- * @brief ´¥Ãş×ø±êĞŞ¸Ä±êÖ¾Î»
- * @note ÓÃÓÚÅĞ¶ÏÊÇ·ñĞèÒª½øĞĞ·Ö±æÂÊ×ª»»
- *       1 = ĞèÒª×ª»»£¨¾ÉÓ²¼ş£¬1024¡Á600 ¡ú 800¡Á480£©
- *       0 = ÎŞĞè×ª»»£¨ĞÂÓ²¼ş»òÒÑÆ¥Åä·Ö±æÂÊ£©
+ * @brief è§¦æ‘¸åæ ‡ä¿®æ”¹æ ‡å¿—ä½
+ * @note ç”¨äºåˆ¤æ–­æ˜¯å¦éœ€è¦è¿›è¡Œåˆ†è¾¨ç‡è½¬æ¢
+ *       1 = éœ€è¦è½¬æ¢ï¼ˆæ—§ç¡¬ä»¶ï¼Œ1024Ã—600 â†’ 800Ã—480ï¼‰
+ *       0 = æ— éœ€è½¬æ¢ï¼ˆæ–°ç¡¬ä»¶æˆ–å·²åŒ¹é…åˆ†è¾¨ç‡ï¼‰
  */
 volatile static uint8_t Modify_Flag = 0;
 
 /*******************************************************************************
- *                              GT911Ğ¾Æ¬²Ù×÷º¯Êı
+ *                              GT911èŠ¯ç‰‡æ“ä½œå‡½æ•°
  *******************************************************************************/
 
 /**
- * @brief  ¸´Î»GT911Ğ¾Æ¬
- * @param  ÎŞ
- * @retval ÎŞ
- * @note   GT911¸´Î»Ê±Ğò£º
- *         1. INT½ÅÊä³öµÍµçÆ½£¨¹Ì¶¨IICµØÖ·Îª0xBA/0xBB£©
- *         2. RST½Å£º¸ß ¡ú ÑÓÊ± ¡ú µÍ ¡ú ÑÓÊ± ¡ú ¸ß
- *         3. INT½Å×ªÊäÈëÄ£Ê½
+ * @brief  å¤ä½GT911èŠ¯ç‰‡
+ * @param  æ— 
+ * @retval æ— 
+ * @note   GT911å¤ä½æ—¶åºï¼š
+ *         1. INTè„šè¾“å‡ºä½ç”µå¹³ï¼ˆå›ºå®šIICåœ°å€ä¸º0xBA/0xBBï¼‰
+ *         2. RSTè„šï¼šé«˜ â†’ å»¶æ—¶ â†’ ä½ â†’ å»¶æ—¶ â†’ é«˜
+ *         3. INTè„šè½¬è¾“å…¥æ¨¡å¼
  */
 void GT9XX_Reset(void)
 {
-	Touch_INT_Out(); /* ½«INTÒı½ÅÅäÖÃÎªÊä³ö */
+	Touch_INT_Out(); /* å°†INTå¼•è„šé…ç½®ä¸ºè¾“å‡º */
 
-	/* ³õÊ¼»¯Òı½Å×´Ì¬ */
-	HAL_GPIO_WritePin(Touch_INT_PORT, Touch_INT_PIN, GPIO_PIN_RESET); /* INTÊä³öµÍµçÆ½ */
-	HAL_GPIO_WritePin(Touch_RST_PORT, Touch_RST_PIN, GPIO_PIN_SET);	  /* RSTÊä³ö¸ßµçÆ½ */
+	/* åˆå§‹åŒ–å¼•è„šçŠ¶æ€ */
+	HAL_GPIO_WritePin(Touch_INT_PORT, Touch_INT_PIN, GPIO_PIN_RESET); /* INTè¾“å‡ºä½ç”µå¹³ */
+	HAL_GPIO_WritePin(Touch_RST_PORT, Touch_RST_PIN, GPIO_PIN_SET);	  /* RSTè¾“å‡ºé«˜ç”µå¹³ */
 	Touch_IIC_Delay(10000);
 
-	/* Ö´ĞĞ¸´Î» */
-	/* INTÒı½Å±£³ÖµÍµçÆ½£¬½«Æ÷¼şµØÖ·ÉèÖÃÎª0xBA/0xBB */
-	HAL_GPIO_WritePin(Touch_RST_PORT, Touch_RST_PIN, GPIO_PIN_RESET); /* À­µÍ¸´Î»Òı½Å */
-	Touch_IIC_Delay(150000);										  /* ÑÓÊ± */
-	HAL_GPIO_WritePin(Touch_RST_PORT, Touch_RST_PIN, GPIO_PIN_SET);	  /* À­¸ß¸´Î»Òı½Å */
-	Touch_IIC_Delay(350000);										  /* ÑÓÊ± */
-	Touch_INT_In();													  /* INTÒı½Å×ªÎªÊäÈë */
-	Touch_IIC_Delay(20000);											  /* ÑÓÊ± */
+	/* æ‰§è¡Œå¤ä½ */
+	/* INTå¼•è„šä¿æŒä½ç”µå¹³ï¼Œå°†å™¨ä»¶åœ°å€è®¾ç½®ä¸º0xBA/0xBB */
+	HAL_GPIO_WritePin(Touch_RST_PORT, Touch_RST_PIN, GPIO_PIN_RESET); /* æ‹‰ä½å¤ä½å¼•è„š */
+	Touch_IIC_Delay(150000);										  /* å»¶æ—¶ */
+	HAL_GPIO_WritePin(Touch_RST_PORT, Touch_RST_PIN, GPIO_PIN_SET);	  /* æ‹‰é«˜å¤ä½å¼•è„š */
+	Touch_IIC_Delay(350000);										  /* å»¶æ—¶ */
+	Touch_INT_In();													  /* INTå¼•è„šè½¬ä¸ºè¾“å…¥ */
+	Touch_IIC_Delay(20000);											  /* å»¶æ—¶ */
 }
 
 
 /**
- * @brief  GT911¼Ä´æÆ÷Ğ´²Ù×÷´¦Àí
- * @param  addr: Òª²Ù×÷µÄ¼Ä´æÆ÷µØÖ·£¨16Î»£©
- * @retval SUCCESS - µØÖ·Ğ´Èë³É¹¦
- * @retval ERROR - µØÖ·Ğ´ÈëÊ§°Ü
- * @note   ½öÖ´ĞĞIICÆğÊ¼ºÍµØÖ·Ğ´Èë£¬ÓÃÓÚGT9XX_WriteReg/GT9XX_ReadRegÄÚ²¿µ÷ÓÃ
+ * @brief  GT911å¯„å­˜å™¨å†™æ“ä½œå¤„ç†
+ * @param  addr: è¦æ“ä½œçš„å¯„å­˜å™¨åœ°å€ï¼ˆ16ä½ï¼‰
+ * @retval SUCCESS - åœ°å€å†™å…¥æˆåŠŸ
+ * @retval ERROR - åœ°å€å†™å…¥å¤±è´¥
+ * @note   ä»…æ‰§è¡ŒIICèµ·å§‹å’Œåœ°å€å†™å…¥ï¼Œç”¨äºGT9XX_WriteReg/GT9XX_ReadRegå†…éƒ¨è°ƒç”¨
  */
 uint8_t GT9XX_WriteHandle(uint16_t addr)
 {
 	uint8_t status;
 
-	Touch_IIC_Start();									/* Æô¶¯IICÍ¨ĞÅ */
-	if (Touch_IIC_WriteByte(GT9XX_IIC_WADDR) == ACK_OK) /* ·¢ËÍĞ´ÃüÁî */
+	Touch_IIC_Start();									/* å¯åŠ¨IICé€šä¿¡ */
+	if (Touch_IIC_WriteByte(GT9XX_IIC_WADDR) == ACK_OK) /* å‘é€å†™å‘½ä»¤ */
 	{
-		if (Touch_IIC_WriteByte((uint8_t)(addr >> 8)) == ACK_OK) /* Ğ´Èë¸ß×Ö½ÚµØÖ· */
+		if (Touch_IIC_WriteByte((uint8_t)(addr >> 8)) == ACK_OK) /* å†™å…¥é«˜å­—èŠ‚åœ°å€ */
 		{
-			if (Touch_IIC_WriteByte((uint8_t)(addr)) == ACK_OK) /* Ğ´ÈëµÍ×Ö½ÚµØÖ· */
+			if (Touch_IIC_WriteByte((uint8_t)(addr)) == ACK_OK) /* å†™å…¥ä½å­—èŠ‚åœ°å€ */
 			{
-				status = SUCCESS; /* µØÖ·Ğ´Èë³É¹¦ */
+				status = SUCCESS; /* åœ°å€å†™å…¥æˆåŠŸ */
 			}
 			else
 			{
@@ -110,22 +110,22 @@ uint8_t GT9XX_WriteHandle(uint16_t addr)
 }
 
 /**
- * @brief  Ğ´Ò»×Ö½ÚÊı¾İµ½GT911
- * @param  addr: ÒªĞ´ÈëµÄ¼Ä´æÆ÷µØÖ·£¨16Î»£©
- * @param  value: ÒªĞ´ÈëµÄÊı¾İ
- * @retval SUCCESS - Ğ´Èë³É¹¦
- * @retval ERROR - Ğ´ÈëÊ§°Ü
- * @note   ÍêÕûµÄIICĞ´²Ù×÷£ºSTART ¡ú µØÖ· ¡ú Êı¾İ ¡ú STOP
+ * @brief  å†™ä¸€å­—èŠ‚æ•°æ®åˆ°GT911
+ * @param  addr: è¦å†™å…¥çš„å¯„å­˜å™¨åœ°å€ï¼ˆ16ä½ï¼‰
+ * @param  value: è¦å†™å…¥çš„æ•°æ®
+ * @retval SUCCESS - å†™å…¥æˆåŠŸ
+ * @retval ERROR - å†™å…¥å¤±è´¥
+ * @note   å®Œæ•´çš„IICå†™æ“ä½œï¼šSTART â†’ åœ°å€ â†’ æ•°æ® â†’ STOP
  */
 uint8_t GT9XX_WriteData(uint16_t addr, uint8_t value)
 {
 	uint8_t status = SUCCESS;
 
-	Touch_IIC_Start(); /* Æô¶¯IICÍ¨ĞÅ */
+	Touch_IIC_Start(); /* å¯åŠ¨IICé€šä¿¡ */
 
-	if (GT9XX_WriteHandle(addr) == SUCCESS) /* Ğ´ÈëÒª²Ù×÷µÄ¼Ä´æÆ÷µØÖ· */
+	if (GT9XX_WriteHandle(addr) == SUCCESS) /* å†™å…¥è¦æ“ä½œçš„å¯„å­˜å™¨åœ°å€ */
 	{
-		if (Touch_IIC_WriteByte(value) != ACK_OK) /* Ğ´ÈëÊı¾İ */
+		if (Touch_IIC_WriteByte(value) != ACK_OK) /* å†™å…¥æ•°æ® */
 		{
 			status = ERROR;
 		}
@@ -134,54 +134,54 @@ uint8_t GT9XX_WriteData(uint16_t addr, uint8_t value)
 	{
 		status = ERROR;
 	}
-	Touch_IIC_Stop(); /* Í£Ö¹IICÍ¨ĞÅ */
+	Touch_IIC_Stop(); /* åœæ­¢IICé€šä¿¡ */
 
 	return status;
 }
 
 /**
- * @brief  Ğ´¶à×Ö½ÚÊı¾İµ½GT911
- * @param  addr: ÒªĞ´ÈëµÄ¼Ä´æÆ÷µØÖ·£¨16Î»£©
- * @param  cnt: ÒªĞ´ÈëµÄ×Ö½ÚÊı
- * @param  value: Êı¾İ»º³åÇøÖ¸Õë
- * @retval SUCCESS - Ğ´Èë³É¹¦
- * @retval ERROR - Ğ´ÈëÊ§°Ü
- * @note   ÊÊÓÃÓÚÁ¬ĞøĞ´Èë¶à×Ö½ÚÊı¾İµÄ³¡¾°
+ * @brief  å†™å¤šå­—èŠ‚æ•°æ®åˆ°GT911
+ * @param  addr: è¦å†™å…¥çš„å¯„å­˜å™¨åœ°å€ï¼ˆ16ä½ï¼‰
+ * @param  cnt: è¦å†™å…¥çš„å­—èŠ‚æ•°
+ * @param  value: æ•°æ®ç¼“å†²åŒºæŒ‡é’ˆ
+ * @retval SUCCESS - å†™å…¥æˆåŠŸ
+ * @retval ERROR - å†™å…¥å¤±è´¥
+ * @note   é€‚ç”¨äºè¿ç»­å†™å…¥å¤šå­—èŠ‚æ•°æ®çš„åœºæ™¯
  */
 uint8_t GT9XX_WriteReg(uint16_t addr, uint8_t cnt, uint8_t *value)
 {
 	uint8_t status;
 	uint8_t i;
 
-	Touch_IIC_Start(); /* Æô¶¯IICÍ¨ĞÅ */
+	Touch_IIC_Start(); /* å¯åŠ¨IICé€šä¿¡ */
 
-	if (GT9XX_WriteHandle(addr) == SUCCESS) /* Ğ´ÈëÒª²Ù×÷µÄ¼Ä´æÆ÷µØÖ· */
+	if (GT9XX_WriteHandle(addr) == SUCCESS) /* å†™å…¥è¦æ“ä½œçš„å¯„å­˜å™¨åœ°å€ */
 	{
-		for (i = 0; i < cnt; i++) /* Öğ×Ö½ÚĞ´ÈëÊı¾İ */
+		for (i = 0; i < cnt; i++) /* é€å­—èŠ‚å†™å…¥æ•°æ® */
 		{
 			Touch_IIC_WriteByte(value[i]);
 		}
-		Touch_IIC_Stop(); /* Í£Ö¹IICÍ¨ĞÅ */
-		status = SUCCESS; /* Ğ´Èë³É¹¦ */
+		Touch_IIC_Stop(); /* åœæ­¢IICé€šä¿¡ */
+		status = SUCCESS; /* å†™å…¥æˆåŠŸ */
 	}
 	else
 	{
-		Touch_IIC_Stop(); /* Í£Ö¹IICÍ¨ĞÅ */
-		status = ERROR;	  /* Ğ´ÈëÊ§°Ü */
+		Touch_IIC_Stop(); /* åœæ­¢IICé€šä¿¡ */
+		status = ERROR;	  /* å†™å…¥å¤±è´¥ */
 	}
 	return status;
 }
 
 /**
- * @brief  ´ÓGT911¶Á¶à×Ö½ÚÊı¾İ
- * @param  addr: Òª¶ÁÈ¡µÄ¼Ä´æÆ÷µØÖ·£¨16Î»£©
- * @param  cnt: Òª¶ÁÈ¡µÄ×Ö½ÚÊı
- * @param  value: Êı¾İ»º³åÇøÖ¸Õë
- * @retval SUCCESS - ¶ÁÈ¡³É¹¦
- * @retval ERROR - ¶ÁÈ¡Ê§°Ü
- * @note   IIC¶Á²Ù×÷Á÷³Ì£º
- *         1. START ¡ú Ğ´µØÖ· ¡ú STOP
- *         2. START ¡ú ¶ÁÃüÁî ¡ú Öğ×Ö½Ú¶ÁÈ¡ ¡ú STOP
+ * @brief  ä»GT911è¯»å¤šå­—èŠ‚æ•°æ®
+ * @param  addr: è¦è¯»å–çš„å¯„å­˜å™¨åœ°å€ï¼ˆ16ä½ï¼‰
+ * @param  cnt: è¦è¯»å–çš„å­—èŠ‚æ•°
+ * @param  value: æ•°æ®ç¼“å†²åŒºæŒ‡é’ˆ
+ * @retval SUCCESS - è¯»å–æˆåŠŸ
+ * @retval ERROR - è¯»å–å¤±è´¥
+ * @note   IICè¯»æ“ä½œæµç¨‹ï¼š
+ *         1. START â†’ å†™åœ°å€ â†’ STOP
+ *         2. START â†’ è¯»å‘½ä»¤ â†’ é€å­—èŠ‚è¯»å– â†’ STOP
  */
 uint8_t GT9XX_ReadReg(uint16_t addr, uint8_t cnt, uint8_t *value)
 {
@@ -189,116 +189,116 @@ uint8_t GT9XX_ReadReg(uint16_t addr, uint8_t cnt, uint8_t *value)
 	uint8_t i;
 
 	status = ERROR;
-	Touch_IIC_Start(); /* Æô¶¯IICÍ¨ĞÅ */
+	Touch_IIC_Start(); /* å¯åŠ¨IICé€šä¿¡ */
 
-	if (GT9XX_WriteHandle(addr) == SUCCESS) /* Ğ´ÈëÒª¶ÁÈ¡µÄ¼Ä´æÆ÷µØÖ· */
+	if (GT9XX_WriteHandle(addr) == SUCCESS) /* å†™å…¥è¦è¯»å–çš„å¯„å­˜å™¨åœ°å€ */
 	{
-		Touch_IIC_Start(); /* ÖØĞÂÆô¶¯IICÍ¨Ñ¶ */
+		Touch_IIC_Start(); /* é‡æ–°å¯åŠ¨IICé€šè®¯ */
 
-		if (Touch_IIC_WriteByte(GT9XX_IIC_RADDR) == ACK_OK) /* ·¢ËÍ¶ÁÃüÁî */
+		if (Touch_IIC_WriteByte(GT9XX_IIC_RADDR) == ACK_OK) /* å‘é€è¯»å‘½ä»¤ */
 		{
-			for (i = 0; i < cnt; i++) /* Öğ×Ö½Ú¶ÁÈ¡Êı¾İ */
+			for (i = 0; i < cnt; i++) /* é€å­—èŠ‚è¯»å–æ•°æ® */
 			{
 				if (i == (cnt - 1))
 				{
-					value[i] = Touch_IIC_ReadByte(0); /* ×îºóÒ»×Ö½Ú·¢ËÍNACK */
+					value[i] = Touch_IIC_ReadByte(0); /* æœ€åä¸€å­—èŠ‚å‘é€NACK */
 				}
 				else
 				{
-					value[i] = Touch_IIC_ReadByte(1); /* ÆäËû×Ö½Ú·¢ËÍACK */
+					value[i] = Touch_IIC_ReadByte(1); /* å…¶ä»–å­—èŠ‚å‘é€ACK */
 				}
 			}
-			Touch_IIC_Stop(); /* Í£Ö¹IICÍ¨ĞÅ */
-			status = SUCCESS; /* ¶ÁÈ¡³É¹¦ */
+			Touch_IIC_Stop(); /* åœæ­¢IICé€šä¿¡ */
+			status = SUCCESS; /* è¯»å–æˆåŠŸ */
 		}
 	}
-	Touch_IIC_Stop(); /* Í£Ö¹IICÍ¨ĞÅ */
+	Touch_IIC_Stop(); /* åœæ­¢IICé€šä¿¡ */
 	return status;
 }
 
 /*******************************************************************************
- *                              ´¥ÃşÆÁ³õÊ¼»¯ºÍÉ¨Ãèº¯Êı
+ *                              è§¦æ‘¸å±åˆå§‹åŒ–å’Œæ‰«æå‡½æ•°
  *******************************************************************************/
 
 /**
- * @brief  Ê¶±ğÆÁÄ»Ó²¼ş°æ±¾
- * @param  ÎŞ
- * @retval ÎŞ
- * @note   ÓÃÓÚ¼æÈİ²»Í¬Ó²¼ş°æ±¾£º
- *         - V1.1Ö®Ç°£ºRSTºÍINTÒı½ÅÎ´Á¬½Ó£¬·Ö±æÂÊ1024¡Á600
- *         - V1.1¼°ÒÔºó£ºRSTºÍINTÒı½ÅÒÑÁ¬½Ó£¬·Ö±æÂÊ¿ÉÊ¶±ğ
- *         ½ö¶Ô7´çÆÁÓĞĞ§£¬ÆäËû³ß´çÆÁÄ»¿ÉºöÂÔ´Ëº¯Êı
+ * @brief  è¯†åˆ«å±å¹•ç¡¬ä»¶ç‰ˆæœ¬
+ * @param  æ— 
+ * @retval æ— 
+ * @note   ç”¨äºå…¼å®¹ä¸åŒç¡¬ä»¶ç‰ˆæœ¬ï¼š
+ *         - V1.1ä¹‹å‰ï¼šRSTå’ŒINTå¼•è„šæœªè¿æ¥ï¼Œåˆ†è¾¨ç‡1024Ã—600
+ *         - V1.1åŠä»¥åï¼šRSTå’ŒINTå¼•è„šå·²è¿æ¥ï¼Œåˆ†è¾¨ç‡å¯è¯†åˆ«
+ *         ä»…å¯¹7å¯¸å±æœ‰æ•ˆï¼Œå…¶ä»–å°ºå¯¸å±å¹•å¯å¿½ç•¥æ­¤å‡½æ•°
  */
 void PanelRecognition(void)
 {
 	GPIO_InitTypeDef GPIO_InitStruct = {0};
 
-	Touch_INT_CLK_ENABLE; /* ³õÊ¼»¯IO¿ÚÊ±ÖÓ */
+	Touch_INT_CLK_ENABLE; /* åˆå§‹åŒ–IOå£æ—¶é’Ÿ */
 	Touch_RST_CLK_ENABLE;
 
-	GPIO_InitStruct.Mode = GPIO_MODE_INPUT;		 /* ÊäÈëÄ£Ê½ */
-	GPIO_InitStruct.Pull = GPIO_PULLDOWN;		 /* ÏÂÀ­ÊäÈë */
-	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW; /* µÍËÙ */
-	GPIO_InitStruct.Pin = Touch_INT_PIN;		 /* ³õÊ¼»¯INTÒı½Å */
+	GPIO_InitStruct.Mode = GPIO_MODE_INPUT;		 /* è¾“å…¥æ¨¡å¼ */
+	GPIO_InitStruct.Pull = GPIO_PULLDOWN;		 /* ä¸‹æ‹‰è¾“å…¥ */
+	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW; /* ä½é€Ÿ */
+	GPIO_InitStruct.Pin = Touch_INT_PIN;		 /* åˆå§‹åŒ–INTå¼•è„š */
 
 	HAL_GPIO_Init(Touch_INT_PORT, &GPIO_InitStruct);
 
-	GPIO_InitStruct.Pin = Touch_RST_PIN; /* ³õÊ¼»¯RSTÒı½Å */
+	GPIO_InitStruct.Pin = Touch_RST_PIN; /* åˆå§‹åŒ–RSTå¼•è„š */
 	HAL_GPIO_Init(Touch_RST_PORT, &GPIO_InitStruct);
 
-	Touch_IIC_Delay(4000); /* ÑÓÊ± */
+	Touch_IIC_Delay(4000); /* å»¶æ—¶ */
 
-	/* ¾É°æ±¾Ó²¼şµÄRSTºÍINTÒı½ÅÎŞÉÏÀ­£¬ĞÂ°æÓĞÉÏÀ­´¦Àí */
+	/* æ—§ç‰ˆæœ¬ç¡¬ä»¶çš„RSTå’ŒINTå¼•è„šæ— ä¸Šæ‹‰ï¼Œæ–°ç‰ˆæœ‰ä¸Šæ‹‰å¤„ç† */
 	if ((HAL_GPIO_ReadPin(Touch_RST_PORT, Touch_RST_PIN) != 1) &&
 		(HAL_GPIO_ReadPin(Touch_INT_PORT, Touch_INT_PIN) != 1))
 	{
-		/* V1.1Ö®Ç°Ó²¼ş£º·Ö±æÂÊ1024¡Á600£¬Ğè×ª»»µ½800¡Á480 */
+		/* V1.1ä¹‹å‰ç¡¬ä»¶ï¼šåˆ†è¾¨ç‡1024Ã—600ï¼Œéœ€è½¬æ¢åˆ°800Ã—480 */
 		Modify_Flag = 1;
 	}
 }
 
 /**
- * @brief  ³õÊ¼»¯´¥ÃşÆÁ
- * @param  ÎŞ
- * @retval SUCCESS - ³õÊ¼»¯³É¹¦
- * @retval ERROR - ³õÊ¼»¯Ê§°Ü£¬Î´¼ì²âµ½GT911Ğ¾Æ¬
- * @note   ³õÊ¼»¯Á÷³Ì£º
- *         1. Ê¶±ğÓ²¼ş°æ±¾
- *         2. ³õÊ¼»¯IIC½Ó¿Ú
- *         3. ¸´Î»GT911Ğ¾Æ¬
- *         4. ¶ÁÈ¡Ğ¾Æ¬IDºÍÅäÖÃ°æ±¾
- *         5. ´òÓ¡³õÊ¼»¯ĞÅÏ¢
- *         6. Ê¶±ğ´¥Ãş·Ö±æÂÊ
+ * @brief  åˆå§‹åŒ–è§¦æ‘¸å±
+ * @param  æ— 
+ * @retval SUCCESS - åˆå§‹åŒ–æˆåŠŸ
+ * @retval ERROR - åˆå§‹åŒ–å¤±è´¥ï¼Œæœªæ£€æµ‹åˆ°GT911èŠ¯ç‰‡
+ * @note   åˆå§‹åŒ–æµç¨‹ï¼š
+ *         1. è¯†åˆ«ç¡¬ä»¶ç‰ˆæœ¬
+ *         2. åˆå§‹åŒ–IICæ¥å£
+ *         3. å¤ä½GT911èŠ¯ç‰‡
+ *         4. è¯»å–èŠ¯ç‰‡IDå’Œé…ç½®ç‰ˆæœ¬
+ *         5. æ‰“å°åˆå§‹åŒ–ä¿¡æ¯
+ *         6. è¯†åˆ«è§¦æ‘¸åˆ†è¾¨ç‡
  */
 uint8_t Touch_Init(void)
 {
-	uint8_t GT9XX_Info[11]; /* ´¥ÃşÆÁICĞÅÏ¢£¨11×Ö½Ú£© */
-	uint8_t cfgVersion = 0; /* ´¥ÃşÅäÖÃ°æ±¾ */
+	uint8_t GT9XX_Info[11]; /* è§¦æ‘¸å±ICä¿¡æ¯ï¼ˆ11å­—èŠ‚ï¼‰ */
+	uint8_t cfgVersion = 0; /* è§¦æ‘¸é…ç½®ç‰ˆæœ¬ */
 
-	/* Ê¶±ğÓ²¼ş°æ±¾£¨½ö¶ÔV1.1Ö®Ç°µÄÓ²¼şÓĞĞ§£© */
+	/* è¯†åˆ«ç¡¬ä»¶ç‰ˆæœ¬ï¼ˆä»…å¯¹V1.1ä¹‹å‰çš„ç¡¬ä»¶æœ‰æ•ˆï¼‰ */
 	PanelRecognition();
 
-        Touch_IIC_GPIO_Config(); /* ³õÊ¼»¯IICÒı½Å */
-	  GT9XX_Reset();			 /* ¸´Î»GT911Ğ¾Æ¬ */
+        Touch_IIC_GPIO_Config(); /* åˆå§‹åŒ–IICå¼•è„š */
+	  GT9XX_Reset();			 /* å¤ä½GT911èŠ¯ç‰‡ */
 
-	/* ¶ÁÈ¡´¥ÃşÆÁICĞÅÏ¢ºÍÅäÖÃ°æ±¾ */
-	GT9XX_ReadReg(GT9XX_ID_ADDR, 11, GT9XX_Info);  /* ¶ÁICĞÅÏ¢ */
-	GT9XX_ReadReg(GT9XX_CFG_ADDR, 1, &cfgVersion); /* ¶ÁÅäÖÃ°æ±¾ */
+	/* è¯»å–è§¦æ‘¸å±ICä¿¡æ¯å’Œé…ç½®ç‰ˆæœ¬ */
+	GT9XX_ReadReg(GT9XX_ID_ADDR, 11, GT9XX_Info);  /* è¯»ICä¿¡æ¯ */
+	GT9XX_ReadReg(GT9XX_CFG_ADDR, 1, &cfgVersion); /* è¯»é…ç½®ç‰ˆæœ¬ */
 
-	/* ÑéÖ¤Ğ¾Æ¬ID£¨µÚÒ»¸ö×Ö·ûÓ¦Îª'9'£© */
+	/* éªŒè¯èŠ¯ç‰‡IDï¼ˆç¬¬ä¸€ä¸ªå­—ç¬¦åº”ä¸º'9'ï¼‰ */
 	if (GT9XX_Info[0] == '9')
 	{
-		/* ´òÓ¡³õÊ¼»¯ĞÅÏ¢ */
+		/* æ‰“å°åˆå§‹åŒ–ä¿¡æ¯ */
 
-		/* Ê¶±ğ´¥Ãş·Ö±æÂÊ£¨ÓÃÓÚ·Ö±æÂÊÊÊÅä£© */
+		/* è¯†åˆ«è§¦æ‘¸åˆ†è¾¨ç‡ï¼ˆç”¨äºåˆ†è¾¨ç‡é€‚é…ï¼‰ */
 		if (((GT9XX_Info[7] << 8) + GT9XX_Info[6]) == TOUCH_CHIP_WIDTH)
 		{
-			/* V1.1Ö®Ç°Ó²¼ş°æ±¾£º·Ö±æÂÊ1024¡Á600 */
+			/* V1.1ä¹‹å‰ç¡¬ä»¶ç‰ˆæœ¬ï¼šåˆ†è¾¨ç‡1024Ã—600 */
 			Modify_Flag = 1;
 		}
 		else if (((GT9XX_Info[7] << 8) + GT9XX_Info[6]) == SCREEN_WIDTH)
 		{
-			/* ĞÂÓ²¼ş°æ±¾£º·Ö±æÂÊ800¡Á480 */
+			/* æ–°ç¡¬ä»¶ç‰ˆæœ¬ï¼šåˆ†è¾¨ç‡800Ã—480 */
 			Modify_Flag = 0;
 		}
 
@@ -306,82 +306,82 @@ uint8_t Touch_Init(void)
 	}
 	else
 	{
-		DEBUG_ERROR("Touch Error: Î´¼ì²âµ½GT911Ğ¾Æ¬"); /* ´íÎó£ºÎ´¼ì²âµ½GT911Ğ¾Æ¬ */
+		DEBUG_ERROR("Touch Error: æœªæ£€æµ‹åˆ°GT911èŠ¯ç‰‡"); /* é”™è¯¯ï¼šæœªæ£€æµ‹åˆ°GT911èŠ¯ç‰‡ */
 		return ERROR;
 	}
 }
 
 /**
- * @brief  ´¥ÃşÆÁÉ¨Ãè
- * @param  ÎŞ
- * @retval ÎŞ
- * @note   ´¥ÃşÊı¾İ¸ñÊ½£¨´Ó0x814E¿ªÊ¼£©£º
- *         - [0]£º´¥Ãş×´Ì¬ºÍµãÊı & 0x0f = ´¥ÃşµãÊı
- *         - [1]£º±£Áô
- *         - [2-9]£ºµÚ1¸ö´¥Ãşµã£¨XµÍ¡úX¸ß¡úYµÍ¡úY¸ß¡úÆäËûÊı¾İ£©
- *         - [10-17]£ºµÚ2¸ö´¥Ãşµã
- *         - ...ÒÔ´ËÀàÍÆ
+ * @brief  è§¦æ‘¸å±æ‰«æ
+ * @param  æ— 
+ * @retval æ— 
+ * @note   è§¦æ‘¸æ•°æ®æ ¼å¼ï¼ˆä»0x814Eå¼€å§‹ï¼‰ï¼š
+ *         - [0]ï¼šè§¦æ‘¸çŠ¶æ€å’Œç‚¹æ•° & 0x0f = è§¦æ‘¸ç‚¹æ•°
+ *         - [1]ï¼šä¿ç•™
+ *         - [2-9]ï¼šç¬¬1ä¸ªè§¦æ‘¸ç‚¹ï¼ˆXä½â†’Xé«˜â†’Yä½â†’Yé«˜â†’å…¶ä»–æ•°æ®ï¼‰
+ *         - [10-17]ï¼šç¬¬2ä¸ªè§¦æ‘¸ç‚¹
+ *         - ...ä»¥æ­¤ç±»æ¨
  */
 void Touch_Scan(void)
 {
-	uint8_t touchData[2 + 8 * TOUCH_MAX]; /* ´æ´¢´¥ÃşÊı¾İ */
+	uint8_t touchData[2 + 8 * TOUCH_MAX]; /* å­˜å‚¨è§¦æ‘¸æ•°æ® */
 	uint8_t i = 0;
 
-	/* ¶ÁÈ¡´¥ÃşÊı¾İ¼Ä´æÆ÷ */
+	/* è¯»å–è§¦æ‘¸æ•°æ®å¯„å­˜å™¨ */
 	GT9XX_ReadReg(GT9XX_READ_ADDR, 2 + 8 * TOUCH_MAX, touchData);
 
-	/* Çå³ı´¥ÃşĞ¾Æ¬µÄÊı¾İÓĞĞ§±êÖ¾Î» */
+	/* æ¸…é™¤è§¦æ‘¸èŠ¯ç‰‡çš„æ•°æ®æœ‰æ•ˆæ ‡å¿—ä½ */
 	GT9XX_WriteData(GT9XX_READ_ADDR, 0);
 
-	/* È¡µ±Ç°µÄ´¥ÃşµãÊı */
+	/* å–å½“å‰çš„è§¦æ‘¸ç‚¹æ•° */
 	touchInfo.num = touchData[0] & 0x0f;
 
-	/* ÅĞ¶Ï´¥ÃşµãÊıÊÇ·ñÓĞĞ§£¨1-5¸ö´¥Ãşµã£© */
+	/* åˆ¤æ–­è§¦æ‘¸ç‚¹æ•°æ˜¯å¦æœ‰æ•ˆï¼ˆ1-5ä¸ªè§¦æ‘¸ç‚¹ï¼‰ */
 	if ((touchInfo.num >= 1) && (touchInfo.num <= 5))
 	{
-		/* ÌáÈ¡Ã¿¸ö´¥ÃşµãµÄ×ø±ê */
+		/* æå–æ¯ä¸ªè§¦æ‘¸ç‚¹çš„åæ ‡ */
 		for (i = 0; i < touchInfo.num; i++)
 		{
-			/* ´Ó¼Ä´æÆ÷ÖĞÌáÈ¡X¡¢Y×ø±ê£¨Ğ¡¶ËĞò£© */
+			/* ä»å¯„å­˜å™¨ä¸­æå–Xã€Yåæ ‡ï¼ˆå°ç«¯åºï¼‰ */
 			touchInfo.y[i] = (touchData[5 + 8 * i] << 8) | touchData[4 + 8 * i];
 			touchInfo.x[i] = (touchData[3 + 8 * i] << 8) | touchData[2 + 8 * i];
 
-			/* ·Ö±æÂÊ×ª»»£¨½ö¶Ô¾ÉÓ²¼ş°æ±¾£© */
+			/* åˆ†è¾¨ç‡è½¬æ¢ï¼ˆä»…å¯¹æ—§ç¡¬ä»¶ç‰ˆæœ¬ï¼‰ */
 			if (Modify_Flag == 1)
 			{
-				/* ½«1024¡Á600·Ö±æÂÊµÄ×ø±ê×ª»»µ½800¡Á480 */
+				/* å°†1024Ã—600åˆ†è¾¨ç‡çš„åæ ‡è½¬æ¢åˆ°800Ã—480 */
 				touchInfo.y[i] *= TOUCH_Y_SCALE;
 				touchInfo.x[i] *= TOUCH_X_SCALE;
 			}
 		}
-		touchInfo.flag = 1; /* ÓĞ´¥ÃşÊÂ¼ş */
+		touchInfo.flag = 1; /* æœ‰è§¦æ‘¸äº‹ä»¶ */
 	}
 	else
 	{
-		touchInfo.flag = 0; /* ÎŞ´¥ÃşÊÂ¼ş */
+		touchInfo.flag = 0; /* æ— è§¦æ‘¸äº‹ä»¶ */
 	}
 }
 
 /**
- * @brief  ·¢ËÍGT911ÅäÖÃ²ÎÊı£¨¿ÉÑ¡£©
- * @param  ÎŞ
- * @retval ÎŞ
- * @note   ±£Áôº¯Êı£¬ÓÃÓÚĞŞ¸ÄGT911¹¤×÷²ÎÊı
+ * @brief  å‘é€GT911é…ç½®å‚æ•°ï¼ˆå¯é€‰ï¼‰
+ * @param  æ— 
+ * @retval æ— 
+ * @note   ä¿ç•™å‡½æ•°ï¼Œç”¨äºä¿®æ”¹GT911å·¥ä½œå‚æ•°
  */
 void GT9XX_SendCfg(void)
 {
-	/* ÓÃ»§¿ÉÔÚ´ËÌí¼ÓÅäÖÃ²ÎÊı·¢ËÍ´úÂë */
+	/* ç”¨æˆ·å¯åœ¨æ­¤æ·»åŠ é…ç½®å‚æ•°å‘é€ä»£ç  */
 }
 
 /**
- * @brief  ¶ÁÈ¡GT911ÅäÖÃ²ÎÊı£¨¿ÉÑ¡£©
- * @param  ÎŞ
- * @retval ÎŞ
- * @note   ±£Áôº¯Êı£¬ÓÃÓÚ¶ÁÈ¡GT911µ±Ç°ÅäÖÃ
+ * @brief  è¯»å–GT911é…ç½®å‚æ•°ï¼ˆå¯é€‰ï¼‰
+ * @param  æ— 
+ * @retval æ— 
+ * @note   ä¿ç•™å‡½æ•°ï¼Œç”¨äºè¯»å–GT911å½“å‰é…ç½®
  */
 void GT9XX_ReadCfg(void)
 {
-	/* ÓÃ»§¿ÉÔÚ´ËÌí¼ÓÅäÖÃ²ÎÊı¶ÁÈ¡´úÂë */
+	/* ç”¨æˆ·å¯åœ¨æ­¤æ·»åŠ é…ç½®å‚æ•°è¯»å–ä»£ç  */
 }
 
 /****** End of File ******/

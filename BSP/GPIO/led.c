@@ -1,18 +1,18 @@
 /**
  ******************************************************************************
  * @file    led.c
- * @author  ²Ë²Ëwhy£¨BÕ¾£º²Ë²Ëwhyy£©
- * @brief   LEDÇı¶¯ÊµÏÖÎÄ¼ş
+ * @author  èœèœwhyï¼ˆBç«™ï¼šèœèœwhyyï¼‰
+ * @brief   LEDé©±åŠ¨å®ç°æ–‡ä»¶
  ******************************************************************************
  * @attention
  *
- * ±¾ÎÄ¼şÊµÏÖ£º
- * - LED»ù±¾¿ØÖÆ£¨¿ª/¹Ø/ÇĞ»»,µ¥¸ö/È«²¿£©
- * - LED¶¯»­Ğ§¹û£¨ÉÁË¸/ºôÎü/Á÷Ë®£¬×èÈûÊµÏÖ£©
+ * æœ¬æ–‡ä»¶å®ç°ï¼š
+ * - LEDåŸºæœ¬æ§åˆ¶ï¼ˆå¼€/å…³/åˆ‡æ¢,å•ä¸ª/å…¨éƒ¨ï¼‰
+ * - LEDåŠ¨ç”»æ•ˆæœï¼ˆé—ªçƒ/å‘¼å¸/æµæ°´ï¼Œé˜»å¡å®ç°ï¼‰
  *
- * ×¢ÒâÊÂÏî£º
- * - ¶¯»­º¯ÊıÊ¹ÓÃHAL_Delay×èÈû£¬ÊÊÓÃÓÚ¼òµ¥Ó¦ÓÃ
- * - ÈôĞè·Ç×èÈû¶¯»­£¬½¨ÒéÊ¹ÓÃ×´Ì¬»ú+¶¨Ê±Æ÷Çı¶¯
+ * æ³¨æ„äº‹é¡¹ï¼š
+ * - åŠ¨ç”»å‡½æ•°ä½¿ç”¨HAL_Delayé˜»å¡ï¼Œé€‚ç”¨äºç®€å•åº”ç”¨
+ * - è‹¥éœ€éé˜»å¡åŠ¨ç”»ï¼Œå»ºè®®ä½¿ç”¨çŠ¶æ€æœº+å®šæ—¶å™¨é©±åŠ¨
  *
  ******************************************************************************
  */
@@ -22,15 +22,15 @@
 #ifdef LED_ENABLE
 
 /* Private defines -----------------------------------------------------------*/
-#define BREATHE_STEPS 100 /*!< ºôÎüĞ§¹ûµÄPWM·Ö¶ÎÊı */
+#define BREATHE_STEPS 100 /*!< å‘¼å¸æ•ˆæœçš„PWMåˆ†æ®µæ•° */
 
 /* Private variables ---------------------------------------------------------*/
-/** @defgroup LED_Private_Variables LEDÊı×é¶¨Òå
+/** @defgroup LED_Private_Variables LEDæ•°ç»„å®šä¹‰
  * @{
  */
 
 /**
- * @brief  LEDÊı×é£¨¸ù¾İLED_LIST×Ô¶¯Éú³É£©
+ * @brief  LEDæ•°ç»„ï¼ˆæ ¹æ®LED_LISTè‡ªåŠ¨ç”Ÿæˆï¼‰
  */
 #define X(name, port, pin, direct) {port, pin, direct},
 LED leds[] = {
@@ -42,7 +42,7 @@ LED leds[] = {
  */
 
 /**
- * @brief  ³õÊ¼»¯ËùÓĞLED£¨¹Ø±Õ×´Ì¬£©
+ * @brief  åˆå§‹åŒ–æ‰€æœ‰LEDï¼ˆå…³é—­çŠ¶æ€ï¼‰
  * @retval None
  */
 void LED_Init(void)
@@ -54,15 +54,15 @@ void LED_Init(void)
 }
 
 /**
- * @brief  µãÁÁÖ¸¶¨LED
- * @param  led: LEDÖ¸Õë
+ * @brief  ç‚¹äº®æŒ‡å®šLED
+ * @param  led: LEDæŒ‡é’ˆ
  * @retval None
  */
 void LED_On(LED *led)
 {
     if (led == NULL)
     {
-        DEBUG_ERROR("LED_On: LEDÖ¸ÕëÎª¿Õ");
+        DEBUG_ERROR("LED_On: LEDæŒ‡é’ˆä¸ºç©º");
         return;
     }
     if (led->direct == 1)
@@ -72,15 +72,15 @@ void LED_On(LED *led)
 }
 
 /**
- * @brief  Ï¨ÃğÖ¸¶¨LED
- * @param  led: LEDÖ¸Õë
+ * @brief  ç†„ç­æŒ‡å®šLED
+ * @param  led: LEDæŒ‡é’ˆ
  * @retval None
  */
 void LED_Off(LED *led)
 {
     if (led == NULL)
     {
-        DEBUG_ERROR("LED_Off: LEDÖ¸ÕëÎª¿Õ");
+        DEBUG_ERROR("LED_Off: LEDæŒ‡é’ˆä¸ºç©º");
         return;
     }
     if (led->direct == 1)
@@ -90,22 +90,22 @@ void LED_Off(LED *led)
 }
 
 /**
- * @brief  ÇĞ»»Ö¸¶¨LED×´Ì¬
- * @param  led: LEDÖ¸Õë
+ * @brief  åˆ‡æ¢æŒ‡å®šLEDçŠ¶æ€
+ * @param  led: LEDæŒ‡é’ˆ
  * @retval None
  */
 void LED_Toggle(LED *led)
 {
     if (led == NULL)
     {
-        DEBUG_ERROR("LED_Toggle: LEDÖ¸ÕëÎª¿Õ");
+        DEBUG_ERROR("LED_Toggle: LEDæŒ‡é’ˆä¸ºç©º");
         return;
     }
     GPIO_TogglePin(led->port, led->pin);
 }
 
 /**
- * @brief  µãÁÁËùÓĞLED
+ * @brief  ç‚¹äº®æ‰€æœ‰LED
  * @retval None
  */
 void LED_On_All(void)
@@ -117,7 +117,7 @@ void LED_On_All(void)
 }
 
 /**
- * @brief  Ï¨ÃğËùÓĞLED
+ * @brief  ç†„ç­æ‰€æœ‰LED
  * @retval None
  */
 void LED_Off_All(void)
@@ -129,7 +129,7 @@ void LED_Off_All(void)
 }
 
 /**
- * @brief  ÇĞ»»ËùÓĞLED×´Ì¬
+ * @brief  åˆ‡æ¢æ‰€æœ‰LEDçŠ¶æ€
  * @retval None
  */
 void LED_Toggle_All(void)
@@ -143,22 +143,22 @@ void LED_Toggle_All(void)
 /* Animation functions (blocking) --------------------------------------------*/
 
 /**
- * @brief  µ¥¸öLEDÉÁË¸Ò»¸öÖÜÆÚ£¨×èÈû£©
- * @param  led: LEDÖ¸Õë
- * @param  period_ms: ÉÁË¸ÖÜÆÚ£¨ºÁÃë£©
- * @note   ÄÚ²¿ÇĞ»»Á½´Î£¨on->off£©£¬×ÜºÄÊ±=period_ms
+ * @brief  å•ä¸ªLEDé—ªçƒä¸€ä¸ªå‘¨æœŸï¼ˆé˜»å¡ï¼‰
+ * @param  led: LEDæŒ‡é’ˆ
+ * @param  period_ms: é—ªçƒå‘¨æœŸï¼ˆæ¯«ç§’ï¼‰
+ * @note   å†…éƒ¨åˆ‡æ¢ä¸¤æ¬¡ï¼ˆon->offï¼‰ï¼Œæ€»è€—æ—¶=period_ms
  * @retval None
  */
 void LED_Blink(LED *led, uint32_t period_ms)
 {
     if (led == NULL)
     {
-        DEBUG_ERROR("LED_Blink: LEDÖ¸ÕëÎª¿Õ");
+        DEBUG_ERROR("LED_Blink: LEDæŒ‡é’ˆä¸ºç©º");
         return;
     }
     if (period_ms == 0)
     {
-        DEBUG_ERROR("LED_Blink: ÖÜÆÚÎª0");
+        DEBUG_ERROR("LED_Blink: å‘¨æœŸä¸º0");
         return;
     }
     LED_Toggle(led);
@@ -168,15 +168,15 @@ void LED_Blink(LED *led, uint32_t period_ms)
 }
 
 /**
- * @brief  ËùÓĞLEDÍ¬²½ÉÁË¸Ò»¸öÖÜÆÚ£¨×èÈû£©
- * @param  period_ms: ÉÁË¸ÖÜÆÚ£¨ºÁÃë£©
+ * @brief  æ‰€æœ‰LEDåŒæ­¥é—ªçƒä¸€ä¸ªå‘¨æœŸï¼ˆé˜»å¡ï¼‰
+ * @param  period_ms: é—ªçƒå‘¨æœŸï¼ˆæ¯«ç§’ï¼‰
  * @retval None
  */
 void LED_Blink_All(uint32_t period_ms)
 {
     if (period_ms == 0)
     {
-        DEBUG_ERROR("LED_Blink_All: ÖÜÆÚÎª0");
+        DEBUG_ERROR("LED_Blink_All: å‘¨æœŸä¸º0");
         return;
     }
     LED_Toggle_All();
@@ -186,22 +186,22 @@ void LED_Blink_All(uint32_t period_ms)
 }
 
 /**
- * @brief  µ¥¸öLEDºôÎüĞ§¹ûÒ»¸öÖÜÆÚ£¨×èÈû£©
- * @param  led: LEDÖ¸Õë
- * @param  period_ms: ºôÎü×ÜÖÜÆÚ£¨ºÁÃë£©£¬´Ó°µµ½ÁÁÔÙµ½°µ
- * @note   Ê¹ÓÃÈí¼şPWM£¬·Ö100²½½¥±ä£¬×ÜºÄÊ±¡Öperiod_ms
+ * @brief  å•ä¸ªLEDå‘¼å¸æ•ˆæœä¸€ä¸ªå‘¨æœŸï¼ˆé˜»å¡ï¼‰
+ * @param  led: LEDæŒ‡é’ˆ
+ * @param  period_ms: å‘¼å¸æ€»å‘¨æœŸï¼ˆæ¯«ç§’ï¼‰ï¼Œä»æš—åˆ°äº®å†åˆ°æš—
+ * @note   ä½¿ç”¨è½¯ä»¶PWMï¼Œåˆ†100æ­¥æ¸å˜ï¼Œæ€»è€—æ—¶â‰ˆperiod_ms
  * @retval None
  */
 void LED_Breathe(LED *led, uint32_t period_ms)
 {
     if (led == NULL)
     {
-        DEBUG_ERROR("LED_Breathe: LEDÖ¸ÕëÎª¿Õ");
+        DEBUG_ERROR("LED_Breathe: LEDæŒ‡é’ˆä¸ºç©º");
         return;
     }
     if (period_ms < 2)
     {
-        DEBUG_ERROR("LED_Breathe: ÖÜÆÚ¹ı¶Ì");
+        DEBUG_ERROR("LED_Breathe: å‘¨æœŸè¿‡çŸ­");
         return;
     }
 
@@ -210,7 +210,7 @@ void LED_Breathe(LED *led, uint32_t period_ms)
     if (step_ms == 0)
         step_ms = 1;
 
-    /* ÉÏÆÂ 0 -> max (N ²½) */
+    /* ä¸Šå¡ 0 -> max (N æ­¥) */
     for (uint32_t i = 0; i < N; ++i)
     {
         float duty = (float)i / (float)(N - 1);
@@ -229,7 +229,7 @@ void LED_Breathe(LED *led, uint32_t period_ms)
         }
     }
 
-    /* ÏÂÆÂ max -> 0 (N ²½) */
+    /* ä¸‹å¡ max -> 0 (N æ­¥) */
     for (int32_t i = (int32_t)N - 1; i >= 0; --i)
     {
         float duty = (float)i / (float)(N - 1);
@@ -250,15 +250,15 @@ void LED_Breathe(LED *led, uint32_t period_ms)
 }
 
 /**
- * @brief  ËùÓĞLEDÍ¬²½ºôÎüÒ»¸öÖÜÆÚ£¨×èÈû£©
- * @param  period_ms: ºôÎü×ÜÖÜÆÚ£¨ºÁÃë£©
+ * @brief  æ‰€æœ‰LEDåŒæ­¥å‘¼å¸ä¸€ä¸ªå‘¨æœŸï¼ˆé˜»å¡ï¼‰
+ * @param  period_ms: å‘¼å¸æ€»å‘¨æœŸï¼ˆæ¯«ç§’ï¼‰
  * @retval None
  */
 void LED_Breathe_All(uint32_t period_ms)
 {
     if (period_ms < 2)
     {
-        DEBUG_ERROR("LED_Breathe_All: ÖÜÆÚ¹ı¶Ì");
+        DEBUG_ERROR("LED_Breathe_All: å‘¨æœŸè¿‡çŸ­");
         return;
     }
 
@@ -267,7 +267,7 @@ void LED_Breathe_All(uint32_t period_ms)
     if (step_ms == 0)
         step_ms = 1;
 
-    /* ÉÏÆÂ */
+    /* ä¸Šå¡ */
     for (uint32_t i = 0; i < N; ++i)
     {
         float duty = (float)i / (float)(N - 1);
@@ -286,7 +286,7 @@ void LED_Breathe_All(uint32_t period_ms)
         }
     }
 
-    /* ÏÂÆÂ */
+    /* ä¸‹å¡ */
     for (int32_t i = (int32_t)N - 1; i >= 0; --i)
     {
         float duty = (float)i / (float)(N - 1);
@@ -307,21 +307,21 @@ void LED_Breathe_All(uint32_t period_ms)
 }
 
 /**
- * @brief  Á÷Ë®µÆĞ§¹û£¨×èÈû£©
- * @param  step_ms: µ¥²½Í£ÁôÊ±¼ä£¨ºÁÃë£©
- * @note   ÒÀ´ÎµãÁÁleds[]ÖĞµÄÃ¿¸öLED£¬Íê³ÉÒ»´Î±éÀú
+ * @brief  æµæ°´ç¯æ•ˆæœï¼ˆé˜»å¡ï¼‰
+ * @param  step_ms: å•æ­¥åœç•™æ—¶é—´ï¼ˆæ¯«ç§’ï¼‰
+ * @note   ä¾æ¬¡ç‚¹äº®leds[]ä¸­çš„æ¯ä¸ªLEDï¼Œå®Œæˆä¸€æ¬¡éå†
  * @retval None
  */
 void LED_ChaseStart(uint32_t step_ms)
 {
     if (LED_COUNT <= 0)
     {
-        DEBUG_ERROR("LED_ChaseStart: LEDÊıÁ¿Îª0");
+        DEBUG_ERROR("LED_ChaseStart: LEDæ•°é‡ä¸º0");
         return;
     }
     if (step_ms == 0)
     {
-        DEBUG_ERROR("LED_ChaseStart: ²½½øÊ±¼äÎª0");
+        DEBUG_ERROR("LED_ChaseStart: æ­¥è¿›æ—¶é—´ä¸º0");
         return;
     }
 

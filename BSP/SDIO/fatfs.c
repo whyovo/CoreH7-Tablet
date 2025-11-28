@@ -1,79 +1,79 @@
 /**
  ******************************************************************************
  * @file    fatfs.c
- * @author  ²Ë²Ëwhy£¨BÕ¾£º²Ë²Ëwhyy£©
- * @brief   FatFs ÎÄ¼şÏµÍ³Ô´ÎÄ¼ş£¬ÊµÏÖ SD ¿¨ÎÄ¼ş²Ù×÷¹¦ÄÜ
- *          °üÀ¨¹ÒÔØ¡¢¸ñÊ½»¯¡¢ÎÄ¼ş¶ÁĞ´¡¢Ä¿Â¼¹ÜÀíµÈ²Ù×÷
+ * @author  èœèœwhyï¼ˆBç«™ï¼šèœèœwhyyï¼‰
+ * @brief   FatFs æ–‡ä»¶ç³»ç»Ÿæºæ–‡ä»¶ï¼Œå®ç° SD å¡æ–‡ä»¶æ“ä½œåŠŸèƒ½
+ *          åŒ…æ‹¬æŒ‚è½½ã€æ ¼å¼åŒ–ã€æ–‡ä»¶è¯»å†™ã€ç›®å½•ç®¡ç†ç­‰æ“ä½œ
  ******************************************************************************
  */
 #include "fatfs.h"
 #include <string.h>
 #include <stdio.h>
 
-/* È«¾Ö±äÁ¿¶¨Òå */
-FATFS SD_FatFs;     /* ÎÄ¼şÏµÍ³¶ÔÏó */
-FRESULT MyFile_Res; /* ²Ù×÷½á¹û */
-char SDPath[4];     /* Âß¼­Çı¶¯Â·¾¶£¬FatFs_LinkDriver »áĞ´Èë£¬ÀıÈç "0:" */
+/* å…¨å±€å˜é‡å®šä¹‰ */
+FATFS SD_FatFs;     /* æ–‡ä»¶ç³»ç»Ÿå¯¹è±¡ */
+FRESULT MyFile_Res; /* æ“ä½œç»“æœ */
+char SDPath[4];     /* é€»è¾‘é©±åŠ¨è·¯å¾„ï¼ŒFatFs_LinkDriver ä¼šå†™å…¥ï¼Œä¾‹å¦‚ "0:" */
 
 /**
- * @brief ¼ì²é²¢¹ÒÔØ FatFs ÎÄ¼şÏµÍ³
- * @note  ÈôĞèÒª£¬ÕâÀï¿ÉÒÔÔÚ¹ÒÔØÊ§°ÜÊ±¼ÓÈë¸ñÊ½»¯Âß¼­£¨Ä¿Ç°½öÊä³öĞÅÏ¢£©
+ * @brief æ£€æŸ¥å¹¶æŒ‚è½½ FatFs æ–‡ä»¶ç³»ç»Ÿ
+ * @note  è‹¥éœ€è¦ï¼Œè¿™é‡Œå¯ä»¥åœ¨æŒ‚è½½å¤±è´¥æ—¶åŠ å…¥æ ¼å¼åŒ–é€»è¾‘ï¼ˆç›®å‰ä»…è¾“å‡ºä¿¡æ¯ï¼‰
  */
 void FatFs_Check(void)
 {
-    BYTE work[FF_MAX_SS]; // ÓÃÓÚ¸ñÊ½»¯¹¤×÷»º³åÇø
+    BYTE work[FF_MAX_SS]; // ç”¨äºæ ¼å¼åŒ–å·¥ä½œç¼“å†²åŒº
 
-    /* °ó¶¨Çı¶¯²¢¹ÒÔØ£¨Ê¹ÓÃ SD_Driver£¬sd_diskio Ìá¹©£© */
-    FATFS_LinkDriver(&SD_Driver, SDPath); /* SDPath »á±»ÉèÖÃÎª "0:" */
+    /* ç»‘å®šé©±åŠ¨å¹¶æŒ‚è½½ï¼ˆä½¿ç”¨ SD_Driverï¼Œsd_diskio æä¾›ï¼‰ */
+    FATFS_LinkDriver(&SD_Driver, SDPath); /* SDPath ä¼šè¢«è®¾ç½®ä¸º "0:" */
 
     MyFile_Res = f_mount(&SD_FatFs, SDPath, 1);
     if (MyFile_Res == FR_OK)
     {
         char buf[128];
-        snprintf(buf, sizeof(buf), "FatFs ¹ÒÔØ³É¹¦: %s", SDPath);
+        snprintf(buf, sizeof(buf), "FatFs æŒ‚è½½æˆåŠŸ: %s", SDPath);
         DEBUG_INFO(buf);
     }
     else if (MyFile_Res == FR_NO_FILESYSTEM)
     {
         char buf[128];
-        DEBUG_INFO("Î´¼ì²âµ½ÎÄ¼şÏµÍ³£¬³¢ÊÔ¸ñÊ½»¯ SD ¿¨");
+        DEBUG_INFO("æœªæ£€æµ‹åˆ°æ–‡ä»¶ç³»ç»Ÿï¼Œå°è¯•æ ¼å¼åŒ– SD å¡");
 
-        /* ¸ñÊ½»¯ SD ¿¨Îª FAT32 */
+        /* æ ¼å¼åŒ– SD å¡ä¸º FAT32 */
         MyFile_Res = f_mkfs(SDPath, FM_FAT32, 0, work, sizeof(work));
 
         if (MyFile_Res == FR_OK)
         {
-            DEBUG_INFO("SD ¿¨¸ñÊ½»¯³É¹¦£¬ÖØĞÂ¹ÒÔØ");
+            DEBUG_INFO("SD å¡æ ¼å¼åŒ–æˆåŠŸï¼Œé‡æ–°æŒ‚è½½");
 
-            /* ÖØĞÂ¹ÒÔØ */
+            /* é‡æ–°æŒ‚è½½ */
             MyFile_Res = f_mount(&SD_FatFs, SDPath, 1);
             if (MyFile_Res == FR_OK)
             {
-                snprintf(buf, sizeof(buf), "FatFs ¹ÒÔØ³É¹¦: %s", SDPath);
+                snprintf(buf, sizeof(buf), "FatFs æŒ‚è½½æˆåŠŸ: %s", SDPath);
                 DEBUG_INFO(buf);
             }
             else
             {
-                snprintf(buf, sizeof(buf), "¸ñÊ½»¯ºó¹ÒÔØÊ§°Ü£¬´íÎó´úÂë: 0x%02X", MyFile_Res);
+                snprintf(buf, sizeof(buf), "æ ¼å¼åŒ–åæŒ‚è½½å¤±è´¥ï¼Œé”™è¯¯ä»£ç : 0x%02X", MyFile_Res);
                 DEBUG_ERROR(buf);
             }
         }
         else
         {
-            snprintf(buf, sizeof(buf), "SD ¿¨¸ñÊ½»¯Ê§°Ü£¬´íÎó´úÂë: 0x%02X", MyFile_Res);
+            snprintf(buf, sizeof(buf), "SD å¡æ ¼å¼åŒ–å¤±è´¥ï¼Œé”™è¯¯ä»£ç : 0x%02X", MyFile_Res);
             DEBUG_ERROR(buf);
         }
     }
     else
     {
         char buf[128];
-        snprintf(buf, sizeof(buf), "FatFs ¹ÒÔØÊ§°Ü£¬´íÎó´úÂë: 0x%02X", MyFile_Res);
+        snprintf(buf, sizeof(buf), "FatFs æŒ‚è½½å¤±è´¥ï¼Œé”™è¯¯ä»£ç : 0x%02X", MyFile_Res);
         DEBUG_ERROR(buf);
     }
 }
 
 /**
- * @brief ¼ÆËã²¢Êä³ö SD ¿¨×ÜÈİÁ¿ÓëÊ£ÓàÈİÁ¿£¨µ¥Î»£ºMB£©
+ * @brief è®¡ç®—å¹¶è¾“å‡º SD å¡æ€»å®¹é‡ä¸å‰©ä½™å®¹é‡ï¼ˆå•ä½ï¼šMBï¼‰
  */
 void FatFs_GetVolume(void)
 {
@@ -85,53 +85,53 @@ void FatFs_GetVolume(void)
 
     if (f_getfree(SDPath, &fre_clust, &fs) != FR_OK)
     {
-        DEBUG_INFO("FatFs »ñÈ¡¿ÕÏĞ´ØÊ§°Ü");
+        DEBUG_INFO("FatFs è·å–ç©ºé—²ç°‡å¤±è´¥");
         return;
     }
 
-    tot_sect = (fs->n_fatent - 2) * fs->csize; /* ×ÜÉÈÇøÊı */
-    fre_sect = fre_clust * fs->csize;          /* ¿ÕÏĞÉÈÇøÊı */
+    tot_sect = (fs->n_fatent - 2) * fs->csize; /* æ€»æ‰‡åŒºæ•° */
+    fre_sect = fre_clust * fs->csize;          /* ç©ºé—²æ‰‡åŒºæ•° */
 
-    /* Ã¿ÉÈÇø 512 ×Ö½Ú£¬1 MB = 1024*1024 ×Ö½Ú
+    /* æ¯æ‰‡åŒº 512 å­—èŠ‚ï¼Œ1 MB = 1024*1024 å­—èŠ‚
        total MB = tot_sect * 512 / (1024*1024) = tot_sect / 2048 */
     SD_CardCapacity = tot_sect / 2048;
     SD_FreeCapacity = fre_sect / 2048;
 
-    snprintf(buf, sizeof(buf), " »ñÈ¡Éè±¸ÈİÁ¿ĞÅÏ¢:");
+    snprintf(buf, sizeof(buf), " è·å–è®¾å¤‡å®¹é‡ä¿¡æ¯:");
     DEBUG_INFO(buf);
-    snprintf(buf, sizeof(buf), "SD ×ÜÈİÁ¿£º%u MB", SD_CardCapacity);
+    snprintf(buf, sizeof(buf), "SD æ€»å®¹é‡ï¼š%u MB", SD_CardCapacity);
     DEBUG_INFO(buf);
-    snprintf(buf, sizeof(buf), "SD Ê£Óà£º%u MB", SD_FreeCapacity);
+    snprintf(buf, sizeof(buf), "SD å‰©ä½™ï¼š%u MB", SD_FreeCapacity);
     DEBUG_INFO(buf);
 }
 
 /**
- * @brief  ÎÄ¼ş´´½¨¡¢Ğ´ÈëÓë¶ÁÈ¡²âÊÔ
- * @return 1=³É¹¦, 0=Ê§°Ü
+ * @brief  æ–‡ä»¶åˆ›å»ºã€å†™å…¥ä¸è¯»å–æµ‹è¯•
+ * @return 1=æˆåŠŸ, 0=å¤±è´¥
  */
 uint8_t FatFs_FileTest(void)
 {
     // FIL MyFile;
     // UINT MyFile_Num;
-    // BYTE MyFile_WriteBuffer[] = "STM32H750 SD¿¨ ÎÄ¼şÏµÍ³²âÊÔ";
+    // BYTE MyFile_WriteBuffer[] = "STM32H750 SDå¡ æ–‡ä»¶ç³»ç»Ÿæµ‹è¯•";
     // BYTE MyFile_ReadBuffer[1024];
     // char buf[256];
 
-    // DEBUG_INFO(" FatFs ÎÄ¼ş´´½¨/Ğ´Èë²âÊÔ");
+    // DEBUG_INFO(" FatFs æ–‡ä»¶åˆ›å»º/å†™å…¥æµ‹è¯•");
 
-    // /* ´´½¨²¢Ğ´ÈëÎÄ¼ş */
+    // /* åˆ›å»ºå¹¶å†™å…¥æ–‡ä»¶ */
     // MyFile_Res = f_open(&MyFile, "0:FatFs Test.txt", FA_CREATE_ALWAYS | FA_WRITE);
     // if (MyFile_Res == FR_OK)
     // {
     //     MyFile_Res = f_write(&MyFile, MyFile_WriteBuffer, sizeof(MyFile_WriteBuffer), &MyFile_Num);
     //     if (MyFile_Res == FR_OK)
     //     {
-    //         snprintf(buf, sizeof(buf), "Ğ´Èë³É¹¦£¬×Ö½ÚÊı£º%u", (unsigned)MyFile_Num);
+    //         snprintf(buf, sizeof(buf), "å†™å…¥æˆåŠŸï¼Œå­—èŠ‚æ•°ï¼š%u", (unsigned)MyFile_Num);
     //         DEBUG_INFO(buf);
     //     }
     //     else
     //     {
-    //         DEBUG_INFO("ÎÄ¼şĞ´ÈëÊ§°Ü");
+    //         DEBUG_INFO("æ–‡ä»¶å†™å…¥å¤±è´¥");
     //         f_close(&MyFile);
     //         return 0;
     //     }
@@ -139,12 +139,12 @@ uint8_t FatFs_FileTest(void)
     // }
     // else
     // {
-    //     DEBUG_INFO("´ò¿ª/´´½¨ÎÄ¼şÊ§°Ü");
+    //     DEBUG_INFO("æ‰“å¼€/åˆ›å»ºæ–‡ä»¶å¤±è´¥");
     //     return 0;
     // }
 
-    // /* ¶ÁÈ¡²âÊÔ */
-    // DEBUG_INFO("FatFs ÎÄ¼ş¶ÁÈ¡²âÊÔ");
+    // /* è¯»å–æµ‹è¯• */
+    // DEBUG_INFO("FatFs æ–‡ä»¶è¯»å–æµ‹è¯•");
 
     // size_t BufferSize = sizeof(MyFile_WriteBuffer) / sizeof(BYTE);
     // memset(MyFile_ReadBuffer, 0, sizeof(MyFile_ReadBuffer));
@@ -152,61 +152,61 @@ uint8_t FatFs_FileTest(void)
     // MyFile_Res = f_open(&MyFile, "0:FatFs Test.txt", FA_OPEN_EXISTING | FA_READ);
     // if (MyFile_Res != FR_OK)
     // {
-    //     DEBUG_INFO("´ò¿ªÒª¶ÁÈ¡µÄÎÄ¼şÊ§°Ü");
+    //     DEBUG_INFO("æ‰“å¼€è¦è¯»å–çš„æ–‡ä»¶å¤±è´¥");
     //     return 0;
     // }
 
     // MyFile_Res = f_read(&MyFile, MyFile_ReadBuffer, BufferSize, &MyFile_Num);
     // if (MyFile_Res == FR_OK)
     // {
-    //     snprintf(buf, sizeof(buf), "¶ÁÈ¡³É¹¦£¬×Ö½ÚÊı£º%u£¬ÄÚÈİ£º%s", (unsigned)MyFile_Num, (char *)MyFile_ReadBuffer);
+    //     snprintf(buf, sizeof(buf), "è¯»å–æˆåŠŸï¼Œå­—èŠ‚æ•°ï¼š%uï¼Œå†…å®¹ï¼š%s", (unsigned)MyFile_Num, (char *)MyFile_ReadBuffer);
     //     DEBUG_INFO(buf);
     // }
     // else
     // {
-    //     DEBUG_INFO("ÎÄ¼ş¶ÁÈ¡Ê§°Ü");
+    //     DEBUG_INFO("æ–‡ä»¶è¯»å–å¤±è´¥");
     //     f_close(&MyFile);
     //     return 0;
     // }
 
     // f_close(&MyFile);
     // return 1;
-    // Ğ´ÈëÎÄ¼ş
+    // å†™å…¥æ–‡ä»¶
     FatFs_WriteFile("0:data.txt", "Hello World", 11);
 
-    // ¶ÁÈ¡ÎÄ¼ş
+    // è¯»å–æ–‡ä»¶
     char read_buf[256];
     uint32_t bytes = FatFs_ReadFile("0:data.txt", read_buf, sizeof(read_buf));
 
-    // ×·¼ÓĞ´Èë
+    // è¿½åŠ å†™å…¥
     FatFs_AppendFile("0:data.txt", "\nAppend data", 12);
 
-    // ¼ì²éÎÄ¼şÊÇ·ñ´æÔÚ
+    // æ£€æŸ¥æ–‡ä»¶æ˜¯å¦å­˜åœ¨
     if (FatFs_FileExists("0:data.txt"))
-        DEBUG_INFO("ÎÄ¼ş´æÔÚ");
+        DEBUG_INFO("æ–‡ä»¶å­˜åœ¨");
 
-    // »ñÈ¡ÎÄ¼ş´óĞ¡
+    // è·å–æ–‡ä»¶å¤§å°
     uint32_t size = FatFs_GetFileSize("0:data.txt");
 
-    // ´´½¨Ä¿Â¼
+    // åˆ›å»ºç›®å½•
     FatFs_CreateDir("0:MyFolder");
 
-    // ÁĞ³öÄ¿Â¼ÄÚÈİ
+    // åˆ—å‡ºç›®å½•å†…å®¹
     FatFs_ListDir("0:", 100);
 
-    // É¾³ıÎÄ¼ş
+    // åˆ é™¤æ–‡ä»¶
     FatFs_DeleteFile("0:data.txt");
 		return 1;
 }
 
 /*******************************************************************************
- *                          ±ã½İÎÄ¼ş²Ù×÷º¯Êı
+ *                          ä¾¿æ·æ–‡ä»¶æ“ä½œå‡½æ•°
  ******************************************************************************/
 
 /**
- * @brief »ñÈ¡´íÎóĞÅÏ¢ÃèÊö
- * @param res FatFs ²Ù×÷½á¹û
- * @return ´íÎóĞÅÏ¢×Ö·û´®Ö¸Õë
+ * @brief è·å–é”™è¯¯ä¿¡æ¯æè¿°
+ * @param res FatFs æ“ä½œç»“æœ
+ * @return é”™è¯¯ä¿¡æ¯å­—ç¬¦ä¸²æŒ‡é’ˆ
  */
 const char *FatFs_GetErrorMsg(FRESULT res)
 {
@@ -232,11 +232,11 @@ const char *FatFs_GetErrorMsg(FRESULT res)
 }
 
 /**
- * @brief ´´½¨²¢Ğ´ÈëÎÄ¼ş
- * @param filename ÎÄ¼şÂ·¾¶£¨Àı£º"0:test.txt"£©
- * @param data Ğ´ÈëµÄÊı¾İ
- * @param size Ğ´ÈëµÄÊı¾İ´óĞ¡
- * @return FR_OK=³É¹¦, ÆäËû=Ê§°Ü
+ * @brief åˆ›å»ºå¹¶å†™å…¥æ–‡ä»¶
+ * @param filename æ–‡ä»¶è·¯å¾„ï¼ˆä¾‹ï¼š"0:test.txt"ï¼‰
+ * @param data å†™å…¥çš„æ•°æ®
+ * @param size å†™å…¥çš„æ•°æ®å¤§å°
+ * @return FR_OK=æˆåŠŸ, å…¶ä»–=å¤±è´¥
  */
 FRESULT FatFs_WriteFile(const char *filename, const void *data, uint32_t size)
 {
@@ -246,14 +246,14 @@ FRESULT FatFs_WriteFile(const char *filename, const void *data, uint32_t size)
 
     if (!filename || !data || size == 0)
     {
-        DEBUG_ERROR("FatFs_WriteFile: ²ÎÊıÎŞĞ§");
+        DEBUG_ERROR("FatFs_WriteFile: å‚æ•°æ— æ•ˆ");
         return FR_INVALID_NAME;
     }
 
     MyFile_Res = f_open(&file, filename, FA_CREATE_ALWAYS | FA_WRITE);
     if (MyFile_Res != FR_OK)
     {
-        snprintf(buf, sizeof(buf), "´ò¿ªÎÄ¼şÊ§°Ü: %s, ´íÎó: %s", filename, FatFs_GetErrorMsg(MyFile_Res));
+        snprintf(buf, sizeof(buf), "æ‰“å¼€æ–‡ä»¶å¤±è´¥: %s, é”™è¯¯: %s", filename, FatFs_GetErrorMsg(MyFile_Res));
         DEBUG_ERROR(buf);
         return MyFile_Res;
     }
@@ -261,24 +261,24 @@ FRESULT FatFs_WriteFile(const char *filename, const void *data, uint32_t size)
     MyFile_Res = f_write(&file, data, size, &bytes_written);
     if (MyFile_Res != FR_OK)
     {
-        snprintf(buf, sizeof(buf), "Ğ´ÈëÎÄ¼şÊ§°Ü: %s, ´íÎó: %s", filename, FatFs_GetErrorMsg(MyFile_Res));
+        snprintf(buf, sizeof(buf), "å†™å…¥æ–‡ä»¶å¤±è´¥: %s, é”™è¯¯: %s", filename, FatFs_GetErrorMsg(MyFile_Res));
         DEBUG_ERROR(buf);
         f_close(&file);
         return MyFile_Res;
     }
 
     f_close(&file);
-    snprintf(buf, sizeof(buf), "ÎÄ¼şĞ´Èë³É¹¦: %s (%u ×Ö½Ú)", filename, bytes_written);
+    snprintf(buf, sizeof(buf), "æ–‡ä»¶å†™å…¥æˆåŠŸ: %s (%u å­—èŠ‚)", filename, bytes_written);
     DEBUG_INFO(buf);
     return FR_OK;
 }
 
 /**
- * @brief ¶ÁÈ¡ÎÄ¼ş
- * @param filename ÎÄ¼şÂ·¾¶
- * @param buffer ¶ÁÈ¡»º³åÇø
- * @param size »º³åÇø´óĞ¡
- * @return Êµ¼Ê¶ÁÈ¡µÄ×Ö½ÚÊı£¬Ê§°Ü·µ»Ø 0
+ * @brief è¯»å–æ–‡ä»¶
+ * @param filename æ–‡ä»¶è·¯å¾„
+ * @param buffer è¯»å–ç¼“å†²åŒº
+ * @param size ç¼“å†²åŒºå¤§å°
+ * @return å®é™…è¯»å–çš„å­—èŠ‚æ•°ï¼Œå¤±è´¥è¿”å› 0
  */
 uint32_t FatFs_ReadFile(const char *filename, void *buffer, uint32_t size)
 {
@@ -288,14 +288,14 @@ uint32_t FatFs_ReadFile(const char *filename, void *buffer, uint32_t size)
 
     if (!filename || !buffer || size == 0)
     {
-        DEBUG_ERROR("FatFs_ReadFile: ²ÎÊıÎŞĞ§");
+        DEBUG_ERROR("FatFs_ReadFile: å‚æ•°æ— æ•ˆ");
         return 0;
     }
 
     MyFile_Res = f_open(&file, filename, FA_OPEN_EXISTING | FA_READ);
     if (MyFile_Res != FR_OK)
     {
-        snprintf(buf, sizeof(buf), "´ò¿ªÎÄ¼şÊ§°Ü: %s, ´íÎó: %s", filename, FatFs_GetErrorMsg(MyFile_Res));
+        snprintf(buf, sizeof(buf), "æ‰“å¼€æ–‡ä»¶å¤±è´¥: %s, é”™è¯¯: %s", filename, FatFs_GetErrorMsg(MyFile_Res));
         DEBUG_ERROR(buf);
         return 0;
     }
@@ -303,24 +303,24 @@ uint32_t FatFs_ReadFile(const char *filename, void *buffer, uint32_t size)
     MyFile_Res = f_read(&file, buffer, size, &bytes_read);
     if (MyFile_Res != FR_OK)
     {
-        snprintf(buf, sizeof(buf), "¶ÁÈ¡ÎÄ¼şÊ§°Ü: %s, ´íÎó: %s", filename, FatFs_GetErrorMsg(MyFile_Res));
+        snprintf(buf, sizeof(buf), "è¯»å–æ–‡ä»¶å¤±è´¥: %s, é”™è¯¯: %s", filename, FatFs_GetErrorMsg(MyFile_Res));
         DEBUG_ERROR(buf);
         f_close(&file);
         return 0;
     }
 
     f_close(&file);
-    snprintf(buf, sizeof(buf), "ÎÄ¼ş¶ÁÈ¡³É¹¦: %s (%u ×Ö½Ú)", filename, bytes_read);
+    snprintf(buf, sizeof(buf), "æ–‡ä»¶è¯»å–æˆåŠŸ: %s (%u å­—èŠ‚)", filename, bytes_read);
     DEBUG_INFO(buf);
     return bytes_read;
 }
 
 /**
- * @brief ×·¼ÓĞ´ÈëÎÄ¼ş
- * @param filename ÎÄ¼şÂ·¾¶
- * @param data Ğ´ÈëµÄÊı¾İ
- * @param size Ğ´ÈëµÄÊı¾İ´óĞ¡
- * @return FR_OK=³É¹¦, ÆäËû=Ê§°Ü
+ * @brief è¿½åŠ å†™å…¥æ–‡ä»¶
+ * @param filename æ–‡ä»¶è·¯å¾„
+ * @param data å†™å…¥çš„æ•°æ®
+ * @param size å†™å…¥çš„æ•°æ®å¤§å°
+ * @return FR_OK=æˆåŠŸ, å…¶ä»–=å¤±è´¥
  */
 FRESULT FatFs_AppendFile(const char *filename, const void *data, uint32_t size)
 {
@@ -330,14 +330,14 @@ FRESULT FatFs_AppendFile(const char *filename, const void *data, uint32_t size)
 
     if (!filename || !data || size == 0)
     {
-        DEBUG_ERROR("FatFs_AppendFile: ²ÎÊıÎŞĞ§");
+        DEBUG_ERROR("FatFs_AppendFile: å‚æ•°æ— æ•ˆ");
         return FR_INVALID_NAME;
     }
 
     MyFile_Res = f_open(&file, filename, FA_OPEN_APPEND | FA_WRITE);
     if (MyFile_Res != FR_OK)
     {
-        snprintf(buf, sizeof(buf), "´ò¿ªÎÄ¼şÊ§°Ü: %s, ´íÎó: %s", filename, FatFs_GetErrorMsg(MyFile_Res));
+        snprintf(buf, sizeof(buf), "æ‰“å¼€æ–‡ä»¶å¤±è´¥: %s, é”™è¯¯: %s", filename, FatFs_GetErrorMsg(MyFile_Res));
         DEBUG_ERROR(buf);
         return MyFile_Res;
     }
@@ -345,22 +345,22 @@ FRESULT FatFs_AppendFile(const char *filename, const void *data, uint32_t size)
     MyFile_Res = f_write(&file, data, size, &bytes_written);
     if (MyFile_Res != FR_OK)
     {
-        snprintf(buf, sizeof(buf), "×·¼ÓĞ´ÈëÊ§°Ü: %s, ´íÎó: %s", filename, FatFs_GetErrorMsg(MyFile_Res));
+        snprintf(buf, sizeof(buf), "è¿½åŠ å†™å…¥å¤±è´¥: %s, é”™è¯¯: %s", filename, FatFs_GetErrorMsg(MyFile_Res));
         DEBUG_ERROR(buf);
         f_close(&file);
         return MyFile_Res;
     }
 
     f_close(&file);
-    snprintf(buf, sizeof(buf), "ÎÄ¼ş×·¼Ó³É¹¦: %s (%u ×Ö½Ú)", filename, bytes_written);
+    snprintf(buf, sizeof(buf), "æ–‡ä»¶è¿½åŠ æˆåŠŸ: %s (%u å­—èŠ‚)", filename, bytes_written);
     DEBUG_INFO(buf);
     return FR_OK;
 }
 
 /**
- * @brief É¾³ıÎÄ¼ş
- * @param filename ÎÄ¼şÂ·¾¶
- * @return FR_OK=³É¹¦, ÆäËû=Ê§°Ü
+ * @brief åˆ é™¤æ–‡ä»¶
+ * @param filename æ–‡ä»¶è·¯å¾„
+ * @return FR_OK=æˆåŠŸ, å…¶ä»–=å¤±è´¥
  */
 FRESULT FatFs_DeleteFile(const char *filename)
 {
@@ -368,27 +368,27 @@ FRESULT FatFs_DeleteFile(const char *filename)
 
     if (!filename)
     {
-        DEBUG_ERROR("FatFs_DeleteFile: ÎÄ¼şÃûÎŞĞ§");
+        DEBUG_ERROR("FatFs_DeleteFile: æ–‡ä»¶åæ— æ•ˆ");
         return FR_INVALID_NAME;
     }
 
     MyFile_Res = f_unlink(filename);
     if (MyFile_Res != FR_OK)
     {
-        snprintf(buf, sizeof(buf), "É¾³ıÎÄ¼şÊ§°Ü: %s, ´íÎó: %s", filename, FatFs_GetErrorMsg(MyFile_Res));
+        snprintf(buf, sizeof(buf), "åˆ é™¤æ–‡ä»¶å¤±è´¥: %s, é”™è¯¯: %s", filename, FatFs_GetErrorMsg(MyFile_Res));
         DEBUG_ERROR(buf);
         return MyFile_Res;
     }
 
-    snprintf(buf, sizeof(buf), "ÎÄ¼şÉ¾³ı³É¹¦: %s", filename);
+    snprintf(buf, sizeof(buf), "æ–‡ä»¶åˆ é™¤æˆåŠŸ: %s", filename);
     DEBUG_INFO(buf);
     return FR_OK;
 }
 
 /**
- * @brief ¼ì²éÎÄ¼şÊÇ·ñ´æÔÚ
- * @param filename ÎÄ¼şÂ·¾¶
- * @return 1=´æÔÚ, 0=²»´æÔÚ
+ * @brief æ£€æŸ¥æ–‡ä»¶æ˜¯å¦å­˜åœ¨
+ * @param filename æ–‡ä»¶è·¯å¾„
+ * @return 1=å­˜åœ¨, 0=ä¸å­˜åœ¨
  */
 uint8_t FatFs_FileExists(const char *filename)
 {
@@ -407,9 +407,9 @@ uint8_t FatFs_FileExists(const char *filename)
 }
 
 /**
- * @brief »ñÈ¡ÎÄ¼ş´óĞ¡
- * @param filename ÎÄ¼şÂ·¾¶
- * @return ÎÄ¼ş´óĞ¡£¨×Ö½Ú£©£¬Ê§°Ü·µ»Ø 0
+ * @brief è·å–æ–‡ä»¶å¤§å°
+ * @param filename æ–‡ä»¶è·¯å¾„
+ * @return æ–‡ä»¶å¤§å°ï¼ˆå­—èŠ‚ï¼‰ï¼Œå¤±è´¥è¿”å› 0
  */
 uint32_t FatFs_GetFileSize(const char *filename)
 {
@@ -418,14 +418,14 @@ uint32_t FatFs_GetFileSize(const char *filename)
 
     if (!filename)
     {
-        DEBUG_ERROR("FatFs_GetFileSize: ÎÄ¼şÃûÎŞĞ§");
+        DEBUG_ERROR("FatFs_GetFileSize: æ–‡ä»¶åæ— æ•ˆ");
         return 0;
     }
 
     MyFile_Res = f_open(&file, filename, FA_OPEN_EXISTING | FA_READ);
     if (MyFile_Res != FR_OK)
     {
-        snprintf(buf, sizeof(buf), "´ò¿ªÎÄ¼şÊ§°Ü: %s, ´íÎó: %s", filename, FatFs_GetErrorMsg(MyFile_Res));
+        snprintf(buf, sizeof(buf), "æ‰“å¼€æ–‡ä»¶å¤±è´¥: %s, é”™è¯¯: %s", filename, FatFs_GetErrorMsg(MyFile_Res));
         DEBUG_ERROR(buf);
         return 0;
     }
@@ -433,15 +433,15 @@ uint32_t FatFs_GetFileSize(const char *filename)
     uint32_t file_size = f_size(&file);
     f_close(&file);
 
-    snprintf(buf, sizeof(buf), "ÎÄ¼ş´óĞ¡: %s = %u ×Ö½Ú", filename, file_size);
+    snprintf(buf, sizeof(buf), "æ–‡ä»¶å¤§å°: %s = %u å­—èŠ‚", filename, file_size);
     DEBUG_INFO(buf);
     return file_size;
 }
 
 /**
- * @brief ´´½¨Ä¿Â¼
- * @param dirname Ä¿Â¼Â·¾¶£¨Àı£º"0:MyDir"£©
- * @return FR_OK=³É¹¦, ÆäËû=Ê§°Ü
+ * @brief åˆ›å»ºç›®å½•
+ * @param dirname ç›®å½•è·¯å¾„ï¼ˆä¾‹ï¼š"0:MyDir"ï¼‰
+ * @return FR_OK=æˆåŠŸ, å…¶ä»–=å¤±è´¥
  */
 FRESULT FatFs_CreateDir(const char *dirname)
 {
@@ -449,27 +449,27 @@ FRESULT FatFs_CreateDir(const char *dirname)
 
     if (!dirname)
     {
-        DEBUG_ERROR("FatFs_CreateDir: Ä¿Â¼ÃûÎŞĞ§");
+        DEBUG_ERROR("FatFs_CreateDir: ç›®å½•åæ— æ•ˆ");
         return FR_INVALID_NAME;
     }
 
     MyFile_Res = f_mkdir(dirname);
     if (MyFile_Res != FR_OK)
     {
-        snprintf(buf, sizeof(buf), "´´½¨Ä¿Â¼Ê§°Ü: %s, ´íÎó: %s", dirname, FatFs_GetErrorMsg(MyFile_Res));
+        snprintf(buf, sizeof(buf), "åˆ›å»ºç›®å½•å¤±è´¥: %s, é”™è¯¯: %s", dirname, FatFs_GetErrorMsg(MyFile_Res));
         DEBUG_ERROR(buf);
         return MyFile_Res;
     }
 
-    snprintf(buf, sizeof(buf), "Ä¿Â¼´´½¨³É¹¦: %s", dirname);
+    snprintf(buf, sizeof(buf), "ç›®å½•åˆ›å»ºæˆåŠŸ: %s", dirname);
     DEBUG_INFO(buf);
     return FR_OK;
 }
 
 /**
- * @brief É¾³ıÄ¿Â¼
- * @param dirname Ä¿Â¼Â·¾¶
- * @return FR_OK=³É¹¦, ÆäËû=Ê§°Ü
+ * @brief åˆ é™¤ç›®å½•
+ * @param dirname ç›®å½•è·¯å¾„
+ * @return FR_OK=æˆåŠŸ, å…¶ä»–=å¤±è´¥
  */
 FRESULT FatFs_DeleteDir(const char *dirname)
 {
@@ -477,28 +477,28 @@ FRESULT FatFs_DeleteDir(const char *dirname)
 
     if (!dirname)
     {
-        DEBUG_ERROR("FatFs_DeleteDir: Ä¿Â¼ÃûÎŞĞ§");
+        DEBUG_ERROR("FatFs_DeleteDir: ç›®å½•åæ— æ•ˆ");
         return FR_INVALID_NAME;
     }
 
     MyFile_Res = f_unlink(dirname);
     if (MyFile_Res != FR_OK)
     {
-        snprintf(buf, sizeof(buf), "É¾³ıÄ¿Â¼Ê§°Ü: %s, ´íÎó: %s", dirname, FatFs_GetErrorMsg(MyFile_Res));
+        snprintf(buf, sizeof(buf), "åˆ é™¤ç›®å½•å¤±è´¥: %s, é”™è¯¯: %s", dirname, FatFs_GetErrorMsg(MyFile_Res));
         DEBUG_ERROR(buf);
         return MyFile_Res;
     }
 
-    snprintf(buf, sizeof(buf), "Ä¿Â¼É¾³ı³É¹¦: %s", dirname);
+    snprintf(buf, sizeof(buf), "ç›®å½•åˆ é™¤æˆåŠŸ: %s", dirname);
     DEBUG_INFO(buf);
     return FR_OK;
 }
 
 /**
- * @brief ÁĞ³öÄ¿Â¼ÖĞµÄÎÄ¼şºÍ×ÓÄ¿Â¼
- * @param dirname Ä¿Â¼Â·¾¶
- * @param max_items ×î¶àÏÔÊ¾µÄÏîÄ¿Êı
- * @return FR_OK=³É¹¦, ÆäËû=Ê§°Ü
+ * @brief åˆ—å‡ºç›®å½•ä¸­çš„æ–‡ä»¶å’Œå­ç›®å½•
+ * @param dirname ç›®å½•è·¯å¾„
+ * @param max_items æœ€å¤šæ˜¾ç¤ºçš„é¡¹ç›®æ•°
+ * @return FR_OK=æˆåŠŸ, å…¶ä»–=å¤±è´¥
  */
 FRESULT FatFs_ListDir(const char *dirname, uint32_t max_items)
 {
@@ -509,19 +509,19 @@ FRESULT FatFs_ListDir(const char *dirname, uint32_t max_items)
 
     if (!dirname)
     {
-        DEBUG_ERROR("FatFs_ListDir: Ä¿Â¼ÃûÎŞĞ§");
+        DEBUG_ERROR("FatFs_ListDir: ç›®å½•åæ— æ•ˆ");
         return FR_INVALID_NAME;
     }
 
     MyFile_Res = f_opendir(&dir, dirname);
     if (MyFile_Res != FR_OK)
     {
-        snprintf(buf, sizeof(buf), "´ò¿ªÄ¿Â¼Ê§°Ü: %s, ´íÎó: %s", dirname, FatFs_GetErrorMsg(MyFile_Res));
+        snprintf(buf, sizeof(buf), "æ‰“å¼€ç›®å½•å¤±è´¥: %s, é”™è¯¯: %s", dirname, FatFs_GetErrorMsg(MyFile_Res));
         DEBUG_ERROR(buf);
         return MyFile_Res;
     }
 
-    snprintf(buf, sizeof(buf), "====== Ä¿Â¼ÄÚÈİ: %s ======", dirname);
+    snprintf(buf, sizeof(buf), "====== ç›®å½•å†…å®¹: %s ======", dirname);
     DEBUG_INFO(buf);
 
     while (1)
@@ -532,7 +532,7 @@ FRESULT FatFs_ListDir(const char *dirname, uint32_t max_items)
 
         if (count >= max_items)
         {
-            DEBUG_INFO("(ÁĞ±íÒÑ½Ø¶Ï)");
+            DEBUG_INFO("(åˆ—è¡¨å·²æˆªæ–­)");
             break;
         }
 
@@ -542,14 +542,14 @@ FRESULT FatFs_ListDir(const char *dirname, uint32_t max_items)
         }
         else
         {
-            snprintf(buf, sizeof(buf), "[FILE] %s (%u ×Ö½Ú)", fno.fname, (unsigned)fno.fsize);
+            snprintf(buf, sizeof(buf), "[FILE] %s (%u å­—èŠ‚)", fno.fname, (unsigned)fno.fsize);
         }
         DEBUG_INFO(buf);
         count++;
     }
 
     f_closedir(&dir);
-    snprintf(buf, sizeof(buf), "====== ×Ü¼Æ: %u Ïî ======", count);
+    snprintf(buf, sizeof(buf), "====== æ€»è®¡: %u é¡¹ ======", count);
     DEBUG_INFO(buf);
     return FR_OK;
 }

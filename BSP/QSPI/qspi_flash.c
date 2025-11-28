@@ -1,44 +1,44 @@
 /**
  ******************************************************************************
  * @file    qspi_flash.c
- * @author  ²Ë²Ëwhy£¨BÕ¾£º²Ë²Ëwhyy£©
- * @brief   QSPI Flash W25QxxÇı¶¯ÊµÏÖÎÄ¼ş
+ * @author  èœèœwhyï¼ˆBç«™ï¼šèœèœwhyyï¼‰
+ * @brief   QSPI Flash W25Qxxé©±åŠ¨å®ç°æ–‡ä»¶
  ******************************************************************************
  * @attention
  *
- * ±¾ÎÄ¼şÊµÏÖ£º
- * - W25Qxx FlashµÄQSPI½Ó¿ÚÇı¶¯
- * - Ö§³ÖÉÈÇø/¿é/ÕûÆ¬²Á³ı
- * - Ö§³ÖÒ³Ğ´ÈëºÍ»º³åÇø¶ÁĞ´
- * - Ö§³ÖÄÚ´æÓ³ÉäÄ£Ê½
- * - Ìá¹©ĞÔÄÜ²âÊÔº¯Êı
+ * æœ¬æ–‡ä»¶å®ç°ï¼š
+ * - W25Qxx Flashçš„QSPIæ¥å£é©±åŠ¨
+ * - æ”¯æŒæ‰‡åŒº/å—/æ•´ç‰‡æ“¦é™¤
+ * - æ”¯æŒé¡µå†™å…¥å’Œç¼“å†²åŒºè¯»å†™
+ * - æ”¯æŒå†…å­˜æ˜ å°„æ¨¡å¼
+ * - æä¾›æ€§èƒ½æµ‹è¯•å‡½æ•°
  *
- * ÖØÒªËµÃ÷£º
- * 1. ²Á³ıºÄÊ±£¨W25Q256JVÊı¾İÊÖ²áµäĞÍÖµ£©
- *    - 4KBÉÈÇø£º45ms
- *    - 64KB¿é£º150ms£¨ÍÆ¼ö£©
- *    - ÕûÆ¬£º80s
+ * é‡è¦è¯´æ˜ï¼š
+ * 1. æ“¦é™¤è€—æ—¶ï¼ˆW25Q256JVæ•°æ®æ‰‹å†Œå…¸å‹å€¼ï¼‰
+ *    - 4KBæ‰‡åŒºï¼š45ms
+ *    - 64KBå—ï¼š150msï¼ˆæ¨èï¼‰
+ *    - æ•´ç‰‡ï¼š80s
  *
- * 2. Ğ´ÈëºÄÊ±£¨Êı¾İÊÖ²áµäĞÍÖµ£©
- *    - 256×Ö½Ú/Ò³£º0.4ms
- *    - ÀíÂÛËÙ¶È£º1MB/s£¨Êµ²âÔ¼600KB/s£©
+ * 2. å†™å…¥è€—æ—¶ï¼ˆæ•°æ®æ‰‹å†Œå…¸å‹å€¼ï¼‰
+ *    - 256å­—èŠ‚/é¡µï¼š0.4ms
+ *    - ç†è®ºé€Ÿåº¦ï¼š1MB/sï¼ˆå®æµ‹çº¦600KB/sï¼‰
  *
- * 3. ¶ÁÈ¡ËÙ¶ÈÓ°ÏìÒòËØ
- *    - QSPIÇı¶¯Ê±ÖÓ
- *    - ÊÇ·ñÊ¹ÓÃDMA
- *    - ÊÇ·ñ¿ªÆôCache
- *    - ±àÒëÆ÷ÓÅ»¯µÈ¼¶
- *    - Êı¾İ´æ´¢Î»ÖÃ£¨TCM SRAM / AXI SRAM£©
+ * 3. è¯»å–é€Ÿåº¦å½±å“å› ç´ 
+ *    - QSPIé©±åŠ¨æ—¶é’Ÿ
+ *    - æ˜¯å¦ä½¿ç”¨DMA
+ *    - æ˜¯å¦å¼€å¯Cache
+ *    - ç¼–è¯‘å™¨ä¼˜åŒ–ç­‰çº§
+ *    - æ•°æ®å­˜å‚¨ä½ç½®ï¼ˆTCM SRAM / AXI SRAMï¼‰
  *
- * 4. ÄÚ´æÓ³ÉäÄ£Ê½
- *    - Ö»ÄÜ¶ÁÈ¡£¬²»ÄÜĞ´Èë
- *    - ĞÔÄÜ½öÓëQSPIÊ±ÖÓºÍCacheÏà¹Ø
- *    - ·ÃÎÊµØÖ·£º0x90000000 + offset
+ * 4. å†…å­˜æ˜ å°„æ¨¡å¼
+ *    - åªèƒ½è¯»å–ï¼Œä¸èƒ½å†™å…¥
+ *    - æ€§èƒ½ä»…ä¸QSPIæ—¶é’Ÿå’ŒCacheç›¸å…³
+ *    - è®¿é—®åœ°å€ï¼š0x90000000 + offset
  *
- * 5. Ê¹ÓÃ½¨Òé
- *    - ´óÊı¾İÁ¿²Á³ıÓÅÏÈÊ¹ÓÃ64K¿é²Á³ı
- *    - Ğ´ÈëÇ°Îñ±ØÍê³É²Á³ı²Ù×÷
- *    - FlashÊ¹ÓÃÊ±¼äÔ½³¤£¬²Á³ı/Ğ´ÈëºÄÊ±Ô½³¤
+ * 5. ä½¿ç”¨å»ºè®®
+ *    - å¤§æ•°æ®é‡æ“¦é™¤ä¼˜å…ˆä½¿ç”¨64Kå—æ“¦é™¤
+ *    - å†™å…¥å‰åŠ¡å¿…å®Œæˆæ“¦é™¤æ“ä½œ
+ *    - Flashä½¿ç”¨æ—¶é—´è¶Šé•¿ï¼Œæ“¦é™¤/å†™å…¥è€—æ—¶è¶Šé•¿
  *
  ******************************************************************************
  */
@@ -47,590 +47,596 @@
 #include <string.h>
 #ifdef QSPI_FLASH_ENABLE
 
-extern QSPI_HandleTypeDef hqspi; // ¶¨ÒåQSPI¾ä±ú£¬ÕâÀï±£ÁôÊ¹ÓÃcubeMXÉú³ÉµÄ±äÁ¿ÃüÃû£¬·½±ãÓÃ»§²Î¿¼ºÍÒÆÖ²
+extern QSPI_HandleTypeDef
+    hqspi; // å®šä¹‰QSPIå¥æŸ„ï¼Œè¿™é‡Œä¿ç•™ä½¿ç”¨cubeMXç”Ÿæˆçš„å˜é‡å‘½åï¼Œæ–¹ä¾¿ç”¨æˆ·å‚è€ƒå’Œç§»æ¤
 
-#define W25Qxx_NumByteToTest 32 * 1024 // ²âÊÔÊı¾İµÄ³¤¶È£¬64K
+#define W25Qxx_NumByteToTest 32 * 1024 // æµ‹è¯•æ•°æ®çš„é•¿åº¦ï¼Œ64K
 
-int32_t QSPI_Status; // ¼ì²â±êÖ¾Î»
+int32_t QSPI_Status; // æ£€æµ‹æ ‡å¿—ä½
 
-uint32_t W25Qxx_TestAddr = 0x1A20000;			  // ²âÊÔµØÖ·
-uint8_t W25Qxx_WriteBuffer[W25Qxx_NumByteToTest]; //	Ğ´Êı¾İÊı×é
-uint8_t W25Qxx_ReadBuffer[W25Qxx_NumByteToTest];  //	¶ÁÊı¾İÊı×é
+uint32_t W25Qxx_TestAddr = 0x1A20000;             // æµ‹è¯•åœ°å€
+uint8_t W25Qxx_WriteBuffer[W25Qxx_NumByteToTest]; //	å†™æ•°æ®æ•°ç»„
+uint8_t W25Qxx_ReadBuffer[W25Qxx_NumByteToTest];  //	è¯»æ•°æ®æ•°ç»„
 
 /**
- * @brief  ³õÊ¼»¯QSPI Flash
- * @retval QSPI_W25Qxx_OK - ³õÊ¼»¯³É¹¦
- * @retval W25Qxx_ERROR_INIT - ³õÊ¼»¯Ê§°Ü
- * @note   ¶ÁÈ¡Æ÷¼şID²¢ÓëÔ¤ÆÚÖµ±È¶Ô
+ * @brief  åˆå§‹åŒ–QSPI Flash
+ * @retval QSPI_W25Qxx_OK - åˆå§‹åŒ–æˆåŠŸ
+ * @retval W25Qxx_ERROR_INIT - åˆå§‹åŒ–å¤±è´¥
+ * @note   è¯»å–å™¨ä»¶IDå¹¶ä¸é¢„æœŸå€¼æ¯”å¯¹
  */
-int8_t QSPI_W25Qxx_Init(void)
-{
-	uint32_t Device_ID; // Æ÷¼şID
+int8_t QSPI_W25Qxx_Init(void) {
+  uint32_t Device_ID; // å™¨ä»¶ID
 
-	QSPI_W25Qxx_Reset();			  // ¸´Î»Æ÷¼ş
-	Device_ID = QSPI_W25Qxx_ReadID(); // ¶ÁÈ¡Æ÷¼şID
+  QSPI_W25Qxx_Reset();              // å¤ä½å™¨ä»¶
+  Device_ID = QSPI_W25Qxx_ReadID(); // è¯»å–å™¨ä»¶ID
 
-	if (Device_ID == W25Qxx_FLASH_ID)
-	{
-		return QSPI_W25Qxx_OK;
-	}
-	else
-	{
-		DEBUG_ERROR("QSPI Flash IDÆ¥ÅäÊ§°Ü");
-		return W25Qxx_ERROR_INIT;
-	}
+  if (Device_ID == W25Qxx_FLASH_ID) {
+    return QSPI_W25Qxx_OK;
+  } else {
+    DEBUG_ERROR("QSPI Flash IDåŒ¹é…å¤±è´¥");
+    return W25Qxx_ERROR_INIT;
+  }
 }
 
 /**
- * @brief  Ê¹ÓÃ×Ô¶¯ÂÖÑ¯µÈ´ıFlash¾ÍĞ÷
- * @retval QSPI_W25Qxx_OK - Í¨ĞÅÕı³£½áÊø
- * @retval W25Qxx_ERROR_AUTOPOLLING - ÂÖÑ¯µÈ´ıÎŞÏìÓ¦
- * @note   Ã¿´ÎÍ¨ĞÅºó¶¼Ó¦µ÷ÓÃ´Ëº¯ÊıµÈ´ıÍê³É
+ * @brief  ä½¿ç”¨è‡ªåŠ¨è½®è¯¢ç­‰å¾…Flashå°±ç»ª
+ * @retval QSPI_W25Qxx_OK - é€šä¿¡æ­£å¸¸ç»“æŸ
+ * @retval W25Qxx_ERROR_AUTOPOLLING - è½®è¯¢ç­‰å¾…æ— å“åº”
+ * @note   æ¯æ¬¡é€šä¿¡åéƒ½åº”è°ƒç”¨æ­¤å‡½æ•°ç­‰å¾…å®Œæˆ
  */
-int8_t QSPI_W25Qxx_AutoPollingMemReady(void)
-{
-	QSPI_CommandTypeDef s_command;	  // QSPI´«ÊäÅäÖÃ
-	QSPI_AutoPollingTypeDef s_config; // ÂÖÑ¯±È½ÏÏà¹ØÅäÖÃ²ÎÊı
+int8_t QSPI_W25Qxx_AutoPollingMemReady(void) {
+  QSPI_CommandTypeDef s_command;    // QSPIä¼ è¾“é…ç½®
+  QSPI_AutoPollingTypeDef s_config; // è½®è¯¢æ¯”è¾ƒç›¸å…³é…ç½®å‚æ•°
 
-	s_command.InstructionMode = QSPI_INSTRUCTION_1_LINE;	 // 1ÏßÖ¸ÁîÄ£Ê½
-	s_command.AddressMode = QSPI_ADDRESS_NONE;				 // ÎŞµØÖ·Ä£Ê½
-	s_command.AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE; //	ÎŞ½»Ìæ×Ö½Ú
-	s_command.DdrMode = QSPI_DDR_MODE_DISABLE;				 // ½ûÖ¹DDRÄ£Ê½
-	s_command.DdrHoldHalfCycle = QSPI_DDR_HHC_ANALOG_DELAY;	 // DDRÄ£Ê½ÖĞÊı¾İÑÓ³Ù£¬ÕâÀïÓÃ²»µ½
-	s_command.SIOOMode = QSPI_SIOO_INST_EVERY_CMD;			 //	Ã¿´Î´«ÊäÊı¾İ¶¼·¢ËÍÖ¸Áî
-	s_command.DataMode = QSPI_DATA_1_LINE;					 // 1ÏßÊı¾İÄ£Ê½
-	s_command.DummyCycles = 0;								 //	¿ÕÖÜÆÚ¸öÊı
-	s_command.Instruction = W25Qxx_CMD_ReadStatus_REG1;		 // ¶Á×´Ì¬ĞÅÏ¢¼Ä´æÆ÷
+  s_command.InstructionMode = QSPI_INSTRUCTION_1_LINE;     // 1çº¿æŒ‡ä»¤æ¨¡å¼
+  s_command.AddressMode = QSPI_ADDRESS_NONE;               // æ— åœ°å€æ¨¡å¼
+  s_command.AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE; //	æ— äº¤æ›¿å­—èŠ‚
+  s_command.DdrMode = QSPI_DDR_MODE_DISABLE;               // ç¦æ­¢DDRæ¨¡å¼
+  s_command.DdrHoldHalfCycle =
+      QSPI_DDR_HHC_ANALOG_DELAY; // DDRæ¨¡å¼ä¸­æ•°æ®å»¶è¿Ÿï¼Œè¿™é‡Œç”¨ä¸åˆ°
+  s_command.SIOOMode = QSPI_SIOO_INST_EVERY_CMD; //	æ¯æ¬¡ä¼ è¾“æ•°æ®éƒ½å‘é€æŒ‡ä»¤
+  s_command.DataMode = QSPI_DATA_1_LINE;         // 1çº¿æ•°æ®æ¨¡å¼
+  s_command.DummyCycles = 0;                     //	ç©ºå‘¨æœŸä¸ªæ•°
+  s_command.Instruction = W25Qxx_CMD_ReadStatus_REG1; // è¯»çŠ¶æ€ä¿¡æ¯å¯„å­˜å™¨
 
-	// ²»Í£µÄ²éÑ¯ W25Qxx_CMD_ReadStatus_REG1 ¼Ä´æÆ÷£¬½«¶ÁÈ¡µ½µÄ×´Ì¬×Ö½ÚÖĞµÄ W25Qxx_Status_REG1_BUSY ²»Í£µÄÓë0×÷±È½Ï
-	// ¶Á×´Ì¬¼Ä´æÆ÷1µÄµÚ0Î»£¨Ö»¶Á£©£¬Busy±êÖ¾Î»£¬µ±ÕıÔÚ²Á³ı/Ğ´ÈëÊı¾İ/Ğ´ÃüÁîÊ±»á±»ÖÃ1£¬¿ÕÏĞ»òÍ¨ĞÅ½áÊøÎª0
+  // ä¸åœçš„æŸ¥è¯¢ W25Qxx_CMD_ReadStatus_REG1 å¯„å­˜å™¨ï¼Œå°†è¯»å–åˆ°çš„çŠ¶æ€å­—èŠ‚ä¸­çš„
+  // W25Qxx_Status_REG1_BUSY ä¸åœçš„ä¸0ä½œæ¯”è¾ƒ
+  // è¯»çŠ¶æ€å¯„å­˜å™¨1çš„ç¬¬0ä½ï¼ˆåªè¯»ï¼‰ï¼ŒBusyæ ‡å¿—ä½ï¼Œå½“æ­£åœ¨æ“¦é™¤/å†™å…¥æ•°æ®/å†™å‘½ä»¤æ—¶ä¼šè¢«ç½®1ï¼Œç©ºé—²æˆ–é€šä¿¡ç»“æŸä¸º0
 
-	s_config.Match = 0;									 //	Æ¥ÅäÖµ
-	s_config.MatchMode = QSPI_MATCH_MODE_AND;			 //	ÓëÔËËã
-	s_config.Interval = 0x10;							 //	ÂÖÑ¯¼ä¸ô
-	s_config.AutomaticStop = QSPI_AUTOMATIC_STOP_ENABLE; // ×Ô¶¯Í£Ö¹Ä£Ê½
-	s_config.StatusBytesSize = 1;						 //	×´Ì¬×Ö½ÚÊı
-	s_config.Mask = W25Qxx_Status_REG1_BUSY;			 // ¶ÔÔÚÂÖÑ¯Ä£Ê½ÏÂ½ÓÊÕµÄ×´Ì¬×Ö½Ú½øĞĞÆÁ±Î£¬Ö»±È½ÏĞèÒªÓÃµ½µÄÎ»
+  s_config.Match = 0;                                  //	åŒ¹é…å€¼
+  s_config.MatchMode = QSPI_MATCH_MODE_AND;            //	ä¸è¿ç®—
+  s_config.Interval = 0x10;                            //	è½®è¯¢é—´éš”
+  s_config.AutomaticStop = QSPI_AUTOMATIC_STOP_ENABLE; // è‡ªåŠ¨åœæ­¢æ¨¡å¼
+  s_config.StatusBytesSize = 1;                        //	çŠ¶æ€å­—èŠ‚æ•°
+  s_config.Mask =
+      W25Qxx_Status_REG1_BUSY; // å¯¹åœ¨è½®è¯¢æ¨¡å¼ä¸‹æ¥æ”¶çš„çŠ¶æ€å­—èŠ‚è¿›è¡Œå±è”½ï¼Œåªæ¯”è¾ƒéœ€è¦ç”¨åˆ°çš„ä½
 
-	// ·¢ËÍÂÖÑ¯µÈ´ıÃüÁî
-	if (HAL_QSPI_AutoPolling(&hqspi, &s_command, &s_config, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
-	{
-		return W25Qxx_ERROR_AUTOPOLLING; // ÂÖÑ¯µÈ´ıÎŞÏìÓ¦
-	}
-	return QSPI_W25Qxx_OK; // Í¨ĞÅÕı³£½áÊø
+  // å‘é€è½®è¯¢ç­‰å¾…å‘½ä»¤
+  if (HAL_QSPI_AutoPolling(&hqspi, &s_command, &s_config,
+                           HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
+    return W25Qxx_ERROR_AUTOPOLLING; // è½®è¯¢ç­‰å¾…æ— å“åº”
+  }
+  return QSPI_W25Qxx_OK; // é€šä¿¡æ­£å¸¸ç»“æŸ
 }
 
 /**
- * @brief  ¸´Î»FlashÆ÷¼ş
- * @retval QSPI_W25Qxx_OK - ¸´Î»³É¹¦
- * @retval W25Qxx_ERROR_INIT - ¸´Î»Ê§°Ü
- * @retval W25Qxx_ERROR_AUTOPOLLING - ÂÖÑ¯³¬Ê±
+ * @brief  å¤ä½Flashå™¨ä»¶
+ * @retval QSPI_W25Qxx_OK - å¤ä½æˆåŠŸ
+ * @retval W25Qxx_ERROR_INIT - å¤ä½å¤±è´¥
+ * @retval W25Qxx_ERROR_AUTOPOLLING - è½®è¯¢è¶…æ—¶
  */
-int8_t QSPI_W25Qxx_Reset(void)
-{
-	QSPI_CommandTypeDef s_command; // QSPI´«ÊäÅäÖÃ
+int8_t QSPI_W25Qxx_Reset(void) {
+  QSPI_CommandTypeDef s_command; // QSPIä¼ è¾“é…ç½®
 
-	s_command.InstructionMode = QSPI_INSTRUCTION_1_LINE;	 // 1ÏßÖ¸ÁîÄ£Ê½
-	s_command.AddressMode = QSPI_ADDRESS_NONE;				 // ÎŞµØÖ·Ä£Ê½
-	s_command.AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE; // ÎŞ½»Ìæ×Ö½Ú
-	s_command.DdrMode = QSPI_DDR_MODE_DISABLE;				 // ½ûÖ¹DDRÄ£Ê½
-	s_command.DdrHoldHalfCycle = QSPI_DDR_HHC_ANALOG_DELAY;	 // DDRÄ£Ê½ÖĞÊı¾İÑÓ³Ù£¬ÕâÀïÓÃ²»µ½
-	s_command.SIOOMode = QSPI_SIOO_INST_EVERY_CMD;			 // Ã¿´Î´«ÊäÊı¾İ¶¼·¢ËÍÖ¸Áî
-	s_command.DataMode = QSPI_DATA_NONE;					 // ÎŞÊı¾İÄ£Ê½
-	s_command.DummyCycles = 0;								 // ¿ÕÖÜÆÚ¸öÊı
-	s_command.Instruction = W25Qxx_CMD_EnableReset;			 // Ö´ĞĞ¸´Î»Ê¹ÄÜÃüÁî
-	int status1 = HAL_QSPI_Command(&hqspi, &s_command, HAL_QPSI_TIMEOUT_DEFAULT_VALUE);
-	// ·¢ËÍ¸´Î»Ê¹ÄÜÃüÁî
-	if (status1 != HAL_OK)
-	{
-		DEBUG_ERROR("QSPI Flash¸´Î»Ê¹ÄÜÊ§°Ü");
-		return W25Qxx_ERROR_INIT; // Èç¹û·¢ËÍÊ§°Ü£¬·µ»Ø´íÎóĞÅÏ¢
-	}
-	// Ê¹ÓÃ×Ô¶¯ÂÖÑ¯±êÖ¾Î»£¬µÈ´ıÍ¨ĞÅ½áÊø
-	if (QSPI_W25Qxx_AutoPollingMemReady() != QSPI_W25Qxx_OK)
-	{
-		DEBUG_ERROR("QSPI Flash¸´Î»Ê¹ÄÜÊ§°Ü");
-		return W25Qxx_ERROR_AUTOPOLLING; // ÂÖÑ¯µÈ´ıÎŞÏìÓ¦
-	}
+  s_command.InstructionMode = QSPI_INSTRUCTION_1_LINE;     // 1çº¿æŒ‡ä»¤æ¨¡å¼
+  s_command.AddressMode = QSPI_ADDRESS_NONE;               // æ— åœ°å€æ¨¡å¼
+  s_command.AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE; // æ— äº¤æ›¿å­—èŠ‚
+  s_command.DdrMode = QSPI_DDR_MODE_DISABLE;               // ç¦æ­¢DDRæ¨¡å¼
+  s_command.DdrHoldHalfCycle =
+      QSPI_DDR_HHC_ANALOG_DELAY; // DDRæ¨¡å¼ä¸­æ•°æ®å»¶è¿Ÿï¼Œè¿™é‡Œç”¨ä¸åˆ°
+  s_command.SIOOMode = QSPI_SIOO_INST_EVERY_CMD; // æ¯æ¬¡ä¼ è¾“æ•°æ®éƒ½å‘é€æŒ‡ä»¤
+  s_command.DataMode = QSPI_DATA_NONE;           // æ— æ•°æ®æ¨¡å¼
+  s_command.DummyCycles = 0;                     // ç©ºå‘¨æœŸä¸ªæ•°
+  s_command.Instruction = W25Qxx_CMD_EnableReset; // æ‰§è¡Œå¤ä½ä½¿èƒ½å‘½ä»¤
+  int status1 =
+      HAL_QSPI_Command(&hqspi, &s_command, HAL_QPSI_TIMEOUT_DEFAULT_VALUE);
+  // å‘é€å¤ä½ä½¿èƒ½å‘½ä»¤
+  if (status1 != HAL_OK) {
+    DEBUG_ERROR("QSPI Flashå¤ä½ä½¿èƒ½å¤±è´¥");
+    return W25Qxx_ERROR_INIT; // å¦‚æœå‘é€å¤±è´¥ï¼Œè¿”å›é”™è¯¯ä¿¡æ¯
+  }
+  // ä½¿ç”¨è‡ªåŠ¨è½®è¯¢æ ‡å¿—ä½ï¼Œç­‰å¾…é€šä¿¡ç»“æŸ
+  if (QSPI_W25Qxx_AutoPollingMemReady() != QSPI_W25Qxx_OK) {
+    DEBUG_ERROR("QSPI Flashå¤ä½ä½¿èƒ½å¤±è´¥");
+    return W25Qxx_ERROR_AUTOPOLLING; // è½®è¯¢ç­‰å¾…æ— å“åº”
+  }
 
-	s_command.Instruction = W25Qxx_CMD_ResetDevice; // ¸´Î»Æ÷¼şÃüÁî
+  s_command.Instruction = W25Qxx_CMD_ResetDevice; // å¤ä½å™¨ä»¶å‘½ä»¤
 
-	// ·¢ËÍ¸´Î»Æ÷¼şÃüÁî
-	if (HAL_QSPI_Command(&hqspi, &s_command, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
-	{
-		DEBUG_ERROR("QSPI Flash¸´Î»Ê¹ÄÜÊ§°Ü");
-		return W25Qxx_ERROR_INIT; // Èç¹û·¢ËÍÊ§°Ü£¬·µ»Ø´íÎóĞÅÏ¢
-	}
-	// Ê¹ÓÃ×Ô¶¯ÂÖÑ¯±êÖ¾Î»£¬µÈ´ıÍ¨ĞÅ½áÊø
-	if (QSPI_W25Qxx_AutoPollingMemReady() != QSPI_W25Qxx_OK)
-	{
-		DEBUG_ERROR("QSPI Flash¸´Î»Ê¹ÄÜÊ§°Ü");
-		return W25Qxx_ERROR_AUTOPOLLING; // ÂÖÑ¯µÈ´ıÎŞÏìÓ¦
-	}
-	return QSPI_W25Qxx_OK; // ¸´Î»³É¹¦
+  // å‘é€å¤ä½å™¨ä»¶å‘½ä»¤
+  if (HAL_QSPI_Command(&hqspi, &s_command, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) !=
+      HAL_OK) {
+    DEBUG_ERROR("QSPI Flashå¤ä½ä½¿èƒ½å¤±è´¥");
+    return W25Qxx_ERROR_INIT; // å¦‚æœå‘é€å¤±è´¥ï¼Œè¿”å›é”™è¯¯ä¿¡æ¯
+  }
+  // ä½¿ç”¨è‡ªåŠ¨è½®è¯¢æ ‡å¿—ä½ï¼Œç­‰å¾…é€šä¿¡ç»“æŸ
+  if (QSPI_W25Qxx_AutoPollingMemReady() != QSPI_W25Qxx_OK) {
+    DEBUG_ERROR("QSPI Flashå¤ä½ä½¿èƒ½å¤±è´¥");
+    return W25Qxx_ERROR_AUTOPOLLING; // è½®è¯¢ç­‰å¾…æ— å“åº”
+  }
+  return QSPI_W25Qxx_OK; // å¤ä½æˆåŠŸ
 }
 
 /**
- * @brief  ¶ÁÈ¡FlashÆ÷¼şID
- * @retval Æ÷¼şID£¨W25Q256Îª0xef4019£©
- * @retval W25Qxx_ERROR_INIT - Í¨ĞÅÊ§°Ü
- * @retval W25Qxx_ERROR_TRANSMIT - ½ÓÊÕÊ§°Ü
+ * @brief  è¯»å–Flashå™¨ä»¶ID
+ * @retval å™¨ä»¶IDï¼ˆW25Q256ä¸º0xef4019ï¼‰
+ * @retval W25Qxx_ERROR_INIT - é€šä¿¡å¤±è´¥
+ * @retval W25Qxx_ERROR_TRANSMIT - æ¥æ”¶å¤±è´¥
  */
-uint32_t QSPI_W25Qxx_ReadID(void)
-{
-	QSPI_CommandTypeDef s_command; // QSPI´«ÊäÅäÖÃ
-	uint8_t QSPI_ReceiveBuff[3];   // ´æ´¢QSPI¶Áµ½µÄÊı¾İ
-	uint32_t W25Qxx_ID;			   // Æ÷¼şµÄID
+uint32_t QSPI_W25Qxx_ReadID(void) {
+  QSPI_CommandTypeDef s_command; // QSPIä¼ è¾“é…ç½®
+  uint8_t QSPI_ReceiveBuff[3];   // å­˜å‚¨QSPIè¯»åˆ°çš„æ•°æ®
+  uint32_t W25Qxx_ID;            // å™¨ä»¶çš„ID
 
-	s_command.InstructionMode = QSPI_INSTRUCTION_1_LINE;	 // 1ÏßÖ¸ÁîÄ£Ê½
-	s_command.AddressSize = QSPI_ADDRESS_32_BITS;			 // 32Î»µØÖ·
-	s_command.AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE; // ÎŞ½»Ìæ×Ö½Ú
-	s_command.DdrMode = QSPI_DDR_MODE_DISABLE;				 // ½ûÖ¹DDRÄ£Ê½
-	s_command.DdrHoldHalfCycle = QSPI_DDR_HHC_ANALOG_DELAY;	 // DDRÄ£Ê½ÖĞÊı¾İÑÓ³Ù£¬ÕâÀïÓÃ²»µ½
-	s_command.SIOOMode = QSPI_SIOO_INST_EVERY_CMD;			 // Ã¿´Î´«ÊäÊı¾İ¶¼·¢ËÍÖ¸Áî
-	s_command.AddressMode = QSPI_ADDRESS_NONE;				 // ÎŞµØÖ·Ä£Ê½
-	s_command.DataMode = QSPI_DATA_1_LINE;					 // 1ÏßÊı¾İÄ£Ê½
-	s_command.DummyCycles = 0;								 // ¿ÕÖÜÆÚ¸öÊı
-	s_command.NbData = 3;									 // ´«ÊäÊı¾İµÄ³¤¶È
-	s_command.Instruction = W25Qxx_CMD_JedecID;				 // Ö´ĞĞ¶ÁÆ÷¼şIDÃüÁî
-															 // int status1 = HAL_QSPI_Command(&hqspi, &s_command, HAL_QPSI_TIMEOUT_DEFAULT_VALUE);
-															 // int status2 = HAL_QSPI_Receive(&hqspi, QSPI_ReceiveBuff, HAL_QPSI_TIMEOUT_DEFAULT_VALUE);
-	// ·¢ËÍÖ¸Áî
-	if (HAL_QSPI_Command(&hqspi, &s_command, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
-	{
-		DEBUG_ERROR("QSPI Flash¶ÁÈ¡IDÊ§°Ü");
-		return 0; 
-	}
-	// ½ÓÊÕÊı¾İ
-	if (HAL_QSPI_Receive(&hqspi, QSPI_ReceiveBuff, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
-	{
-		DEBUG_ERROR("QSPI Flash¶ÁÈ¡IDÊ§°Ü");
-		return 0; 
-	}
-	// ½«µÃµ½µÄÊı¾İ×éºÏ³ÉID
-	W25Qxx_ID = (QSPI_ReceiveBuff[0] << 16) | (QSPI_ReceiveBuff[1] << 8) | QSPI_ReceiveBuff[2];
+  s_command.InstructionMode = QSPI_INSTRUCTION_1_LINE;     // 1çº¿æŒ‡ä»¤æ¨¡å¼
+  s_command.AddressSize = QSPI_ADDRESS_32_BITS;            // 32ä½åœ°å€
+  s_command.AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE; // æ— äº¤æ›¿å­—èŠ‚
+  s_command.DdrMode = QSPI_DDR_MODE_DISABLE;               // ç¦æ­¢DDRæ¨¡å¼
+  s_command.DdrHoldHalfCycle =
+      QSPI_DDR_HHC_ANALOG_DELAY; // DDRæ¨¡å¼ä¸­æ•°æ®å»¶è¿Ÿï¼Œè¿™é‡Œç”¨ä¸åˆ°
+  s_command.SIOOMode = QSPI_SIOO_INST_EVERY_CMD; // æ¯æ¬¡ä¼ è¾“æ•°æ®éƒ½å‘é€æŒ‡ä»¤
+  s_command.AddressMode = QSPI_ADDRESS_NONE; // æ— åœ°å€æ¨¡å¼
+  s_command.DataMode = QSPI_DATA_1_LINE;     // 1çº¿æ•°æ®æ¨¡å¼
+  s_command.DummyCycles = 0;                 // ç©ºå‘¨æœŸä¸ªæ•°
+  s_command.NbData = 3;                      // ä¼ è¾“æ•°æ®çš„é•¿åº¦
+  s_command.Instruction =
+      W25Qxx_CMD_JedecID; // æ‰§è¡Œè¯»å™¨ä»¶IDå‘½ä»¤
+                          // int status1 = HAL_QSPI_Command(&hqspi, &s_command,
+                          // HAL_QPSI_TIMEOUT_DEFAULT_VALUE); int status2 =
+                          // HAL_QSPI_Receive(&hqspi, QSPI_ReceiveBuff,
+                          // HAL_QPSI_TIMEOUT_DEFAULT_VALUE);
+  // å‘é€æŒ‡ä»¤
+  if (HAL_QSPI_Command(&hqspi, &s_command, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) !=
+      HAL_OK) {
+    DEBUG_ERROR("QSPI Flashè¯»å–IDå¤±è´¥");
+    return 0;
+  }
+  // æ¥æ”¶æ•°æ®
+  if (HAL_QSPI_Receive(&hqspi, QSPI_ReceiveBuff,
+                       HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
+    DEBUG_ERROR("QSPI Flashè¯»å–IDå¤±è´¥");
+    return 0;
+  }
+  // å°†å¾—åˆ°çš„æ•°æ®ç»„åˆæˆID
+  W25Qxx_ID = (QSPI_ReceiveBuff[0] << 16) | (QSPI_ReceiveBuff[1] << 8) |
+              QSPI_ReceiveBuff[2];
 
-	return W25Qxx_ID; // ·µ»ØID
+  return W25Qxx_ID; // è¿”å›ID
 }
 
 /**
- * @brief  ½øÈëÄÚ´æÓ³ÉäÄ£Ê½
- * @retval QSPI_W25Qxx_OK - ÅäÖÃ³É¹¦
- * @retval W25Qxx_ERROR_MemoryMapped - ÅäÖÃÊ§°Ü
- * @note   ´ËÄ£Ê½ÏÂÖ»ÄÜ¶ÁÈ¡£¬²»ÄÜĞ´Èë
+ * @brief  è¿›å…¥å†…å­˜æ˜ å°„æ¨¡å¼
+ * @retval QSPI_W25Qxx_OK - é…ç½®æˆåŠŸ
+ * @retval W25Qxx_ERROR_MemoryMapped - é…ç½®å¤±è´¥
+ * @note   æ­¤æ¨¡å¼ä¸‹åªèƒ½è¯»å–ï¼Œä¸èƒ½å†™å…¥
  */
-int8_t QSPI_W25Qxx_MemoryMappedMode(void)
-{
-	QSPI_CommandTypeDef s_command;			   // QSPI´«ÊäÅäÖÃ
-	QSPI_MemoryMappedTypeDef s_mem_mapped_cfg; // ÄÚ´æÓ³Éä·ÃÎÊ²ÎÊı
+int8_t QSPI_W25Qxx_MemoryMappedMode(void) {
+  QSPI_CommandTypeDef s_command;             // QSPIä¼ è¾“é…ç½®
+  QSPI_MemoryMappedTypeDef s_mem_mapped_cfg; // å†…å­˜æ˜ å°„è®¿é—®å‚æ•°
 
-	s_command.InstructionMode = QSPI_INSTRUCTION_1_LINE;	 // 1ÏßÖ¸ÁîÄ£Ê½
-	s_command.AddressSize = QSPI_ADDRESS_32_BITS;			 // 32Î»µØÖ·
-	s_command.AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE; // ÎŞ½»Ìæ×Ö½Ú
-	s_command.DdrMode = QSPI_DDR_MODE_DISABLE;				 // ½ûÖ¹DDRÄ£Ê½
-	s_command.DdrHoldHalfCycle = QSPI_DDR_HHC_ANALOG_DELAY;	 // DDRÄ£Ê½ÖĞÊı¾İÑÓ³Ù£¬ÕâÀïÓÃ²»µ½
-	s_command.SIOOMode = QSPI_SIOO_INST_EVERY_CMD;			 // Ã¿´Î´«ÊäÊı¾İ¶¼·¢ËÍÖ¸Áî
-	s_command.AddressMode = QSPI_ADDRESS_4_LINES;			 // 4ÏßµØÖ·Ä£Ê½
-	s_command.DataMode = QSPI_DATA_4_LINES;					 // 4ÏßÊı¾İÄ£Ê½
-	s_command.DummyCycles = 6;								 // ¿ÕÖÜÆÚ¸öÊı
-	s_command.Instruction = W25Qxx_CMD_FastReadQuad_IO;		 // 1-4-4Ä£Ê½ÏÂ(1ÏßÖ¸Áî4ÏßµØÖ·4ÏßÊı¾İ)£¬¿ìËÙ¶ÁÈ¡Ö¸Áî
+  s_command.InstructionMode = QSPI_INSTRUCTION_1_LINE;     // 1çº¿æŒ‡ä»¤æ¨¡å¼
+  s_command.AddressSize = QSPI_ADDRESS_32_BITS;            // 32ä½åœ°å€
+  s_command.AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE; // æ— äº¤æ›¿å­—èŠ‚
+  s_command.DdrMode = QSPI_DDR_MODE_DISABLE;               // ç¦æ­¢DDRæ¨¡å¼
+  s_command.DdrHoldHalfCycle =
+      QSPI_DDR_HHC_ANALOG_DELAY; // DDRæ¨¡å¼ä¸­æ•°æ®å»¶è¿Ÿï¼Œè¿™é‡Œç”¨ä¸åˆ°
+  s_command.SIOOMode = QSPI_SIOO_INST_EVERY_CMD; // æ¯æ¬¡ä¼ è¾“æ•°æ®éƒ½å‘é€æŒ‡ä»¤
+  s_command.AddressMode = QSPI_ADDRESS_4_LINES; // 4çº¿åœ°å€æ¨¡å¼
+  s_command.DataMode = QSPI_DATA_4_LINES;       // 4çº¿æ•°æ®æ¨¡å¼
+  s_command.DummyCycles = 6;                    // ç©ºå‘¨æœŸä¸ªæ•°
+  s_command.Instruction =
+      W25Qxx_CMD_FastReadQuad_IO; // 1-4-4æ¨¡å¼ä¸‹(1çº¿æŒ‡ä»¤4çº¿åœ°å€4çº¿æ•°æ®)ï¼Œå¿«é€Ÿè¯»å–æŒ‡ä»¤
 
-	s_mem_mapped_cfg.TimeOutActivation = QSPI_TIMEOUT_COUNTER_DISABLE; // ½ûÓÃ³¬Ê±¼ÆÊıÆ÷, nCS ±£³Ö¼¤»î×´Ì¬
-	s_mem_mapped_cfg.TimeOutPeriod = 0;								   // ³¬Ê±ÅĞ¶ÏÖÜÆÚ
+  s_mem_mapped_cfg.TimeOutActivation =
+      QSPI_TIMEOUT_COUNTER_DISABLE; // ç¦ç”¨è¶…æ—¶è®¡æ•°å™¨, nCS ä¿æŒæ¿€æ´»çŠ¶æ€
+  s_mem_mapped_cfg.TimeOutPeriod = 0; // è¶…æ—¶åˆ¤æ–­å‘¨æœŸ
 
-	QSPI_W25Qxx_Reset(); // ¸´Î»W25Qxx
+  QSPI_W25Qxx_Reset(); // å¤ä½W25Qxx
 
-	if (HAL_QSPI_MemoryMapped(&hqspi, &s_command, &s_mem_mapped_cfg) != HAL_OK) // ½øĞĞÅäÖÃ
-	{
-		DEBUG_ERROR("QSPIÄÚ´æÓ³ÉäÄ£Ê½ÇĞ»»Ê§°Ü");
-		return W25Qxx_ERROR_MemoryMapped; // ÉèÖÃÄÚ´æÓ³ÉäÄ£Ê½´íÎó
-	}
-	return QSPI_W25Qxx_OK; // ÅäÖÃ³É¹¦
+  if (HAL_QSPI_MemoryMapped(&hqspi, &s_command, &s_mem_mapped_cfg) !=
+      HAL_OK) // è¿›è¡Œé…ç½®
+  {
+    DEBUG_ERROR("QSPIå†…å­˜æ˜ å°„æ¨¡å¼åˆ‡æ¢å¤±è´¥");
+    return W25Qxx_ERROR_MemoryMapped; // è®¾ç½®å†…å­˜æ˜ å°„æ¨¡å¼é”™è¯¯
+  }
+  return QSPI_W25Qxx_OK; // é…ç½®æˆåŠŸ
 }
 
 /**
- * @brief  ·¢ËÍĞ´Ê¹ÄÜÃüÁî
- * @retval QSPI_W25Qxx_OK - Ğ´Ê¹ÄÜ³É¹¦
- * @retval W25Qxx_ERROR_WriteEnable - Ğ´Ê¹ÄÜÊ§°Ü
- * @retval W25Qxx_ERROR_AUTOPOLLING - ÂÖÑ¯µÈ´ı³¬Ê±
+ * @brief  å‘é€å†™ä½¿èƒ½å‘½ä»¤
+ * @retval QSPI_W25Qxx_OK - å†™ä½¿èƒ½æˆåŠŸ
+ * @retval W25Qxx_ERROR_WriteEnable - å†™ä½¿èƒ½å¤±è´¥
+ * @retval W25Qxx_ERROR_AUTOPOLLING - è½®è¯¢ç­‰å¾…è¶…æ—¶
  */
-int8_t QSPI_W25Qxx_WriteEnable(void)
-{
+int8_t QSPI_W25Qxx_WriteEnable(void) {
 
-	HAL_QSPI_Abort(&hqspi); // ÏÈÍË³öÄÚ´æÓ³Éä
+  HAL_QSPI_Abort(&hqspi); // å…ˆé€€å‡ºå†…å­˜æ˜ å°„
 
-	QSPI_CommandTypeDef s_command;	  // QSPI´«ÊäÅäÖÃ
-	QSPI_AutoPollingTypeDef s_config; // ÂÖÑ¯±È½ÏÏà¹ØÅäÖÃ²ÎÊı
+  QSPI_CommandTypeDef s_command;    // QSPIä¼ è¾“é…ç½®
+  QSPI_AutoPollingTypeDef s_config; // è½®è¯¢æ¯”è¾ƒç›¸å…³é…ç½®å‚æ•°
 
-	s_command.InstructionMode = QSPI_INSTRUCTION_1_LINE;	 // 1ÏßÖ¸ÁîÄ£Ê½
-	s_command.AddressMode = QSPI_ADDRESS_NONE;				 // ÎŞµØÖ·Ä£Ê½
-	s_command.AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE; // ÎŞ½»Ìæ×Ö½Ú
-	s_command.DdrMode = QSPI_DDR_MODE_DISABLE;				 // ½ûÖ¹DDRÄ£Ê½
-	s_command.DdrHoldHalfCycle = QSPI_DDR_HHC_ANALOG_DELAY;	 // DDRÄ£Ê½ÖĞÊı¾İÑÓ³Ù£¬ÕâÀïÓÃ²»µ½
-	s_command.SIOOMode = QSPI_SIOO_INST_EVERY_CMD;			 // Ã¿´Î´«ÊäÊı¾İ¶¼·¢ËÍÖ¸Áî
-	s_command.DataMode = QSPI_DATA_NONE;					 // ÎŞÊı¾İÄ£Ê½
-	s_command.DummyCycles = 0;								 // ¿ÕÖÜÆÚ¸öÊı
-	s_command.Instruction = W25Qxx_CMD_WriteEnable;			 // ·¢ËÍĞ´Ê¹ÄÜÃüÁî
+  s_command.InstructionMode = QSPI_INSTRUCTION_1_LINE;     // 1çº¿æŒ‡ä»¤æ¨¡å¼
+  s_command.AddressMode = QSPI_ADDRESS_NONE;               // æ— åœ°å€æ¨¡å¼
+  s_command.AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE; // æ— äº¤æ›¿å­—èŠ‚
+  s_command.DdrMode = QSPI_DDR_MODE_DISABLE;               // ç¦æ­¢DDRæ¨¡å¼
+  s_command.DdrHoldHalfCycle =
+      QSPI_DDR_HHC_ANALOG_DELAY; // DDRæ¨¡å¼ä¸­æ•°æ®å»¶è¿Ÿï¼Œè¿™é‡Œç”¨ä¸åˆ°
+  s_command.SIOOMode = QSPI_SIOO_INST_EVERY_CMD; // æ¯æ¬¡ä¼ è¾“æ•°æ®éƒ½å‘é€æŒ‡ä»¤
+  s_command.DataMode = QSPI_DATA_NONE;           // æ— æ•°æ®æ¨¡å¼
+  s_command.DummyCycles = 0;                     // ç©ºå‘¨æœŸä¸ªæ•°
+  s_command.Instruction = W25Qxx_CMD_WriteEnable; // å‘é€å†™ä½¿èƒ½å‘½ä»¤
 
-	// ·¢ËÍĞ´Ê¹ÄÜÃüÁî
-	if (HAL_QSPI_Command(&hqspi, &s_command, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
-	{
-		DEBUG_ERROR("QSPI FlashĞ´Ê¹ÄÜÊ§°Ü");
-		return W25Qxx_ERROR_WriteEnable; //
-	}
+  // å‘é€å†™ä½¿èƒ½å‘½ä»¤
+  if (HAL_QSPI_Command(&hqspi, &s_command, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) !=
+      HAL_OK) {
+    DEBUG_ERROR("QSPI Flashå†™ä½¿èƒ½å¤±è´¥");
+    return W25Qxx_ERROR_WriteEnable; //
+  }
 
-	// ²»Í£µÄ²éÑ¯ W25Qxx_CMD_ReadStatus_REG1 ¼Ä´æÆ÷£¬½«¶ÁÈ¡µ½µÄ×´Ì¬×Ö½ÚÖĞµÄ W25Qxx_Status_REG1_WEL ²»Í£µÄÓë 0x02 ×÷±È½Ï
-	// ¶Á×´Ì¬¼Ä´æÆ÷1µÄµÚ1Î»£¨Ö»¶Á£©£¬WELĞ´Ê¹ÄÜ±êÖ¾Î»£¬¸Ã±êÖ¾Î»Îª1Ê±£¬´ú±í¿ÉÒÔ½øĞĞĞ´²Ù×÷
+  // ä¸åœçš„æŸ¥è¯¢ W25Qxx_CMD_ReadStatus_REG1 å¯„å­˜å™¨ï¼Œå°†è¯»å–åˆ°çš„çŠ¶æ€å­—èŠ‚ä¸­çš„
+  // W25Qxx_Status_REG1_WEL ä¸åœçš„ä¸ 0x02 ä½œæ¯”è¾ƒ
+  // è¯»çŠ¶æ€å¯„å­˜å™¨1çš„ç¬¬1ä½ï¼ˆåªè¯»ï¼‰ï¼ŒWELå†™ä½¿èƒ½æ ‡å¿—ä½ï¼Œè¯¥æ ‡å¿—ä½ä¸º1æ—¶ï¼Œä»£è¡¨å¯ä»¥è¿›è¡Œå†™æ“ä½œ
 
-	s_config.Match = 0x02;								 // Æ¥ÅäÖµ
-	s_config.Mask = W25Qxx_Status_REG1_WEL;				 // ¶Á×´Ì¬¼Ä´æÆ÷1µÄµÚ1Î»£¨Ö»¶Á£©£¬WELĞ´Ê¹ÄÜ±êÖ¾Î»£¬¸Ã±êÖ¾Î»Îª1Ê±£¬´ú±í¿ÉÒÔ½øĞĞĞ´²Ù×÷
-	s_config.MatchMode = QSPI_MATCH_MODE_AND;			 // ÓëÔËËã
-	s_config.StatusBytesSize = 1;						 // ×´Ì¬×Ö½ÚÊı
-	s_config.Interval = 0x10;							 // ÂÖÑ¯¼ä¸ô
-	s_config.AutomaticStop = QSPI_AUTOMATIC_STOP_ENABLE; // ×Ô¶¯Í£Ö¹Ä£Ê½
+  s_config.Match = 0x02; // åŒ¹é…å€¼
+  s_config.Mask =
+      W25Qxx_Status_REG1_WEL; // è¯»çŠ¶æ€å¯„å­˜å™¨1çš„ç¬¬1ä½ï¼ˆåªè¯»ï¼‰ï¼ŒWELå†™ä½¿èƒ½æ ‡å¿—ä½ï¼Œè¯¥æ ‡å¿—ä½ä¸º1æ—¶ï¼Œä»£è¡¨å¯ä»¥è¿›è¡Œå†™æ“ä½œ
+  s_config.MatchMode = QSPI_MATCH_MODE_AND;            // ä¸è¿ç®—
+  s_config.StatusBytesSize = 1;                        // çŠ¶æ€å­—èŠ‚æ•°
+  s_config.Interval = 0x10;                            // è½®è¯¢é—´éš”
+  s_config.AutomaticStop = QSPI_AUTOMATIC_STOP_ENABLE; // è‡ªåŠ¨åœæ­¢æ¨¡å¼
 
-	s_command.Instruction = W25Qxx_CMD_ReadStatus_REG1; // ¶Á×´Ì¬ĞÅÏ¢¼Ä´æÆ÷
-	s_command.DataMode = QSPI_DATA_1_LINE;				// 1ÏßÊı¾İÄ£Ê½
-	s_command.NbData = 1;								// Êı¾İ³¤¶È
+  s_command.Instruction = W25Qxx_CMD_ReadStatus_REG1; // è¯»çŠ¶æ€ä¿¡æ¯å¯„å­˜å™¨
+  s_command.DataMode = QSPI_DATA_1_LINE;              // 1çº¿æ•°æ®æ¨¡å¼
+  s_command.NbData = 1;                               // æ•°æ®é•¿åº¦
 
-	// ·¢ËÍÂÖÑ¯µÈ´ıÃüÁî
-	if (HAL_QSPI_AutoPolling(&hqspi, &s_command, &s_config, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
-	{
-		DEBUG_ERROR("QSPI FlashĞ´Ê¹ÄÜÊ§°Ü");
-		return W25Qxx_ERROR_AUTOPOLLING; // ÂÖÑ¯µÈ´ıÎŞÏìÓ¦
-	}
-	return QSPI_W25Qxx_OK; // Í¨ĞÅÕı³£½áÊø
+  // å‘é€è½®è¯¢ç­‰å¾…å‘½ä»¤
+  if (HAL_QSPI_AutoPolling(&hqspi, &s_command, &s_config,
+                           HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
+    DEBUG_ERROR("QSPI Flashå†™ä½¿èƒ½å¤±è´¥");
+    return W25Qxx_ERROR_AUTOPOLLING; // è½®è¯¢ç­‰å¾…æ— å“åº”
+  }
+  return QSPI_W25Qxx_OK; // é€šä¿¡æ­£å¸¸ç»“æŸ
 }
 
 /**
- * @brief  ÉÈÇø²Á³ı£¨4KB£©
- * @param  SectorAddress: ÉÈÇøµØÖ·£¨4KB¶ÔÆë£©
- * @retval QSPI_W25Qxx_OK - ²Á³ı³É¹¦
- * @retval W25Qxx_ERROR_WriteEnable - Ğ´Ê¹ÄÜÊ§°Ü
- * @retval W25Qxx_ERROR_Erase - ²Á³ıÊ§°Ü
- * @retval W25Qxx_ERROR_AUTOPOLLING - ÂÖÑ¯µÈ´ıÎŞÏìÓ¦
- * @note   µäĞÍºÄÊ±£º45ms£¬×î´ó£º400ms
- * @note   FlashÊ¹ÓÃÊ±¼äÔ½³¤£¬²Á³ıËùĞèÊ±¼äÔ½³¤
+ * @brief  æ‰‡åŒºæ“¦é™¤ï¼ˆ4KBï¼‰
+ * @param  SectorAddress: æ‰‡åŒºåœ°å€ï¼ˆ4KBå¯¹é½ï¼‰
+ * @retval QSPI_W25Qxx_OK - æ“¦é™¤æˆåŠŸ
+ * @retval W25Qxx_ERROR_WriteEnable - å†™ä½¿èƒ½å¤±è´¥
+ * @retval W25Qxx_ERROR_Erase - æ“¦é™¤å¤±è´¥
+ * @retval W25Qxx_ERROR_AUTOPOLLING - è½®è¯¢ç­‰å¾…æ— å“åº”
+ * @note   å…¸å‹è€—æ—¶ï¼š45msï¼Œæœ€å¤§ï¼š400ms
+ * @note   Flashä½¿ç”¨æ—¶é—´è¶Šé•¿ï¼Œæ“¦é™¤æ‰€éœ€æ—¶é—´è¶Šé•¿
  */
-int8_t QSPI_W25Qxx_SectorErase(uint32_t SectorAddress)
-{
-	QSPI_CommandTypeDef s_command; // QSPI´«ÊäÅäÖÃ
+int8_t QSPI_W25Qxx_SectorErase(uint32_t SectorAddress) {
+  QSPI_CommandTypeDef s_command; // QSPIä¼ è¾“é…ç½®
 
-	s_command.InstructionMode = QSPI_INSTRUCTION_1_LINE;	 // 1ÏßÖ¸ÁîÄ£Ê½
-	s_command.AddressSize = QSPI_ADDRESS_32_BITS;			 // 32Î»µØÖ·
-	s_command.AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE; //	ÎŞ½»Ìæ×Ö½Ú
-	s_command.DdrMode = QSPI_DDR_MODE_DISABLE;				 // ½ûÖ¹DDRÄ£Ê½
-	s_command.DdrHoldHalfCycle = QSPI_DDR_HHC_ANALOG_DELAY;	 // DDRÄ£Ê½ÖĞÊı¾İÑÓ³Ù£¬ÕâÀïÓÃ²»µ½
-	s_command.SIOOMode = QSPI_SIOO_INST_EVERY_CMD;			 // Ã¿´Î´«ÊäÊı¾İ¶¼·¢ËÍÖ¸Áî
-	s_command.AddressMode = QSPI_ADDRESS_1_LINE;			 // 1ÏßµØÖ·Ä£Ê½
-	s_command.DataMode = QSPI_DATA_NONE;					 // ÎŞÊı¾İ
-	s_command.DummyCycles = 0;								 // ¿ÕÖÜÆÚ¸öÊı
-	s_command.Address = SectorAddress;						 // Òª²Á³ıµÄµØÖ·
-	s_command.Instruction = W25Qxx_CMD_SectorErase;			 // ÉÈÇø²Á³ıÃüÁî
+  s_command.InstructionMode = QSPI_INSTRUCTION_1_LINE;     // 1çº¿æŒ‡ä»¤æ¨¡å¼
+  s_command.AddressSize = QSPI_ADDRESS_32_BITS;            // 32ä½åœ°å€
+  s_command.AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE; //	æ— äº¤æ›¿å­—èŠ‚
+  s_command.DdrMode = QSPI_DDR_MODE_DISABLE;               // ç¦æ­¢DDRæ¨¡å¼
+  s_command.DdrHoldHalfCycle =
+      QSPI_DDR_HHC_ANALOG_DELAY; // DDRæ¨¡å¼ä¸­æ•°æ®å»¶è¿Ÿï¼Œè¿™é‡Œç”¨ä¸åˆ°
+  s_command.SIOOMode = QSPI_SIOO_INST_EVERY_CMD; // æ¯æ¬¡ä¼ è¾“æ•°æ®éƒ½å‘é€æŒ‡ä»¤
+  s_command.AddressMode = QSPI_ADDRESS_1_LINE;    // 1çº¿åœ°å€æ¨¡å¼
+  s_command.DataMode = QSPI_DATA_NONE;            // æ— æ•°æ®
+  s_command.DummyCycles = 0;                      // ç©ºå‘¨æœŸä¸ªæ•°
+  s_command.Address = SectorAddress;              // è¦æ“¦é™¤çš„åœ°å€
+  s_command.Instruction = W25Qxx_CMD_SectorErase; // æ‰‡åŒºæ“¦é™¤å‘½ä»¤
 
-	// ·¢ËÍĞ´Ê¹ÄÜ
-	if (QSPI_W25Qxx_WriteEnable() != QSPI_W25Qxx_OK)
-	{
-		DEBUG_ERROR("QSPI FlashĞ´Ê¹ÄÜÊ§°Ü");
-		return W25Qxx_ERROR_WriteEnable; // Ğ´Ê¹ÄÜÊ§°Ü
-	}
-	// ·¢³ö²Á³ıÃüÁî
-	if (HAL_QSPI_Command(&hqspi, &s_command, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
-	{
-		DEBUG_ERROR("QSPI Flash²Á³ıÃüÁî·¢ËÍÊ§°Ü");
-		return W25Qxx_ERROR_Erase; // ²Á³ıÊ§°Ü
-	}
-	// Ê¹ÓÃ×Ô¶¯ÂÖÑ¯±êÖ¾Î»£¬µÈ´ı²Á³ıµÄ½áÊø
-	if (QSPI_W25Qxx_AutoPollingMemReady() != QSPI_W25Qxx_OK)
-	{
-		DEBUG_ERROR("QSPI Flash²Á³ıÊ§°Ü");
-		return W25Qxx_ERROR_AUTOPOLLING; // ÂÖÑ¯µÈ´ıÎŞÏìÓ¦
-	}
-	return QSPI_W25Qxx_OK; // ²Á³ı³É¹¦
+  // å‘é€å†™ä½¿èƒ½
+  if (QSPI_W25Qxx_WriteEnable() != QSPI_W25Qxx_OK) {
+    DEBUG_ERROR("QSPI Flashå†™ä½¿èƒ½å¤±è´¥");
+    return W25Qxx_ERROR_WriteEnable; // å†™ä½¿èƒ½å¤±è´¥
+  }
+  // å‘å‡ºæ“¦é™¤å‘½ä»¤
+  if (HAL_QSPI_Command(&hqspi, &s_command, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) !=
+      HAL_OK) {
+    DEBUG_ERROR("QSPI Flashæ“¦é™¤å‘½ä»¤å‘é€å¤±è´¥");
+    return W25Qxx_ERROR_Erase; // æ“¦é™¤å¤±è´¥
+  }
+  // ä½¿ç”¨è‡ªåŠ¨è½®è¯¢æ ‡å¿—ä½ï¼Œç­‰å¾…æ“¦é™¤çš„ç»“æŸ
+  if (QSPI_W25Qxx_AutoPollingMemReady() != QSPI_W25Qxx_OK) {
+    DEBUG_ERROR("QSPI Flashæ“¦é™¤å¤±è´¥");
+    return W25Qxx_ERROR_AUTOPOLLING; // è½®è¯¢ç­‰å¾…æ— å“åº”
+  }
+  return QSPI_W25Qxx_OK; // æ“¦é™¤æˆåŠŸ
 }
 
 /**
- * @brief  ¿é²Á³ı£¨64KB£©
- * @param  SectorAddress: ¿éµØÖ·£¨64KB¶ÔÆë£©
- * @retval QSPI_W25Qxx_OK - ²Á³ı³É¹¦
- * @retval W25Qxx_ERROR_WriteEnable - Ğ´Ê¹ÄÜÊ§°Ü
- * @retval W25Qxx_ERROR_Erase - ²Á³ıÊ§°Ü
- * @retval W25Qxx_ERROR_AUTOPOLLING - ÂÖÑ¯µÈ´ıÎŞÏìÓ¦
- * @note   µäĞÍºÄÊ±£º150ms£¬×î´ó£º2000ms
- * @note   ÍÆ¼öÊ¹ÓÃ£º´óÊı¾İÁ¿²Á³ıËÙ¶È×î¿ì
- * @note   FlashÊ¹ÓÃÊ±¼äÔ½³¤£¬²Á³ıËùĞèÊ±¼äÔ½³¤
+ * @brief  å—æ“¦é™¤ï¼ˆ64KBï¼‰
+ * @param  SectorAddress: å—åœ°å€ï¼ˆ64KBå¯¹é½ï¼‰
+ * @retval QSPI_W25Qxx_OK - æ“¦é™¤æˆåŠŸ
+ * @retval W25Qxx_ERROR_WriteEnable - å†™ä½¿èƒ½å¤±è´¥
+ * @retval W25Qxx_ERROR_Erase - æ“¦é™¤å¤±è´¥
+ * @retval W25Qxx_ERROR_AUTOPOLLING - è½®è¯¢ç­‰å¾…æ— å“åº”
+ * @note   å…¸å‹è€—æ—¶ï¼š150msï¼Œæœ€å¤§ï¼š2000ms
+ * @note   æ¨èä½¿ç”¨ï¼šå¤§æ•°æ®é‡æ“¦é™¤é€Ÿåº¦æœ€å¿«
+ * @note   Flashä½¿ç”¨æ—¶é—´è¶Šé•¿ï¼Œæ“¦é™¤æ‰€éœ€æ—¶é—´è¶Šé•¿
  */
-int8_t QSPI_W25Qxx_BlockErase_64K(uint32_t SectorAddress)
-{
-	QSPI_CommandTypeDef s_command; // QSPI´«ÊäÅäÖÃ
+int8_t QSPI_W25Qxx_BlockErase_64K(uint32_t SectorAddress) {
+  QSPI_CommandTypeDef s_command; // QSPIä¼ è¾“é…ç½®
 
-	s_command.InstructionMode = QSPI_INSTRUCTION_1_LINE;	 // 1ÏßÖ¸ÁîÄ£Ê½
-	s_command.AddressSize = QSPI_ADDRESS_32_BITS;			 // 32Î»µØÖ·
-	s_command.AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE; //	ÎŞ½»Ìæ×Ö½Ú
-	s_command.DdrMode = QSPI_DDR_MODE_DISABLE;				 // ½ûÖ¹DDRÄ£Ê½
-	s_command.DdrHoldHalfCycle = QSPI_DDR_HHC_ANALOG_DELAY;	 // DDRÄ£Ê½ÖĞÊı¾İÑÓ³Ù£¬ÕâÀïÓÃ²»µ½
-	s_command.SIOOMode = QSPI_SIOO_INST_EVERY_CMD;			 // Ã¿´Î´«ÊäÊı¾İ¶¼·¢ËÍÖ¸Áî
-	s_command.AddressMode = QSPI_ADDRESS_1_LINE;			 // 1ÏßµØÖ·Ä£Ê½
-	s_command.DataMode = QSPI_DATA_NONE;					 // ÎŞÊı¾İ
-	s_command.DummyCycles = 0;								 // ¿ÕÖÜÆÚ¸öÊı
-	s_command.Address = SectorAddress;						 // Òª²Á³ıµÄµØÖ·
-	s_command.Instruction = W25Qxx_CMD_BlockErase_64K;		 // ¿é²Á³ıÃüÁî£¬Ã¿´Î²Á³ı64K×Ö½Ú
+  s_command.InstructionMode = QSPI_INSTRUCTION_1_LINE;     // 1çº¿æŒ‡ä»¤æ¨¡å¼
+  s_command.AddressSize = QSPI_ADDRESS_32_BITS;            // 32ä½åœ°å€
+  s_command.AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE; //	æ— äº¤æ›¿å­—èŠ‚
+  s_command.DdrMode = QSPI_DDR_MODE_DISABLE;               // ç¦æ­¢DDRæ¨¡å¼
+  s_command.DdrHoldHalfCycle =
+      QSPI_DDR_HHC_ANALOG_DELAY; // DDRæ¨¡å¼ä¸­æ•°æ®å»¶è¿Ÿï¼Œè¿™é‡Œç”¨ä¸åˆ°
+  s_command.SIOOMode = QSPI_SIOO_INST_EVERY_CMD; // æ¯æ¬¡ä¼ è¾“æ•°æ®éƒ½å‘é€æŒ‡ä»¤
+  s_command.AddressMode = QSPI_ADDRESS_1_LINE; // 1çº¿åœ°å€æ¨¡å¼
+  s_command.DataMode = QSPI_DATA_NONE;         // æ— æ•°æ®
+  s_command.DummyCycles = 0;                   // ç©ºå‘¨æœŸä¸ªæ•°
+  s_command.Address = SectorAddress;           // è¦æ“¦é™¤çš„åœ°å€
+  s_command.Instruction =
+      W25Qxx_CMD_BlockErase_64K; // å—æ“¦é™¤å‘½ä»¤ï¼Œæ¯æ¬¡æ“¦é™¤64Kå­—èŠ‚
 
-	// ·¢ËÍĞ´Ê¹ÄÜ
-	if (QSPI_W25Qxx_WriteEnable() != QSPI_W25Qxx_OK)
-	{
-		DEBUG_ERROR("QSPI FlashĞ´Ê¹ÄÜÊ§°Ü");
-		return W25Qxx_ERROR_WriteEnable; // Ğ´Ê¹ÄÜÊ§°Ü
-	}
-	// ·¢³ö²Á³ıÃüÁî
-	if (HAL_QSPI_Command(&hqspi, &s_command, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
-	{
-		DEBUG_ERROR("QSPI Flash²Á³ıÃüÁî·¢ËÍÊ§°Ü");
-		return W25Qxx_ERROR_Erase; // ²Á³ıÊ§°Ü
-	}
-	// Ê¹ÓÃ×Ô¶¯ÂÖÑ¯±êÖ¾Î»£¬µÈ´ı²Á³ıµÄ½áÊø
-	if (QSPI_W25Qxx_AutoPollingMemReady() != QSPI_W25Qxx_OK)
-	{
-		DEBUG_ERROR("QSPI Flash²Á³ıÊ§°Ü");
-		return W25Qxx_ERROR_AUTOPOLLING; // ÂÖÑ¯µÈ´ıÎŞÏìÓ¦
-	}
-	return QSPI_W25Qxx_OK; // ²Á³ı³É¹¦
+  // å‘é€å†™ä½¿èƒ½
+  if (QSPI_W25Qxx_WriteEnable() != QSPI_W25Qxx_OK) {
+    DEBUG_ERROR("QSPI Flashå†™ä½¿èƒ½å¤±è´¥");
+    return W25Qxx_ERROR_WriteEnable; // å†™ä½¿èƒ½å¤±è´¥
+  }
+  // å‘å‡ºæ“¦é™¤å‘½ä»¤
+  if (HAL_QSPI_Command(&hqspi, &s_command, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) !=
+      HAL_OK) {
+    DEBUG_ERROR("QSPI Flashæ“¦é™¤å‘½ä»¤å‘é€å¤±è´¥");
+    return W25Qxx_ERROR_Erase; // æ“¦é™¤å¤±è´¥
+  }
+  // ä½¿ç”¨è‡ªåŠ¨è½®è¯¢æ ‡å¿—ä½ï¼Œç­‰å¾…æ“¦é™¤çš„ç»“æŸ
+  if (QSPI_W25Qxx_AutoPollingMemReady() != QSPI_W25Qxx_OK) {
+    DEBUG_ERROR("QSPI Flashæ“¦é™¤å¤±è´¥");
+    return W25Qxx_ERROR_AUTOPOLLING; // è½®è¯¢ç­‰å¾…æ— å“åº”
+  }
+  return QSPI_W25Qxx_OK; // æ“¦é™¤æˆåŠŸ
 }
 
 /**
- * @brief  ÕûÆ¬²Á³ı
- * @retval QSPI_W25Qxx_OK - ²Á³ı³É¹¦
- * @retval W25Qxx_ERROR_WriteEnable - Ğ´Ê¹ÄÜÊ§°Ü
- * @retval W25Qxx_ERROR_Erase - ²Á³ıÊ§°Ü
- * @retval W25Qxx_ERROR_AUTOPOLLING - ÂÖÑ¯µÈ´ıÎŞÏìÓ¦
- * @note   µäĞÍºÄÊ±£º80s£¬×î´ó£º400s
- * @note   Î£ÏÕ²Ù×÷£º»áÇå³ıËùÓĞÊı¾İ
- * @note   FlashÊ¹ÓÃÊ±¼äÔ½³¤£¬²Á³ıËùĞèÊ±¼äÔ½³¤
+ * @brief  æ•´ç‰‡æ“¦é™¤
+ * @retval QSPI_W25Qxx_OK - æ“¦é™¤æˆåŠŸ
+ * @retval W25Qxx_ERROR_WriteEnable - å†™ä½¿èƒ½å¤±è´¥
+ * @retval W25Qxx_ERROR_Erase - æ“¦é™¤å¤±è´¥
+ * @retval W25Qxx_ERROR_AUTOPOLLING - è½®è¯¢ç­‰å¾…æ— å“åº”
+ * @note   å…¸å‹è€—æ—¶ï¼š80sï¼Œæœ€å¤§ï¼š400s
+ * @note   å±é™©æ“ä½œï¼šä¼šæ¸…é™¤æ‰€æœ‰æ•°æ®
+ * @note   Flashä½¿ç”¨æ—¶é—´è¶Šé•¿ï¼Œæ“¦é™¤æ‰€éœ€æ—¶é—´è¶Šé•¿
  */
-int8_t QSPI_W25Qxx_ChipErase(void)
-{
-	QSPI_CommandTypeDef s_command;	  // QSPI´«ÊäÅäÖÃ
-	QSPI_AutoPollingTypeDef s_config; // ÂÖÑ¯µÈ´ıÅäÖÃ²ÎÊı
+int8_t QSPI_W25Qxx_ChipErase(void) {
+  QSPI_CommandTypeDef s_command;    // QSPIä¼ è¾“é…ç½®
+  QSPI_AutoPollingTypeDef s_config; // è½®è¯¢ç­‰å¾…é…ç½®å‚æ•°
 
-	s_command.InstructionMode = QSPI_INSTRUCTION_1_LINE;	 // 1ÏßÖ¸ÁîÄ£Ê½
-	s_command.AddressSize = QSPI_ADDRESS_32_BITS;			 // 32Î»µØÖ·
-	s_command.AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE; //	ÎŞ½»Ìæ×Ö½Ú
-	s_command.DdrMode = QSPI_DDR_MODE_DISABLE;				 // ½ûÖ¹DDRÄ£Ê½
-	s_command.DdrHoldHalfCycle = QSPI_DDR_HHC_ANALOG_DELAY;	 // DDRÄ£Ê½ÖĞÊı¾İÑÓ³Ù£¬ÕâÀïÓÃ²»µ½
-	s_command.SIOOMode = QSPI_SIOO_INST_EVERY_CMD;			 // Ã¿´Î´«ÊäÊı¾İ¶¼·¢ËÍÖ¸Áî
-	s_command.AddressMode = QSPI_ADDRESS_NONE;				 // ÎŞµØÖ·
-	s_command.DataMode = QSPI_DATA_NONE;					 // ÎŞÊı¾İ
-	s_command.DummyCycles = 0;								 // ¿ÕÖÜÆÚ¸öÊı
-	s_command.Instruction = W25Qxx_CMD_ChipErase;			 // ²Á³ıÃüÁî£¬½øĞĞÕûÆ¬²Á³ı
+  s_command.InstructionMode = QSPI_INSTRUCTION_1_LINE;     // 1çº¿æŒ‡ä»¤æ¨¡å¼
+  s_command.AddressSize = QSPI_ADDRESS_32_BITS;            // 32ä½åœ°å€
+  s_command.AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE; //	æ— äº¤æ›¿å­—èŠ‚
+  s_command.DdrMode = QSPI_DDR_MODE_DISABLE;               // ç¦æ­¢DDRæ¨¡å¼
+  s_command.DdrHoldHalfCycle =
+      QSPI_DDR_HHC_ANALOG_DELAY; // DDRæ¨¡å¼ä¸­æ•°æ®å»¶è¿Ÿï¼Œè¿™é‡Œç”¨ä¸åˆ°
+  s_command.SIOOMode = QSPI_SIOO_INST_EVERY_CMD; // æ¯æ¬¡ä¼ è¾“æ•°æ®éƒ½å‘é€æŒ‡ä»¤
+  s_command.AddressMode = QSPI_ADDRESS_NONE; // æ— åœ°å€
+  s_command.DataMode = QSPI_DATA_NONE;       // æ— æ•°æ®
+  s_command.DummyCycles = 0;                 // ç©ºå‘¨æœŸä¸ªæ•°
+  s_command.Instruction = W25Qxx_CMD_ChipErase; // æ“¦é™¤å‘½ä»¤ï¼Œè¿›è¡Œæ•´ç‰‡æ“¦é™¤
 
-	// ·¢ËÍĞ´Ê¹ÄÜ
-	if (QSPI_W25Qxx_WriteEnable() != QSPI_W25Qxx_OK)
-	{
-		DEBUG_ERROR("QSPI FlashĞ´Ê¹ÄÜÊ§°Ü");
-		return W25Qxx_ERROR_WriteEnable; // Ğ´Ê¹ÄÜÊ§°Ü
-	}
-	// ·¢³ö²Á³ıÃüÁî
-	if (HAL_QSPI_Command(&hqspi, &s_command, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
-	{
-		DEBUG_ERROR("QSPI Flash²Á³ıÃüÁî·¢ËÍÊ§°Ü");
-		return W25Qxx_ERROR_Erase; // ²Á³ıÊ§°Ü
-	}
+  // å‘é€å†™ä½¿èƒ½
+  if (QSPI_W25Qxx_WriteEnable() != QSPI_W25Qxx_OK) {
+    DEBUG_ERROR("QSPI Flashå†™ä½¿èƒ½å¤±è´¥");
+    return W25Qxx_ERROR_WriteEnable; // å†™ä½¿èƒ½å¤±è´¥
+  }
+  // å‘å‡ºæ“¦é™¤å‘½ä»¤
+  if (HAL_QSPI_Command(&hqspi, &s_command, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) !=
+      HAL_OK) {
+    DEBUG_ERROR("QSPI Flashæ“¦é™¤å‘½ä»¤å‘é€å¤±è´¥");
+    return W25Qxx_ERROR_Erase; // æ“¦é™¤å¤±è´¥
+  }
 
-	// ²»Í£µÄ²éÑ¯ W25Qxx_CMD_ReadStatus_REG1 ¼Ä´æÆ÷£¬½«¶ÁÈ¡µ½µÄ×´Ì¬×Ö½ÚÖĞµÄ W25Qxx_Status_REG1_BUSY ²»Í£µÄÓë0×÷±È½Ï
-	// ¶Á×´Ì¬¼Ä´æÆ÷1µÄµÚ0Î»£¨Ö»¶Á£©£¬Busy±êÖ¾Î»£¬µ±ÕıÔÚ²Á³ı/Ğ´ÈëÊı¾İ/Ğ´ÃüÁîÊ±»á±»ÖÃ1£¬¿ÕÏĞ»òÍ¨ĞÅ½áÊøÎª0
+  // ä¸åœçš„æŸ¥è¯¢ W25Qxx_CMD_ReadStatus_REG1 å¯„å­˜å™¨ï¼Œå°†è¯»å–åˆ°çš„çŠ¶æ€å­—èŠ‚ä¸­çš„
+  // W25Qxx_Status_REG1_BUSY ä¸åœçš„ä¸0ä½œæ¯”è¾ƒ
+  // è¯»çŠ¶æ€å¯„å­˜å™¨1çš„ç¬¬0ä½ï¼ˆåªè¯»ï¼‰ï¼ŒBusyæ ‡å¿—ä½ï¼Œå½“æ­£åœ¨æ“¦é™¤/å†™å…¥æ•°æ®/å†™å‘½ä»¤æ—¶ä¼šè¢«ç½®1ï¼Œç©ºé—²æˆ–é€šä¿¡ç»“æŸä¸º0
 
-	s_config.Match = 0;									 //	Æ¥ÅäÖµ
-	s_config.MatchMode = QSPI_MATCH_MODE_AND;			 //	ÓëÔËËã
-	s_config.Interval = 0x10;							 //	ÂÖÑ¯¼ä¸ô
-	s_config.AutomaticStop = QSPI_AUTOMATIC_STOP_ENABLE; // ×Ô¶¯Í£Ö¹Ä£Ê½
-	s_config.StatusBytesSize = 1;						 //	×´Ì¬×Ö½ÚÊı
-	s_config.Mask = W25Qxx_Status_REG1_BUSY;			 // ¶ÔÔÚÂÖÑ¯Ä£Ê½ÏÂ½ÓÊÕµÄ×´Ì¬×Ö½Ú½øĞĞÆÁ±Î£¬Ö»±È½ÏĞèÒªÓÃµ½µÄÎ»
+  s_config.Match = 0;                                  //	åŒ¹é…å€¼
+  s_config.MatchMode = QSPI_MATCH_MODE_AND;            //	ä¸è¿ç®—
+  s_config.Interval = 0x10;                            //	è½®è¯¢é—´éš”
+  s_config.AutomaticStop = QSPI_AUTOMATIC_STOP_ENABLE; // è‡ªåŠ¨åœæ­¢æ¨¡å¼
+  s_config.StatusBytesSize = 1;                        //	çŠ¶æ€å­—èŠ‚æ•°
+  s_config.Mask =
+      W25Qxx_Status_REG1_BUSY; // å¯¹åœ¨è½®è¯¢æ¨¡å¼ä¸‹æ¥æ”¶çš„çŠ¶æ€å­—èŠ‚è¿›è¡Œå±è”½ï¼Œåªæ¯”è¾ƒéœ€è¦ç”¨åˆ°çš„ä½
 
-	s_command.Instruction = W25Qxx_CMD_ReadStatus_REG1; // ¶Á×´Ì¬ĞÅÏ¢¼Ä´æÆ÷
-	s_command.DataMode = QSPI_DATA_1_LINE;				// 1ÏßÊı¾İÄ£Ê½
-	s_command.NbData = 1;								// Êı¾İ³¤¶È
+  s_command.Instruction = W25Qxx_CMD_ReadStatus_REG1; // è¯»çŠ¶æ€ä¿¡æ¯å¯„å­˜å™¨
+  s_command.DataMode = QSPI_DATA_1_LINE;              // 1çº¿æ•°æ®æ¨¡å¼
+  s_command.NbData = 1;                               // æ•°æ®é•¿åº¦
 
-	// W25Q256ÕûÆ¬²Á³ıµÄµäĞÍ²Î¿¼Ê±¼äÎª20s£¬×î´óÊ±¼äÎª100s£¬ÕâÀïµÄ³¬Ê±µÈ´ıÖµ W25Qxx_ChipErase_TIMEOUT_MAX Îª 100S
-	if (HAL_QSPI_AutoPolling(&hqspi, &s_command, &s_config, W25Qxx_ChipErase_TIMEOUT_MAX) != HAL_OK)
-	{
-		DEBUG_ERROR("QSPI Flash²Á³ıÊ§°Ü");
-		return W25Qxx_ERROR_AUTOPOLLING; // ÂÖÑ¯µÈ´ıÎŞÏìÓ¦
-	}
-	return QSPI_W25Qxx_OK;
+  // W25Q256æ•´ç‰‡æ“¦é™¤çš„å…¸å‹å‚è€ƒæ—¶é—´ä¸º20sï¼Œæœ€å¤§æ—¶é—´ä¸º100sï¼Œè¿™é‡Œçš„è¶…æ—¶ç­‰å¾…å€¼
+  // W25Qxx_ChipErase_TIMEOUT_MAX ä¸º 100S
+  if (HAL_QSPI_AutoPolling(&hqspi, &s_command, &s_config,
+                           W25Qxx_ChipErase_TIMEOUT_MAX) != HAL_OK) {
+    DEBUG_ERROR("QSPI Flashæ“¦é™¤å¤±è´¥");
+    return W25Qxx_ERROR_AUTOPOLLING; // è½®è¯¢ç­‰å¾…æ— å“åº”
+  }
+  return QSPI_W25Qxx_OK;
 }
 
 /**
- * @brief  Ò³Ğ´Èë£¨×î´ó256×Ö½Ú£©
- * @param  pBuffer: Êı¾İ»º³åÇøÖ¸Õë
- * @param  WriteAddr: Ğ´ÈëµØÖ·
- * @param  NumByteToWrite: Ğ´Èë×Ö½ÚÊı£¨¡Ü256£©
- * @retval QSPI_W25Qxx_OK - Ğ´Èë³É¹¦
- * @retval W25Qxx_ERROR_WriteEnable - Ğ´Ê¹ÄÜÊ§°Ü
- * @retval W25Qxx_ERROR_TRANSMIT - ´«ÊäÊ§°Ü
- * @retval W25Qxx_ERROR_AUTOPOLLING - ÂÖÑ¯µÈ´ıÎŞÏìÓ¦
- * @note   Ğ´ÈëÇ°±ØĞëÏÈ²Á³ı
- * @note   µäĞÍºÄÊ±£º0.4ms/Ò³£¬×î´ó£º3ms
- * @note   FlashÊ¹ÓÃÊ±¼äÔ½³¤£¬Ğ´ÈëËùĞèÊ±¼äÔ½³¤
+ * @brief  é¡µå†™å…¥ï¼ˆæœ€å¤§256å­—èŠ‚ï¼‰
+ * @param  pBuffer: æ•°æ®ç¼“å†²åŒºæŒ‡é’ˆ
+ * @param  WriteAddr: å†™å…¥åœ°å€
+ * @param  NumByteToWrite: å†™å…¥å­—èŠ‚æ•°ï¼ˆâ‰¤256ï¼‰
+ * @retval QSPI_W25Qxx_OK - å†™å…¥æˆåŠŸ
+ * @retval W25Qxx_ERROR_WriteEnable - å†™ä½¿èƒ½å¤±è´¥
+ * @retval W25Qxx_ERROR_TRANSMIT - ä¼ è¾“å¤±è´¥
+ * @retval W25Qxx_ERROR_AUTOPOLLING - è½®è¯¢ç­‰å¾…æ— å“åº”
+ * @note   å†™å…¥å‰å¿…é¡»å…ˆæ“¦é™¤
+ * @note   å…¸å‹è€—æ—¶ï¼š0.4ms/é¡µï¼Œæœ€å¤§ï¼š3ms
+ * @note   Flashä½¿ç”¨æ—¶é—´è¶Šé•¿ï¼Œå†™å…¥æ‰€éœ€æ—¶é—´è¶Šé•¿
  */
-int8_t QSPI_W25Qxx_WritePage(uint8_t *pBuffer, uint32_t WriteAddr, uint16_t NumByteToWrite)
-{
-	QSPI_CommandTypeDef s_command; // QSPI´«ÊäÅäÖÃ
+int8_t QSPI_W25Qxx_WritePage(uint8_t *pBuffer, uint32_t WriteAddr,
+                             uint16_t NumByteToWrite) {
+  QSPI_CommandTypeDef s_command; // QSPIä¼ è¾“é…ç½®
 
-	s_command.InstructionMode = QSPI_INSTRUCTION_1_LINE;	 // 1ÏßÖ¸ÁîÄ£Ê½
-	s_command.AddressSize = QSPI_ADDRESS_32_BITS;			 // 32Î»µØÖ·
-	s_command.AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE; // ÎŞ½»Ìæ×Ö½Ú
-	s_command.DdrMode = QSPI_DDR_MODE_DISABLE;				 // ½ûÖ¹DDRÄ£Ê½
-	s_command.DdrHoldHalfCycle = QSPI_DDR_HHC_ANALOG_DELAY;	 // DDRÄ£Ê½ÖĞÊı¾İÑÓ³Ù£¬ÕâÀïÓÃ²»µ½
-	s_command.SIOOMode = QSPI_SIOO_INST_EVERY_CMD;			 // Ã¿´Î´«ÊäÊı¾İ¶¼·¢ËÍÖ¸Áî
-	s_command.AddressMode = QSPI_ADDRESS_1_LINE;			 // 1ÏßµØÖ·Ä£Ê½
-	s_command.DataMode = QSPI_DATA_4_LINES;					 // 4ÏßÊı¾İÄ£Ê½
-	s_command.DummyCycles = 0;								 // ¿ÕÖÜÆÚ¸öÊı
-	s_command.NbData = NumByteToWrite;						 // Êı¾İ³¤¶È£¬×î´óÖ»ÄÜ256×Ö½Ú
-	s_command.Address = WriteAddr;							 // ÒªĞ´Èë W25Qxx µÄµØÖ·
-	s_command.Instruction = W25Qxx_CMD_QuadInputPageProgram; // 1-1-4Ä£Ê½ÏÂ(1ÏßÖ¸Áî1ÏßµØÖ·4ÏßÊı¾İ)£¬Ò³±à³ÌÖ¸Áî
+  s_command.InstructionMode = QSPI_INSTRUCTION_1_LINE;     // 1çº¿æŒ‡ä»¤æ¨¡å¼
+  s_command.AddressSize = QSPI_ADDRESS_32_BITS;            // 32ä½åœ°å€
+  s_command.AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE; // æ— äº¤æ›¿å­—èŠ‚
+  s_command.DdrMode = QSPI_DDR_MODE_DISABLE;               // ç¦æ­¢DDRæ¨¡å¼
+  s_command.DdrHoldHalfCycle =
+      QSPI_DDR_HHC_ANALOG_DELAY; // DDRæ¨¡å¼ä¸­æ•°æ®å»¶è¿Ÿï¼Œè¿™é‡Œç”¨ä¸åˆ°
+  s_command.SIOOMode = QSPI_SIOO_INST_EVERY_CMD; // æ¯æ¬¡ä¼ è¾“æ•°æ®éƒ½å‘é€æŒ‡ä»¤
+  s_command.AddressMode = QSPI_ADDRESS_1_LINE; // 1çº¿åœ°å€æ¨¡å¼
+  s_command.DataMode = QSPI_DATA_4_LINES;      // 4çº¿æ•°æ®æ¨¡å¼
+  s_command.DummyCycles = 0;                   // ç©ºå‘¨æœŸä¸ªæ•°
+  s_command.NbData = NumByteToWrite; // æ•°æ®é•¿åº¦ï¼Œæœ€å¤§åªèƒ½256å­—èŠ‚
+  s_command.Address = WriteAddr;     // è¦å†™å…¥ W25Qxx çš„åœ°å€
+  s_command.Instruction =
+      W25Qxx_CMD_QuadInputPageProgram; // 1-1-4æ¨¡å¼ä¸‹(1çº¿æŒ‡ä»¤1çº¿åœ°å€4çº¿æ•°æ®)ï¼Œé¡µç¼–ç¨‹æŒ‡ä»¤
 
-	// Ğ´Ê¹ÄÜ
-	if (QSPI_W25Qxx_WriteEnable() != QSPI_W25Qxx_OK)
-	{
-		DEBUG_ERROR("QSPI FlashĞ´Ê¹ÄÜÊ§°Ü");
-		return W25Qxx_ERROR_WriteEnable; // Ğ´Ê¹ÄÜÊ§°Ü
-	}
-	// Ğ´ÃüÁî
-	if (HAL_QSPI_Command(&hqspi, &s_command, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
-	{
-		DEBUG_ERROR("QSPI FlashĞ´ÃüÁî·¢ËÍÊ§°Ü");
-		return W25Qxx_ERROR_TRANSMIT; // ´«ÊäÊı¾İ´íÎó
-	}
-	// ¿ªÊ¼´«ÊäÊı¾İ
-	if (HAL_QSPI_Transmit(&hqspi, pBuffer, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
-	{
-		DEBUG_ERROR("QSPI FlashĞ´Êı¾İÊ§°Ü");
-		return W25Qxx_ERROR_TRANSMIT; // ´«ÊäÊı¾İ´íÎó
-	}
-	// Ê¹ÓÃ×Ô¶¯ÂÖÑ¯±êÖ¾Î»£¬µÈ´ıĞ´ÈëµÄ½áÊø
-	if (QSPI_W25Qxx_AutoPollingMemReady() != QSPI_W25Qxx_OK)
-	{
-		DEBUG_ERROR("QSPI FlashĞ´ÈëÊ§°Ü");
-		return W25Qxx_ERROR_AUTOPOLLING; // ÂÖÑ¯µÈ´ıÎŞÏìÓ¦
-	}
-	return QSPI_W25Qxx_OK; // Ğ´Êı¾İ³É¹¦
+  // å†™ä½¿èƒ½
+  if (QSPI_W25Qxx_WriteEnable() != QSPI_W25Qxx_OK) {
+    DEBUG_ERROR("QSPI Flashå†™ä½¿èƒ½å¤±è´¥");
+    return W25Qxx_ERROR_WriteEnable; // å†™ä½¿èƒ½å¤±è´¥
+  }
+  // å†™å‘½ä»¤
+  if (HAL_QSPI_Command(&hqspi, &s_command, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) !=
+      HAL_OK) {
+    DEBUG_ERROR("QSPI Flashå†™å‘½ä»¤å‘é€å¤±è´¥");
+    return W25Qxx_ERROR_TRANSMIT; // ä¼ è¾“æ•°æ®é”™è¯¯
+  }
+  // å¼€å§‹ä¼ è¾“æ•°æ®
+  if (HAL_QSPI_Transmit(&hqspi, pBuffer, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) !=
+      HAL_OK) {
+    DEBUG_ERROR("QSPI Flashå†™æ•°æ®å¤±è´¥");
+    return W25Qxx_ERROR_TRANSMIT; // ä¼ è¾“æ•°æ®é”™è¯¯
+  }
+  // ä½¿ç”¨è‡ªåŠ¨è½®è¯¢æ ‡å¿—ä½ï¼Œç­‰å¾…å†™å…¥çš„ç»“æŸ
+  if (QSPI_W25Qxx_AutoPollingMemReady() != QSPI_W25Qxx_OK) {
+    DEBUG_ERROR("QSPI Flashå†™å…¥å¤±è´¥");
+    return W25Qxx_ERROR_AUTOPOLLING; // è½®è¯¢ç­‰å¾…æ— å“åº”
+  }
+  return QSPI_W25Qxx_OK; // å†™æ•°æ®æˆåŠŸ
 }
 
 /**
- * @brief  »º³åÇøĞ´Èë£¨ÈÎÒâ³¤¶È£©
- * @param  pBuffer: Êı¾İ»º³åÇøÖ¸Õë
- * @param  WriteAddr: Ğ´ÈëµØÖ·
- * @param  Size: Ğ´Èë×Ö½ÚÊı£¨¡ÜFlashÈİÁ¿£©
- * @retval QSPI_W25Qxx_OK - Ğ´Èë³É¹¦
- * @retval W25Qxx_ERROR_WriteEnable - Ğ´Ê¹ÄÜÊ§°Ü
- * @retval W25Qxx_ERROR_TRANSMIT - ´«ÊäÊ§°Ü
- * @retval W25Qxx_ERROR_AUTOPOLLING - ÂÖÑ¯µÈ´ıÎŞÏìÓ¦
- * @note   Ğ´ÈëÇ°±ØĞëÏÈ²Á³ı
- * @note   ×Ô¶¯¿çÒ³´¦Àí
- * @note   FlashÊ¹ÓÃÊ±¼äÔ½³¤£¬Ğ´ÈëËùĞèÊ±¼äÔ½³¤
+ * @brief  ç¼“å†²åŒºå†™å…¥ï¼ˆä»»æ„é•¿åº¦ï¼‰
+ * @param  pBuffer: æ•°æ®ç¼“å†²åŒºæŒ‡é’ˆ
+ * @param  WriteAddr: å†™å…¥åœ°å€
+ * @param  Size: å†™å…¥å­—èŠ‚æ•°ï¼ˆâ‰¤Flashå®¹é‡ï¼‰
+ * @retval QSPI_W25Qxx_OK - å†™å…¥æˆåŠŸ
+ * @retval W25Qxx_ERROR_WriteEnable - å†™ä½¿èƒ½å¤±è´¥
+ * @retval W25Qxx_ERROR_TRANSMIT - ä¼ è¾“å¤±è´¥
+ * @retval W25Qxx_ERROR_AUTOPOLLING - è½®è¯¢ç­‰å¾…æ— å“åº”
+ * @note   å†™å…¥å‰å¿…é¡»å…ˆæ“¦é™¤
+ * @note   è‡ªåŠ¨è·¨é¡µå¤„ç†
+ * @note   Flashä½¿ç”¨æ—¶é—´è¶Šé•¿ï¼Œå†™å…¥æ‰€éœ€æ—¶é—´è¶Šé•¿
  */
-int8_t QSPI_W25Qxx_WriteBuffer(uint8_t *pBuffer, uint32_t WriteAddr, uint32_t Size)
-{
-	uint32_t end_addr, current_size, current_addr;
-	uint8_t *write_data; // ÒªĞ´ÈëµÄÊı¾İ
+int8_t QSPI_W25Qxx_WriteBuffer(uint8_t *pBuffer, uint32_t WriteAddr,
+                               uint32_t Size) {
+  uint32_t end_addr, current_size, current_addr;
+  uint8_t *write_data; // è¦å†™å…¥çš„æ•°æ®
 
-	current_size = W25Qxx_PageSize - (WriteAddr % W25Qxx_PageSize); // ¼ÆËãµ±Ç°Ò³»¹Ê£ÓàµÄ¿Õ¼ä
+  current_size =
+      W25Qxx_PageSize - (WriteAddr % W25Qxx_PageSize); // è®¡ç®—å½“å‰é¡µè¿˜å‰©ä½™çš„ç©ºé—´
 
-	if (current_size > Size) // ÅĞ¶Ïµ±Ç°Ò³Ê£ÓàµÄ¿Õ¼äÊÇ·ñ×ã¹»Ğ´ÈëËùÓĞÊı¾İ
-	{
-		current_size = Size; // Èç¹û×ã¹»£¬ÔòÖ±½Ó»ñÈ¡µ±Ç°³¤¶È
-	}
+  if (current_size > Size) // åˆ¤æ–­å½“å‰é¡µå‰©ä½™çš„ç©ºé—´æ˜¯å¦è¶³å¤Ÿå†™å…¥æ‰€æœ‰æ•°æ®
+  {
+    current_size = Size; // å¦‚æœè¶³å¤Ÿï¼Œåˆ™ç›´æ¥è·å–å½“å‰é•¿åº¦
+  }
 
-	current_addr = WriteAddr;	 // »ñÈ¡ÒªĞ´ÈëµÄµØÖ·
-	end_addr = WriteAddr + Size; // ¼ÆËã½áÊøµØÖ·
-	write_data = pBuffer;		 // »ñÈ¡ÒªĞ´ÈëµÄÊı¾İ
+  current_addr = WriteAddr;    // è·å–è¦å†™å…¥çš„åœ°å€
+  end_addr = WriteAddr + Size; // è®¡ç®—ç»“æŸåœ°å€
+  write_data = pBuffer;        // è·å–è¦å†™å…¥çš„æ•°æ®
 
-	do
-	{
-		// ·¢ËÍĞ´Ê¹ÄÜ
-		if (QSPI_W25Qxx_WriteEnable() != QSPI_W25Qxx_OK)
-		{
-			DEBUG_ERROR("QSPI FlashĞ´Ê¹ÄÜÊ§°Ü");
-			return W25Qxx_ERROR_WriteEnable;
-		}
+  do {
+    // å‘é€å†™ä½¿èƒ½
+    if (QSPI_W25Qxx_WriteEnable() != QSPI_W25Qxx_OK) {
+      DEBUG_ERROR("QSPI Flashå†™ä½¿èƒ½å¤±è´¥");
+      return W25Qxx_ERROR_WriteEnable;
+    }
 
-		// °´Ò³Ğ´ÈëÊı¾İ
-		else if (QSPI_W25Qxx_WritePage(write_data, current_addr, current_size) != QSPI_W25Qxx_OK)
-		{
-			DEBUG_ERROR("QSPI FlashĞ´ÈëÊ§°Ü");
-			return W25Qxx_ERROR_TRANSMIT;
-		}
+    // æŒ‰é¡µå†™å…¥æ•°æ®
+    else if (QSPI_W25Qxx_WritePage(write_data, current_addr, current_size) !=
+             QSPI_W25Qxx_OK) {
+      DEBUG_ERROR("QSPI Flashå†™å…¥å¤±è´¥");
+      return W25Qxx_ERROR_TRANSMIT;
+    }
 
-		// Ê¹ÓÃ×Ô¶¯ÂÖÑ¯±êÖ¾Î»£¬µÈ´ıĞ´ÈëµÄ½áÊø
-		else if (QSPI_W25Qxx_AutoPollingMemReady() != QSPI_W25Qxx_OK)
-		{
-			DEBUG_ERROR("QSPI FlashĞ´ÈëÊ§°Ü");
-			return W25Qxx_ERROR_AUTOPOLLING;
-		}
+    // ä½¿ç”¨è‡ªåŠ¨è½®è¯¢æ ‡å¿—ä½ï¼Œç­‰å¾…å†™å…¥çš„ç»“æŸ
+    else if (QSPI_W25Qxx_AutoPollingMemReady() != QSPI_W25Qxx_OK) {
+      DEBUG_ERROR("QSPI Flashå†™å…¥å¤±è´¥");
+      return W25Qxx_ERROR_AUTOPOLLING;
+    }
 
-		else // °´Ò³Ğ´ÈëÊı¾İ³É¹¦£¬½øĞĞÏÂÒ»´ÎĞ´Êı¾İµÄ×¼±¸¹¤×÷
-		{
-			current_addr += current_size; // ¼ÆËãÏÂÒ»´ÎÒªĞ´ÈëµÄµØÖ·
-			write_data += current_size;	  // »ñÈ¡ÏÂÒ»´ÎÒªĞ´ÈëµÄÊı¾İ´æ´¢ÇøµØÖ·
-			// ¼ÆËãÏÂÒ»´ÎĞ´Êı¾İµÄ³¤¶È
-			current_size = ((current_addr + W25Qxx_PageSize) > end_addr) ? (end_addr - current_addr) : W25Qxx_PageSize;
-		}
-	} while (current_addr < end_addr); // ÅĞ¶ÏÊı¾İÊÇ·ñÈ«²¿Ğ´ÈëÍê±Ï
-	return QSPI_W25Qxx_OK; // Ğ´ÈëÊı¾İ³É¹¦
+    else // æŒ‰é¡µå†™å…¥æ•°æ®æˆåŠŸï¼Œè¿›è¡Œä¸‹ä¸€æ¬¡å†™æ•°æ®çš„å‡†å¤‡å·¥ä½œ
+    {
+      current_addr += current_size; // è®¡ç®—ä¸‹ä¸€æ¬¡è¦å†™å…¥çš„åœ°å€
+      write_data += current_size; // è·å–ä¸‹ä¸€æ¬¡è¦å†™å…¥çš„æ•°æ®å­˜å‚¨åŒºåœ°å€
+      // è®¡ç®—ä¸‹ä¸€æ¬¡å†™æ•°æ®çš„é•¿åº¦
+      current_size = ((current_addr + W25Qxx_PageSize) > end_addr)
+                         ? (end_addr - current_addr)
+                         : W25Qxx_PageSize;
+    }
+  } while (current_addr < end_addr); // åˆ¤æ–­æ•°æ®æ˜¯å¦å…¨éƒ¨å†™å…¥å®Œæ¯•
+  return QSPI_W25Qxx_OK; // å†™å…¥æ•°æ®æˆåŠŸ
 }
 
 /**
- * @brief  »º³åÇø¶ÁÈ¡£¨ÈÎÒâ³¤¶È£©
- * @param  pBuffer: Êı¾İ»º³åÇøÖ¸Õë
- * @param  ReadAddr: ¶ÁÈ¡µØÖ·
- * @param  NumByteToRead: ¶ÁÈ¡×Ö½ÚÊı£¨¡ÜFlashÈİÁ¿£©
- * @retval QSPI_W25Qxx_OK - ¶ÁÈ¡³É¹¦
- * @retval W25Qxx_ERROR_TRANSMIT - ´«ÊäÊ§°Ü
- * @retval W25Qxx_ERROR_AUTOPOLLING - ÂÖÑ¯µÈ´ıÎŞÏìÓ¦
- * @note   Ê¹ÓÃ1-4-4Ä£Ê½¿ìËÙ¶ÁÈ¡£¨Fast Read Quad I/O, 0xEBÖ¸Áî£©
- * @note   ¶ÁÈ¡ËÙ¶ÈÊÜQSPIÊ±ÖÓ¡¢DMA¡¢Cache¡¢±àÒëÆ÷ÓÅ»¯µÈ¼¶Ó°Ïì
- * @note   Êı¾İ´æ´¢Î»ÖÃ£¨TCM SRAM / AXI SRAM£©Ò²»áÓ°ÏìĞÔÄÜ
- * @note   W25Q256JV×î¸ßÇı¶¯ÆµÂÊÎª133MHz
+ * @brief  ç¼“å†²åŒºè¯»å–ï¼ˆä»»æ„é•¿åº¦ï¼‰
+ * @param  pBuffer: æ•°æ®ç¼“å†²åŒºæŒ‡é’ˆ
+ * @param  ReadAddr: è¯»å–åœ°å€
+ * @param  NumByteToRead: è¯»å–å­—èŠ‚æ•°ï¼ˆâ‰¤Flashå®¹é‡ï¼‰
+ * @retval QSPI_W25Qxx_OK - è¯»å–æˆåŠŸ
+ * @retval W25Qxx_ERROR_TRANSMIT - ä¼ è¾“å¤±è´¥
+ * @retval W25Qxx_ERROR_AUTOPOLLING - è½®è¯¢ç­‰å¾…æ— å“åº”
+ * @note   ä½¿ç”¨1-4-4æ¨¡å¼å¿«é€Ÿè¯»å–ï¼ˆFast Read Quad I/O, 0xEBæŒ‡ä»¤ï¼‰
+ * @note   è¯»å–é€Ÿåº¦å—QSPIæ—¶é’Ÿã€DMAã€Cacheã€ç¼–è¯‘å™¨ä¼˜åŒ–ç­‰çº§å½±å“
+ * @note   æ•°æ®å­˜å‚¨ä½ç½®ï¼ˆTCM SRAM / AXI SRAMï¼‰ä¹Ÿä¼šå½±å“æ€§èƒ½
+ * @note   W25Q256JVæœ€é«˜é©±åŠ¨é¢‘ç‡ä¸º133MHz
  */
-int8_t QSPI_W25Qxx_ReadBuffer(uint8_t *pBuffer, uint32_t ReadAddr, uint32_t NumByteToRead)
-{
-	QSPI_CommandTypeDef s_command; // QSPI´«ÊäÅäÖÃ
+int8_t QSPI_W25Qxx_ReadBuffer(uint8_t *pBuffer, uint32_t ReadAddr,
+                              uint32_t NumByteToRead) {
+  QSPI_CommandTypeDef s_command; // QSPIä¼ è¾“é…ç½®
 
-	s_command.InstructionMode = QSPI_INSTRUCTION_1_LINE;	 // 1ÏßÖ¸ÁîÄ£Ê½
-	s_command.AddressSize = QSPI_ADDRESS_32_BITS;			 // 32Î»µØÖ·
-	s_command.AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE; // ÎŞ½»Ìæ×Ö½Ú
-	s_command.DdrMode = QSPI_DDR_MODE_DISABLE;				 // ½ûÖ¹DDRÄ£Ê½
-	s_command.DdrHoldHalfCycle = QSPI_DDR_HHC_ANALOG_DELAY;	 // DDRÄ£Ê½ÖĞÊı¾İÑÓ³Ù£¬ÕâÀïÓÃ²»µ½
-	s_command.SIOOMode = QSPI_SIOO_INST_EVERY_CMD;			 // Ã¿´Î´«ÊäÊı¾İ¶¼·¢ËÍÖ¸Áî
-	s_command.AddressMode = QSPI_ADDRESS_4_LINES;			 // 4ÏßµØÖ·Ä£Ê½
-	s_command.DataMode = QSPI_DATA_4_LINES;					 // 4ÏßÊı¾İÄ£Ê½
-	s_command.DummyCycles = 6;								 // ¿ÕÖÜÆÚ¸öÊı
-	s_command.NbData = NumByteToRead;						 // Êı¾İ³¤¶È£¬×î´ó²»ÄÜ³¬¹ıflashĞ¾Æ¬µÄ´óĞ¡
-	s_command.Address = ReadAddr;							 // Òª¶ÁÈ¡ W25Qxx µÄµØÖ·
-	s_command.Instruction = W25Qxx_CMD_FastReadQuad_IO;		 // 1-4-4Ä£Ê½ÏÂ(1ÏßÖ¸Áî4ÏßµØÖ·4ÏßÊı¾İ)£¬¿ìËÙ¶ÁÈ¡Ö¸Áî
+  s_command.InstructionMode = QSPI_INSTRUCTION_1_LINE;     // 1çº¿æŒ‡ä»¤æ¨¡å¼
+  s_command.AddressSize = QSPI_ADDRESS_32_BITS;            // 32ä½åœ°å€
+  s_command.AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE; // æ— äº¤æ›¿å­—èŠ‚
+  s_command.DdrMode = QSPI_DDR_MODE_DISABLE;               // ç¦æ­¢DDRæ¨¡å¼
+  s_command.DdrHoldHalfCycle =
+      QSPI_DDR_HHC_ANALOG_DELAY; // DDRæ¨¡å¼ä¸­æ•°æ®å»¶è¿Ÿï¼Œè¿™é‡Œç”¨ä¸åˆ°
+  s_command.SIOOMode = QSPI_SIOO_INST_EVERY_CMD; // æ¯æ¬¡ä¼ è¾“æ•°æ®éƒ½å‘é€æŒ‡ä»¤
+  s_command.AddressMode = QSPI_ADDRESS_4_LINES; // 4çº¿åœ°å€æ¨¡å¼
+  s_command.DataMode = QSPI_DATA_4_LINES;       // 4çº¿æ•°æ®æ¨¡å¼
+  s_command.DummyCycles = 6;                    // ç©ºå‘¨æœŸä¸ªæ•°
+  s_command.NbData = NumByteToRead; // æ•°æ®é•¿åº¦ï¼Œæœ€å¤§ä¸èƒ½è¶…è¿‡flashèŠ¯ç‰‡çš„å¤§å°
+  s_command.Address = ReadAddr; // è¦è¯»å– W25Qxx çš„åœ°å€
+  s_command.Instruction =
+      W25Qxx_CMD_FastReadQuad_IO; // 1-4-4æ¨¡å¼ä¸‹(1çº¿æŒ‡ä»¤4çº¿åœ°å€4çº¿æ•°æ®)ï¼Œå¿«é€Ÿè¯»å–æŒ‡ä»¤
 
-	// ·¢ËÍ¶ÁÈ¡ÃüÁî
-	if (HAL_QSPI_Command(&hqspi, &s_command, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
-	{
-		DEBUG_ERROR("QSPI Flash¶ÁÈ¡IDÊ§°Ü");
-		return W25Qxx_ERROR_TRANSMIT; // ´«ÊäÊı¾İ´íÎó
-	}
+  // å‘é€è¯»å–å‘½ä»¤
+  if (HAL_QSPI_Command(&hqspi, &s_command, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) !=
+      HAL_OK) {
+    DEBUG_ERROR("QSPI Flashè¯»å–IDå¤±è´¥");
+    return W25Qxx_ERROR_TRANSMIT; // ä¼ è¾“æ•°æ®é”™è¯¯
+  }
 
-	//	½ÓÊÕÊı¾İ
+  //	æ¥æ”¶æ•°æ®
 
-	if (HAL_QSPI_Receive(&hqspi, pBuffer, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
-	{
-		DEBUG_ERROR("QSPI Flash¶ÁÈ¡Êı¾İÊ§°Ü");
-		return W25Qxx_ERROR_TRANSMIT; // ´«ÊäÊı¾İ´íÎó
-	}
+  if (HAL_QSPI_Receive(&hqspi, pBuffer, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) !=
+      HAL_OK) {
+    DEBUG_ERROR("QSPI Flashè¯»å–æ•°æ®å¤±è´¥");
+    return W25Qxx_ERROR_TRANSMIT; // ä¼ è¾“æ•°æ®é”™è¯¯
+  }
 
-	// Ê¹ÓÃ×Ô¶¯ÂÖÑ¯±êÖ¾Î»£¬µÈ´ı½ÓÊÕµÄ½áÊø
-	if (QSPI_W25Qxx_AutoPollingMemReady() != QSPI_W25Qxx_OK)
-	{
-		DEBUG_ERROR("QSPI Flash¶ÁÈ¡Êı¾İÊ§°Ü");
-		return W25Qxx_ERROR_AUTOPOLLING; // ÂÖÑ¯µÈ´ıÎŞÏìÓ¦
-	}
-	return QSPI_W25Qxx_OK; // ¶ÁÈ¡Êı¾İ³É¹¦
+  // ä½¿ç”¨è‡ªåŠ¨è½®è¯¢æ ‡å¿—ä½ï¼Œç­‰å¾…æ¥æ”¶çš„ç»“æŸ
+  if (QSPI_W25Qxx_AutoPollingMemReady() != QSPI_W25Qxx_OK) {
+    DEBUG_ERROR("QSPI Flashè¯»å–æ•°æ®å¤±è´¥");
+    return W25Qxx_ERROR_AUTOPOLLING; // è½®è¯¢ç­‰å¾…æ— å“åº”
+  }
+  return QSPI_W25Qxx_OK; // è¯»å–æ•°æ®æˆåŠŸ
 }
 
 #endif

@@ -1,24 +1,24 @@
 /**
  ******************************************************************************
  * @file    sdram.h
- * @author  �˲�why��Bվ���˲�whyy��
- * @brief   SDRAM����ͷ�ļ�
+ * @author  菜菜why（B站：菜菜whyy）
+ * @brief   SDRAM驱动头文件
  ******************************************************************************
  * @attention
  *
- * ʹ�÷���:
- * 1. �ڳ�ʼ���׶ε��� SDRAM_Initialization_Sequence() ����SDRAM����
- * 2. ��ѡ������ SDRAM_Test() ����SDRAM��д���Ժ����ܲ���
+ * 使用方法:
+ * 1. 在初始化阶段调用 SDRAM_Initialization_Sequence() 配置SDRAM参数
+ * 2. 可选：调用 SDRAM_Test() 进行SDRAM读写测试和性能测试
  *
- * ����˵��:
- * - SDRAM_Size: ����SDRAM������Ĭ��16MB��
- * - SDRAM_BANK_ADDR: SDRAMӳ���ַ��ͨ��FMC���ã�
- * - ˢ�����Զ�����Ϊ1543��������64msˢ������
+ * 配置说明:
+ * - SDRAM_Size: 定义SDRAM容量（默认16MB）
+ * - SDRAM_BANK_ADDR: SDRAM映射地址（通过FMC配置）
+ * - 刷新率自动配置为1543，适用于64ms刷新周期
  *
- * ���Թ���:
- * - 32λ���ݿ��ȶ�д���Ժ����ܲ���
- * - 8λ���ݿ��ȶ�д���ԣ���֤NBL0/NBL1���ӣ�
- * - �Զ������д�ٶȣ���λ��MB/s��
+ * 测试功能:
+ * - 32位数据宽度读写测试和性能测试
+ * - 8位数据宽度读写测试（验证NBL0/NBL1连接）
+ * - 自动计算读写速度（单位：MB/s）
  *
  ******************************************************************************
  */
@@ -33,175 +33,175 @@ extern "C"
 
 #include "init.h"
     /*******************************************************************************
-     *                              SDRAM����궨��
+     *                              SDRAM句柄宏定义
      *******************************************************************************/
 
     /**
-     * @brief SDRAM����궨�壬���� Core/Src/fmc.c ��ȫ�ֱ��� hsdram1
+     * @brief SDRAM句柄宏定义，来自 Core/Src/fmc.c 的全局变量 hsdram1
      */
     #define SDRAM_HANDLE hsdram1
     extern SDRAM_HandleTypeDef hsdram1;
 
     /*******************************************************************************
-     *                              SDRAM���ò���
+     *                              SDRAM配置参数
      *******************************************************************************/
 
-#define SDRAM_Size 16 * 1024 * 1024 /*!< SDRAM�������壨16MB�� */
+#define SDRAM_Size 16 * 1024 * 1024 /*!< SDRAM容量定义（16MB） */
 
-#define SDRAM_BANK_ADDR ((uint32_t)0xC0000000)             /*!< FMC SDRAM���ݻ���ַ */
-#define FMC_COMMAND_TARGET_BANK FMC_SDRAM_CMD_TARGET_BANK1 /*!< SDRAM��Bankѡ�� */
-#define SDRAM_TIMEOUT ((uint32_t)0x1000)                   /*!< ������ʱʱ�� */
+#define SDRAM_BANK_ADDR ((uint32_t)0xC0000000)             /*!< FMC SDRAM数据基地址 */
+#define FMC_COMMAND_TARGET_BANK FMC_SDRAM_CMD_TARGET_BANK1 /*!< SDRAM的Bank选择 */
+#define SDRAM_TIMEOUT ((uint32_t)0x1000)                   /*!< 操作超时时间 */
 
     /*******************************************************************************
-     *                              SDRAMģʽ�Ĵ�������
+     *                              SDRAM模式寄存器配置
      *******************************************************************************/
 
-#define SDRAM_MODEREG_BURST_LENGTH_1 ((uint16_t)0x0000)             /*!< ͻ������=1 */
-#define SDRAM_MODEREG_BURST_LENGTH_2 ((uint16_t)0x0001)             /*!< ͻ������=2 */
-#define SDRAM_MODEREG_BURST_LENGTH_4 ((uint16_t)0x0002)             /*!< ͻ������=4 */
-#define SDRAM_MODEREG_BURST_LENGTH_8 ((uint16_t)0x0004)             /*!< ͻ������=8 */
-#define SDRAM_MODEREG_BURST_TYPE_SEQUENTIAL ((uint16_t)0x0000)      /*!< ˳��ͻ�� */
-#define SDRAM_MODEREG_BURST_TYPE_INTERLEAVED ((uint16_t)0x0008)     /*!< ����ͻ�� */
-#define SDRAM_MODEREG_CAS_LATENCY_2 ((uint16_t)0x0020)              /*!< CAS�ӳ�=2 */
-#define SDRAM_MODEREG_CAS_LATENCY_3 ((uint16_t)0x0030)              /*!< CAS�ӳ�=3 */
-#define SDRAM_MODEREG_OPERATING_MODE_STANDARD ((uint16_t)0x0000)    /*!< ��׼����ģʽ */
-#define SDRAM_MODEREG_WRITEBURST_MODE_PROGRAMMED ((uint16_t)0x0000) /*!< дͻ��ģʽ����� */
-#define SDRAM_MODEREG_WRITEBURST_MODE_SINGLE ((uint16_t)0x0200)     /*!< дͻ��ģʽ������ */
+#define SDRAM_MODEREG_BURST_LENGTH_1 ((uint16_t)0x0000)             /*!< 突发长度=1 */
+#define SDRAM_MODEREG_BURST_LENGTH_2 ((uint16_t)0x0001)             /*!< 突发长度=2 */
+#define SDRAM_MODEREG_BURST_LENGTH_4 ((uint16_t)0x0002)             /*!< 突发长度=4 */
+#define SDRAM_MODEREG_BURST_LENGTH_8 ((uint16_t)0x0004)             /*!< 突发长度=8 */
+#define SDRAM_MODEREG_BURST_TYPE_SEQUENTIAL ((uint16_t)0x0000)      /*!< 顺序突发 */
+#define SDRAM_MODEREG_BURST_TYPE_INTERLEAVED ((uint16_t)0x0008)     /*!< 交错突发 */
+#define SDRAM_MODEREG_CAS_LATENCY_2 ((uint16_t)0x0020)              /*!< CAS延迟=2 */
+#define SDRAM_MODEREG_CAS_LATENCY_3 ((uint16_t)0x0030)              /*!< CAS延迟=3 */
+#define SDRAM_MODEREG_OPERATING_MODE_STANDARD ((uint16_t)0x0000)    /*!< 标准操作模式 */
+#define SDRAM_MODEREG_WRITEBURST_MODE_PROGRAMMED ((uint16_t)0x0000) /*!< 写突发模式：编程 */
+#define SDRAM_MODEREG_WRITEBURST_MODE_SINGLE ((uint16_t)0x0200)     /*!< 写突发模式：单个 */
 
     /*******************************************************************************
-     *                              SDRAM��������
+     *                              SDRAM导出函数
      *******************************************************************************/
 
     /**
-     * @brief  SDRAM��ʼ������
-     * @note   ����SDRAMʱ����������͸��ֿ����������ˢ����
-     * @note   ������FMCӲ����ʼ��֮�����
-     * @note   �ڲ�ʹ�ú� SDRAM_HANDLE ���ʾ�������贫��
+     * @brief  SDRAM初始化序列
+     * @note   配置SDRAM时序参数、发送各种控制命令、设置刷新率
+     * @note   必须在FMC硬件初始化之后调用
+     * @note   内部使用宏 SDRAM_HANDLE 访问句柄，无需传参
      * @retval None
      *
-     * @par    ��ʼ������:
-     *         1. ����SDRAMʱ��
-     *         2. Ԥ�������Bank
-     *         3. �Զ�ˢ��8��
-     *         4. ����ģʽ�Ĵ���
-     *         5. ����ˢ����
+     * @par    初始化步骤:
+     *         1. 开启SDRAM时钟
+     *         2. 预充电所有Bank
+     *         3. 自动刷新8次
+     *         4. 加载模式寄存器
+     *         5. 配置刷新率
      */
     void SDRAM_Initialization_Sequence(void);
 
     /**
-     * @brief  SDRAM��д����
-     * @note   ִ�а���32λ��8λ���ݿ��ȵĶ�д����
-     * @note   ���Թ����л��ӡ�������ݺʹ�����Ϣ������
-     * @note   ��ʱԼ���룬����������ʱִ��
-     * @retval SUCCESS(0) - ����ͨ����ERROR(1) - ����ʧ��
+     * @brief  SDRAM读写测试
+     * @note   执行包括32位和8位数据宽度的读写测试
+     * @note   测试过程中会打印性能数据和错误信息到串口
+     * @note   用时约数秒，建议在启动时执行
+     * @retval SUCCESS(0) - 测试通过，ERROR(1) - 测试失败
      *
-     * @par    ������Ŀ:
-     *         1. 32λ���ݿ���д�����ܲ���
-     *         2. 32λ���ݿ��ȶ�ȡ���ܲ���
-     *         3. 32λ���ݿ��ȶ�дУ��
-     *         4. 8λ���ݿ��ȶ�дУ�飨����NBL0/NBL1���ţ�
+     * @par    测试项目:
+     *         1. 32位数据宽度写入性能测试
+     *         2. 32位数据宽度读取性能测试
+     *         3. 32位数据宽度读写校验
+     *         4. 8位数据宽度读写校验（测试NBL0/NBL1引脚）
      */
     uint8_t SDRAM_Test(void);
 
     /*******************************************************************************
-     *                         SDRAM��д���ܺ���
+     *                         SDRAM读写功能函数
      *******************************************************************************/
 
     /**
-     * @brief  ��SDRAMָ����ַд��8λ����
-     * @param  Address: Ŀ���ַ
-     * @param  Data: Ҫд���8λ����
+     * @brief  向SDRAM指定地址写入8位数据
+     * @param  Address: 目标地址
+     * @param  Data: 要写入的8位数据
      * @retval None
      */
     void SDRAM_Write_8bit(uint32_t Address, uint8_t Data);
 
     /**
-     * @brief  ��SDRAMָ����ַ��ȡ8λ����
-     * @param  Address: Ŀ���ַ
-     * @retval ��ȡ��8λ����
+     * @brief  从SDRAM指定地址读取8位数据
+     * @param  Address: 目标地址
+     * @retval 读取的8位数据
      */
     uint8_t SDRAM_Read_8bit(uint32_t Address);
 
     /**
-     * @brief  ��SDRAMָ����ַд��16λ����
-     * @param  Address: Ŀ���ַ
-     * @param  Data: Ҫд���16λ����
+     * @brief  向SDRAM指定地址写入16位数据
+     * @param  Address: 目标地址
+     * @param  Data: 要写入的16位数据
      * @retval None
      */
     void SDRAM_Write_16bit(uint32_t Address, uint16_t Data);
 
     /**
-     * @brief  ��SDRAMָ����ַ��ȡ16λ����
-     * @param  Address: Ŀ���ַ
-     * @retval ��ȡ��16λ����
+     * @brief  从SDRAM指定地址读取16位数据
+     * @param  Address: 目标地址
+     * @retval 读取的16位数据
      */
     uint16_t SDRAM_Read_16bit(uint32_t Address);
 
     /**
-     * @brief  ��SDRAMָ����ַд��32λ����
-     * @param  Address: Ŀ���ַ
-     * @param  Data: Ҫд���32λ����
+     * @brief  向SDRAM指定地址写入32位数据
+     * @param  Address: 目标地址
+     * @param  Data: 要写入的32位数据
      * @retval None
      */
     void SDRAM_Write_32bit(uint32_t Address, uint32_t Data);
 
     /**
-     * @brief  ��SDRAMָ����ַ��ȡ32λ����
-     * @param  Address: Ŀ���ַ
-     * @retval ��ȡ��32λ����
+     * @brief  从SDRAM指定地址读取32位数据
+     * @param  Address: 目标地址
+     * @retval 读取的32位数据
      */
     uint32_t SDRAM_Read_32bit(uint32_t Address);
 
     /**
-     * @brief  ��SDRAMд�����ݿ飨8λ��
-     * @param  Address: ��ʼ��ַ
-     * @param  pBuffer: ���ݻ�����ָ��
-     * @param  Length: Ҫд����ֽ���
-     * @retval SUCCESS - д��ɹ���ERROR - ��ַԽ��
+     * @brief  向SDRAM写入数据块（8位）
+     * @param  Address: 起始地址
+     * @param  pBuffer: 数据缓冲区指针
+     * @param  Length: 要写入的字节数
+     * @retval SUCCESS - 写入成功，ERROR - 地址越界
      */
     uint8_t SDRAM_WriteBuffer_8bit(uint32_t Address, uint8_t *pBuffer, uint32_t Length);
 
     /**
-     * @brief  ��SDRAM��ȡ���ݿ飨8λ��
-     * @param  Address: ��ʼ��ַ
-     * @param  pBuffer: ���ݻ�����ָ��
-     * @param  Length: Ҫ��ȡ���ֽ���
-     * @retval SUCCESS - ��ȡ�ɹ���ERROR - ��ַԽ��
+     * @brief  从SDRAM读取数据块（8位）
+     * @param  Address: 起始地址
+     * @param  pBuffer: 数据缓冲区指针
+     * @param  Length: 要读取的字节数
+     * @retval SUCCESS - 读取成功，ERROR - 地址越界
      */
     uint8_t SDRAM_ReadBuffer_8bit(uint32_t Address, uint8_t *pBuffer, uint32_t Length);
 
     /**
-     * @brief  ��SDRAMд�����ݿ飨32λ��
-     * @param  Address: ��ʼ��ַ������4�ֽڶ��룩
-     * @param  pBuffer: ���ݻ�����ָ�루32λָ�룩
-     * @param  Length: Ҫд���32λ���ݸ���
-     * @retval SUCCESS - д��ɹ���ERROR - ��ַԽ���δ����
+     * @brief  向SDRAM写入数据块（32位）
+     * @param  Address: 起始地址（必须4字节对齐）
+     * @param  pBuffer: 数据缓冲区指针（32位指针）
+     * @param  Length: 要写入的32位数据个数
+     * @retval SUCCESS - 写入成功，ERROR - 地址越界或未对齐
      */
     uint8_t SDRAM_WriteBuffer_32bit(uint32_t Address, uint32_t *pBuffer, uint32_t Length);
 
     /**
-     * @brief  ��SDRAM��ȡ���ݿ飨32λ��
-     * @param  Address: ��ʼ��ַ������4�ֽڶ��룩
-     * @param  pBuffer: ���ݻ�����ָ�루32λָ�룩
-     * @param  Length: Ҫ��ȡ��32λ���ݸ���
-     * @retval SUCCESS - ��ȡ�ɹ���ERROR - ��ַԽ���δ����
+     * @brief  从SDRAM读取数据块（32位）
+     * @param  Address: 起始地址（必须4字节对齐）
+     * @param  pBuffer: 数据缓冲区指针（32位指针）
+     * @param  Length: 要读取的32位数据个数
+     * @retval SUCCESS - 读取成功，ERROR - 地址越界或未对齐
      */
     uint8_t SDRAM_ReadBuffer_32bit(uint32_t Address, uint32_t *pBuffer, uint32_t Length);
 
     /**
-     * @brief  ʹ��ָ��ֵ���SDRAM�ڴ�����
-     * @param  Address: ��ʼ��ַ
-     * @param  Value: ���ֵ��8λ��
-     * @param  Length: Ҫ�����ֽ���
-     * @retval SUCCESS - ���ɹ���ERROR - ��ַԽ��
+     * @brief  使用指定值填充SDRAM内存区域
+     * @param  Address: 起始地址
+     * @param  Value: 填充值（8位）
+     * @param  Length: 要填充的字节数
+     * @retval SUCCESS - 填充成功，ERROR - 地址越界
      */
     uint8_t SDRAM_Fill_8bit(uint32_t Address, uint8_t Value, uint32_t Length);
 
     /**
-     * @brief  ���SDRAM�ڴ��������Ϊ0��
-     * @param  Address: ��ʼ��ַ
-     * @param  Length: Ҫ��յ��ֽ���
-     * @retval SUCCESS - ��ճɹ���ERROR - ��ַԽ��
+     * @brief  清空SDRAM内存区域（填充为0）
+     * @param  Address: 起始地址
+     * @param  Length: 要清空的字节数
+     * @retval SUCCESS - 清空成功，ERROR - 地址越界
      */
     uint8_t SDRAM_Clear(uint32_t Address, uint32_t Length);
 

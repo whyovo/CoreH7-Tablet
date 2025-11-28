@@ -1,1356 +1,1281 @@
 /**
  ******************************************************************************
  * @file    lcd_rgb.c
- * @author  ²Ë²Ëwhy£¨BÕ¾£º²Ë²Ëwhyy£©
- * @brief   RGB LCD 800*480·Ö±æÂÊÆÁÄ»Çı¶¯ÊµÏÖ (LTDC + DMA2D)
+ * @author  èœèœwhyï¼ˆBç«™ï¼šèœèœwhyyï¼‰
+ * @brief   RGB LCD 800*480åˆ†è¾¨ç‡å±å¹•é©±åŠ¨å®ç° (LTDC + DMA2D)
  ******************************************************************************
  * @attention
- * ËµÃ÷£º
- * 1. Ê¹ÓÃÍâ²¿SDRAM×÷ÎªÏÔ´æ£¬ÆğÊ¼µØÖ·0xC0000000
- * 2. LTDCÊ±ÖÓÅäÖÃÎª32MHz£¬Ë¢ĞÂÂÊÔ¼60Hz
- * 3. Ö§³ÖË«²ãÏÔÊ¾£¨Layer0±³¾°²ã + Layer1Ç°¾°²ã£©
- * 4. ÖĞÎÄ×Ö¿âÎªĞ¡×Ö¿â£¬ĞèÌáÇ°È¡Ä£
- * 5. ¸ÕÏÂÔØ³ÌĞòÊ±ÆÁÄ»¿ÉÄÜÓĞÇáÎ¢¶¶¶¯£¬µÈ´ıÆ¬¿Ì»òÖØĞÂÉÏµç¼´¿É»Ö¸´
+ * è¯´æ˜ï¼š
+ * 1. ä½¿ç”¨å¤–éƒ¨SDRAMä½œä¸ºæ˜¾å­˜ï¼Œèµ·å§‹åœ°å€0xC0000000
+ * 2. LTDCæ—¶é’Ÿé…ç½®ä¸º32MHzï¼Œåˆ·æ–°ç‡çº¦60Hz
+ * 3. æ”¯æŒåŒå±‚æ˜¾ç¤ºï¼ˆLayer0èƒŒæ™¯å±‚ + Layer1å‰æ™¯å±‚ï¼‰
+ * 4. ä¸­æ–‡å­—åº“ä¸ºå°å­—åº“ï¼Œéœ€æå‰å–æ¨¡
+ * 5. åˆšä¸‹è½½ç¨‹åºæ—¶å±å¹•å¯èƒ½æœ‰è½»å¾®æŠ–åŠ¨ï¼Œç­‰å¾…ç‰‡åˆ»æˆ–é‡æ–°ä¸Šç”µå³å¯æ¢å¤
  ******************************************************************************
  */
 
 #include "lcd_rgb.h"
 
-extern DMA2D_HandleTypeDef hdma2d; // DMA2D¾ä±ú
-extern LTDC_HandleTypeDef hltdc;   // LTDC¾ä±ú
+extern DMA2D_HandleTypeDef hdma2d; // DMA2Då¥æŸ„
+extern LTDC_HandleTypeDef hltdc;   // LTDCå¥æŸ„
 
-static pFONT *LCD_RGB_Fonts;   // ASCII×ÖÌå
-static pFONT *LCD_RGB_CHFonts; // ÖĞÎÄ×ÖÌå
+static pFONT *LCD_RGB_Fonts;   // ASCIIå­—ä½“
+static pFONT *LCD_RGB_CHFonts; // ä¸­æ–‡å­—ä½“
 
 /**
- * @brief RGB LCD²ÎÊı½á¹¹Ìå
+ * @brief RGB LCDå‚æ•°ç»“æ„ä½“
  */
-struct
-{
-	uint32_t Color;			 // RGB LCDµ±Ç°»­±ÊÑÕÉ«
-	uint32_t BackColor;		 // ±³¾°É«
-	uint32_t ColorMode;		 // ÑÕÉ«¸ñÊ½
-	uint32_t LayerMemoryAdd; // ²ãÏÔ´æµØÖ·
-	uint8_t Layer;			 // µ±Ç°²ã
-	uint8_t Direction;		 // ÏÔÊ¾·½Ïò
-	uint8_t BytesPerPixel;	 // Ã¿¸öÏñËØËùÕ¼×Ö½ÚÊı
-	uint8_t ShowNum_Mode;	 // Êı×ÖÏÔÊ¾Ä£Ê½
+struct {
+  uint32_t Color;          // RGB LCDå½“å‰ç”»ç¬”é¢œè‰²
+  uint32_t BackColor;      // èƒŒæ™¯è‰²
+  uint32_t ColorMode;      // é¢œè‰²æ ¼å¼
+  uint32_t LayerMemoryAdd; // å±‚æ˜¾å­˜åœ°å€
+  uint8_t Layer;           // å½“å‰å±‚
+  uint8_t Direction;       // æ˜¾ç¤ºæ–¹å‘
+  uint8_t BytesPerPixel;   // æ¯ä¸ªåƒç´ æ‰€å å­—èŠ‚æ•°
+  uint8_t ShowNum_Mode;    // æ•°å­—æ˜¾ç¤ºæ¨¡å¼
 } LCD_RGB;
 
 /****************************************************************************************************************************************
  * @name   RGB_LCD_GPIO_Init
- * @brief  ³õÊ¼»¯RGB LCD±³¹âÒı½Å
+ * @brief  åˆå§‹åŒ–RGB LCDèƒŒå…‰å¼•è„š
  * @param  None
  * @retval None
  ****************************************************************************************************************************************/
-void RGB_LCD_GPIO_Init(void)
-{
-	GPIO_InitTypeDef GPIO_InitStruct = {0};
+void RGB_LCD_GPIO_Init(void) {
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
 
-	RGB_GPIO_LDC_Backlight_CLK_ENABLE; 
+  RGB_GPIO_LDC_Backlight_CLK_ENABLE;
 
-	// ³õÊ¼»¯±³¹âÒı½Å
-	GPIO_InitStruct.Pin = RGB_LCD_Backlight_PIN;
-	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-	GPIO_InitStruct.Pull = GPIO_NOPULL;
-	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-	HAL_GPIO_Init(RGB_LCD_Backlight_PORT, &GPIO_InitStruct);
+  // åˆå§‹åŒ–èƒŒå…‰å¼•è„š
+  GPIO_InitStruct.Pin = RGB_LCD_Backlight_PIN;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(RGB_LCD_Backlight_PORT, &GPIO_InitStruct);
 
-	RGB_LCD_Backlight_OFF; 
+  RGB_LCD_Backlight_OFF;
 }
 
 /****************************************************************************************************************************************
  * @name   RGB_LCD_Init
- * @brief  ³õÊ¼»¯RGB LCDÆÁÄ»
+ * @brief  åˆå§‹åŒ–RGB LCDå±å¹•
  * @param  None
  * @retval None
- * @note   ÅäÖÃLTDC²ã²ÎÊı¡¢DMA2D¡¢±³¹âGPIO
+ * @note   é…ç½®LTDCå±‚å‚æ•°ã€DMA2Dã€èƒŒå…‰GPIO
  ****************************************************************************************************************************************/
-void RGB_LCD_Init(void)
-{
+void RGB_LCD_Init(void) {
 
-	
-	RGB_LCD_GPIO_Init(); // ³õÊ¼»¯LTDCÒı½ÅµÄ±³¹âÒı½Å
+  RGB_LCD_GPIO_Init(); // åˆå§‹åŒ–LTDCå¼•è„šçš„èƒŒå…‰å¼•è„š
 
-	/*---------------------------------- ³õÊ¼»¯Ò»Ğ©Ä¬ÈÏÅäÖÃ --------------------------------*/
+  /*---------------------------------- åˆå§‹åŒ–ä¸€äº›é»˜è®¤é…ç½®
+   * --------------------------------*/
 
-	RGB_LCD_DisplayDirection(Direction_H_RGB); // ÉèÖÃºáÆÁÏÔÊ¾
-	RGB_LCD_SetTextFont(24);				   // ÉèÖÃÄ¬ÈÏÖĞÓ¢ÎÄ×ÖÌå
-	RGB_LCD_ShowNumMode(Fill_Space_RGB);	   // ÉèÖÃÊı×ÖÏÔÊ¾Ä¬ÈÏÌî³ä¿Õ¸ñ
+  RGB_LCD_DisplayDirection(Direction_H_RGB); // è®¾ç½®æ¨ªå±æ˜¾ç¤º
+  RGB_LCD_SetTextFont(24);                   // è®¾ç½®é»˜è®¤ä¸­è‹±æ–‡å­—ä½“
+  RGB_LCD_ShowNumMode(Fill_Space_RGB);       // è®¾ç½®æ•°å­—æ˜¾ç¤ºé»˜è®¤å¡«å……ç©ºæ ¼
 
-	RGB_LCD_SetLayer(0);				 // ÇĞ»»µ½ layer0
-	RGB_LCD_SetBackColor(RGB_LCD_BLACK); // ÉèÖÃ±³¾°É«
-	RGB_LCD_SetColor(RGB_LCD_WHITE);	 // ÉèÖÃ»­±ÊÑÕÉ«
-	RGB_LCD_Clear();					 // ÇåÆÁ£¬Ë¢±³¾°É«
+  RGB_LCD_SetLayer(0);                 // åˆ‡æ¢åˆ° layer0
+  RGB_LCD_SetBackColor(RGB_LCD_BLACK); // è®¾ç½®èƒŒæ™¯è‰²
+  RGB_LCD_SetColor(RGB_LCD_WHITE);     // è®¾ç½®ç”»ç¬”é¢œè‰²
+  RGB_LCD_Clear();                     // æ¸…å±ï¼Œåˆ·èƒŒæ™¯è‰²
 
-	// LTDCÔÚ³õÊ¼»¯Ö®ºó£¬ÉÏµçµÄË²¼ä»áÓĞÒ»¸ö¶ÌÔİµÄ°×ÆÁ£¬
-	// ¼´Ê¹Ò»¿ªÊ¼¾Í½«±³¹âÒı½ÅÀ­µÍ²¢ÇÒÆÁÄ»±³¹âÒı½ÅÓÃµç×èÏÂÀ­»¹ÊÇ»áÓĞÕâ¸öÏÖÏó£¬
-	// Èç¹ûĞèÒªÏû³ıÕâ¸öÏÖÏó£¬¿ÉÒÔÔÚ³õÊ¼»¯Íê±ÏÖ®ºó£¬½øĞĞÒ»¸ö¶ÌÔİµÄÑÓÊ±ÔÙ´ò¿ª±³¹â
-	//
-	HAL_Delay(200);	// ÑÓÊ±200ms
+  // LTDCåœ¨åˆå§‹åŒ–ä¹‹åï¼Œä¸Šç”µçš„ç¬é—´ä¼šæœ‰ä¸€ä¸ªçŸ­æš‚çš„ç™½å±ï¼Œ
+  // å³ä½¿ä¸€å¼€å§‹å°±å°†èƒŒå…‰å¼•è„šæ‹‰ä½å¹¶ä¸”å±å¹•èƒŒå…‰å¼•è„šç”¨ç”µé˜»ä¸‹æ‹‰è¿˜æ˜¯ä¼šæœ‰è¿™ä¸ªç°è±¡ï¼Œ
+  // å¦‚æœéœ€è¦æ¶ˆé™¤è¿™ä¸ªç°è±¡ï¼Œå¯ä»¥åœ¨åˆå§‹åŒ–å®Œæ¯•ä¹‹åï¼Œè¿›è¡Œä¸€ä¸ªçŸ­æš‚çš„å»¶æ—¶å†æ‰“å¼€èƒŒå…‰
+  //
+  HAL_Delay(200); // å»¶æ—¶200ms
 
-	RGB_LCD_Backlight_ON; // ¿ªÆô±³¹â
+  RGB_LCD_Backlight_ON; // å¼€å¯èƒŒå…‰
 }
 
 /****************************************************************************************************************************************
  * @name   RGB_LCD_SetLayer
- * @brief  ÉèÖÃµ±Ç°²Ù×÷µÄÍ¼²ã
- * @param  layer - Í¼²ã±àºÅ (0»ò1)
+ * @brief  è®¾ç½®å½“å‰æ“ä½œçš„å›¾å±‚
+ * @param  layer - å›¾å±‚ç¼–å· (0æˆ–1)
  * @retval None
- * @note   Layer1ÔÚLayer0Ö®ÉÏ£¬¿ªÆôÁ½²ãÏÔÊ¾Ê±Layer1ÊÇÇ°¾°²ã£¨Í¨³£Ê¹ÓÃ´øÍ¸Ã÷É«µÄ¸ñÊ½£©£¬Layer0ÊÇ±³¾°²ã
+ * @note
+ *Layer1åœ¨Layer0ä¹‹ä¸Šï¼Œå¼€å¯ä¸¤å±‚æ˜¾ç¤ºæ—¶Layer1æ˜¯å‰æ™¯å±‚ï¼ˆé€šå¸¸ä½¿ç”¨å¸¦é€æ˜è‰²çš„æ ¼å¼ï¼‰ï¼ŒLayer0æ˜¯èƒŒæ™¯å±‚
  ****************************************************************************************************************************************/
-void RGB_LCD_SetLayer(uint8_t layer)
-{
-#if RGB_LCD_NUM_LAYERS == 2 // Èç¹û¿ªÁËË«²ã
+void RGB_LCD_SetLayer(uint8_t layer) {
+#if RGB_LCD_NUM_LAYERS == 2 // å¦‚æœå¼€äº†åŒå±‚
 
-	if (layer == 0) // Èç¹ûÉèÖÃµÄÊÇ layer0
-	{
-		LCD_RGB.LayerMemoryAdd = RGB_LCD_MemoryAdd;	 // »ñÈ¡ layer0 µÄÏÔ´æµØÖ·
-		LCD_RGB.ColorMode = RGB_ColorMode_0;		 // »ñÈ¡ layer0 µÄÑÕÉ«¸ñÊ½
-		LCD_RGB.BytesPerPixel = RGB_BytesPerPixel_0; // »ñÈ¡ layer0 µÄÃ¿¸öÏñËØËùĞè×Ö½ÚÊıµÄ´óĞ¡
-	}
-	else if (layer == 1) // Èç¹ûÉèÖÃµÄÊÇ layer1
-	{
-		LCD_RGB.LayerMemoryAdd = RGB_LCD_MemoryAdd + RGB_LCD_MemoryAdd_OFFSET; // »ñÈ¡ layer1 µÄÏÔ´æµØÖ·
-		LCD_RGB.ColorMode = RGB_ColorMode_1;								   // »ñÈ¡ layer1 µÄÑÕÉ«¸ñÊ½
-		LCD_RGB.BytesPerPixel = RGB_BytesPerPixel_1;						   // »ñÈ¡ layer1 µÄÃ¿¸öÏñËØËùĞè×Ö½ÚÊıµÄ´óĞ¡
-	}
-	LCD_RGB.Layer = layer; // ¼ÇÂ¼µ±Ç°ËùÔÚµÄ²ã
+  if (layer == 0) // å¦‚æœè®¾ç½®çš„æ˜¯ layer0
+  {
+    LCD_RGB.LayerMemoryAdd = RGB_LCD_MemoryAdd; // è·å– layer0 çš„æ˜¾å­˜åœ°å€
+    LCD_RGB.ColorMode = RGB_ColorMode_0;        // è·å– layer0 çš„é¢œè‰²æ ¼å¼
+    LCD_RGB.BytesPerPixel =
+        RGB_BytesPerPixel_0; // è·å– layer0 çš„æ¯ä¸ªåƒç´ æ‰€éœ€å­—èŠ‚æ•°çš„å¤§å°
+  } else if (layer == 1)     // å¦‚æœè®¾ç½®çš„æ˜¯ layer1
+  {
+    LCD_RGB.LayerMemoryAdd =
+        RGB_LCD_MemoryAdd + RGB_LCD_MemoryAdd_OFFSET; // è·å– layer1 çš„æ˜¾å­˜åœ°å€
+    LCD_RGB.ColorMode = RGB_ColorMode_1;              // è·å– layer1 çš„é¢œè‰²æ ¼å¼
+    LCD_RGB.BytesPerPixel =
+        RGB_BytesPerPixel_1; // è·å– layer1 çš„æ¯ä¸ªåƒç´ æ‰€éœ€å­—èŠ‚æ•°çš„å¤§å°
+  }
+  LCD_RGB.Layer = layer; // è®°å½•å½“å‰æ‰€åœ¨çš„å±‚
 
-#else // Èç¹ûÖ»¿ªÆôµ¥²ã£¬Ä¬ÈÏ²Ù×÷ layer0
+#else // å¦‚æœåªå¼€å¯å•å±‚ï¼Œé»˜è®¤æ“ä½œ layer0
 
-	LCD_RGB.LayerMemoryAdd = RGB_LCD_MemoryAdd;	 // »ñÈ¡ layer0 µÄÏÔ´æµØÖ·
-	LCD_RGB.ColorMode = RGB_ColorMode_0;		 // »ñÈ¡ layer0 µÄÑÕÉ«¸ñÊ½
-	LCD_RGB.BytesPerPixel = RGB_BytesPerPixel_0; // »ñÈ¡ layer0 µÄÃ¿¸öÏñËØËùĞè×Ö½ÚÊıµÄ´óĞ¡
-	LCD_RGB.Layer = 0;							 // ²ã±ê¼ÇÉèÖÃÎª layer0
+  LCD_RGB.LayerMemoryAdd = RGB_LCD_MemoryAdd; // è·å– layer0 çš„æ˜¾å­˜åœ°å€
+  LCD_RGB.ColorMode = RGB_ColorMode_0;        // è·å– layer0 çš„é¢œè‰²æ ¼å¼
+  LCD_RGB.BytesPerPixel =
+      RGB_BytesPerPixel_0; // è·å– layer0 çš„æ¯ä¸ªåƒç´ æ‰€éœ€å­—èŠ‚æ•°çš„å¤§å°
+  LCD_RGB.Layer = 0;       // å±‚æ ‡è®°è®¾ç½®ä¸º layer0
 
 #endif
 }
 
 /****************************************************************************************************************************************
  * @name   RGB_LCD_SetColor
- * @brief  ÉèÖÃRGB LCD»­±ÊÑÕÉ«
- * @param  Color - 32Î»ARGB8888ÑÕÉ«Öµ
+ * @brief  è®¾ç½®RGB LCDç”»ç¬”é¢œè‰²
+ * @param  Color - 32ä½ARGB8888é¢œè‰²å€¼
  * @retval None
- * @note   1. ÎªÁË·½±ãÓÃ»§Ê¹ÓÃ×Ô¶¨ÒåÑÕÉ«£¬Èë¿Ú²ÎÊıColorÊ¹ÓÃ32Î»ÑÕÉ«¸ñÊ½£¬×Ô¶¯×ª»»
- * @note   2. 32Î»ÑÕÉ«¸ñÊ½£º0xAARRGGBB (A:Í¸Ã÷¶È R:ºì G:ÂÌ B:À¶)
- * @note   3. Í¸Ã÷Í¨µÀ£º0xFF²»Í¸Ã÷£¬0x00ÍêÈ«Í¸Ã÷
- * @note   4. ½öARGB¸ñÊ½Ö§³ÖÍ¸Ã÷£¬RGB¸ñÊ½ºöÂÔAÍ¨µÀ
- * @note   5. ARGB1555½öÖ§³Ö1Î»Í¸Ã÷£¨Í¸Ã÷/²»Í¸Ã÷£©£¬ARGB4444Ö§³Ö16¼¶£¬ARGB8888Ö§³Ö256¼¶
+ * @note   1.
+ *ä¸ºäº†æ–¹ä¾¿ç”¨æˆ·ä½¿ç”¨è‡ªå®šä¹‰é¢œè‰²ï¼Œå…¥å£å‚æ•°Colorä½¿ç”¨32ä½é¢œè‰²æ ¼å¼ï¼Œè‡ªåŠ¨è½¬æ¢
+ * @note   2. 32ä½é¢œè‰²æ ¼å¼ï¼š0xAARRGGBB (A:é€æ˜åº¦ R:çº¢ G:ç»¿ B:è“)
+ * @note   3. é€æ˜é€šé“ï¼š0xFFä¸é€æ˜ï¼Œ0x00å®Œå…¨é€æ˜
+ * @note   4. ä»…ARGBæ ¼å¼æ”¯æŒé€æ˜ï¼ŒRGBæ ¼å¼å¿½ç•¥Aé€šé“
+ * @note   5.
+ *ARGB1555ä»…æ”¯æŒ1ä½é€æ˜ï¼ˆé€æ˜/ä¸é€æ˜ï¼‰ï¼ŒARGB4444æ”¯æŒ16çº§ï¼ŒARGB8888æ”¯æŒ256çº§
  ****************************************************************************************************************************************/
-void RGB_LCD_SetColor(uint32_t Color)
-{
-	uint16_t Alpha_Value = 0, Red_Value = 0, Green_Value = 0, Blue_Value = 0; // ¸÷¸öÑÕÉ«Í¨µÀµÄÖµ
+void RGB_LCD_SetColor(uint32_t Color) {
+  uint16_t Alpha_Value = 0, Red_Value = 0, Green_Value = 0,
+           Blue_Value = 0; // å„ä¸ªé¢œè‰²é€šé“çš„å€¼
 
-	if (LCD_RGB.ColorMode == LTDC_PIXEL_FORMAT_RGB565) // ½«32Î»É«×ª»»Îª16Î»É«
-	{
-		Red_Value = (uint16_t)((Color & 0x00F80000) >> 8);
-		Green_Value = (uint16_t)((Color & 0x0000FC00) >> 5);
-		Blue_Value = (uint16_t)((Color & 0x000000F8) >> 3);
-		LCD_RGB.Color = (uint16_t)(Red_Value | Green_Value | Blue_Value);
-	}
-	else if (LCD_RGB.ColorMode == LTDC_PIXEL_FORMAT_ARGB1555) // ½«32Î»É«×ª»»ÎªARGB1555ÑÕÉ«
-	{
-		if ((Color & 0xFF000000) == 0) // ÅĞ¶ÏÊÇ·ñÊ¹ÓÃÍ¸Ã÷É«
-			Alpha_Value = 0x0000;
-		else
-			Alpha_Value = 0x8000;
+  if (LCD_RGB.ColorMode == LTDC_PIXEL_FORMAT_RGB565) // å°†32ä½è‰²è½¬æ¢ä¸º16ä½è‰²
+  {
+    Red_Value = (uint16_t)((Color & 0x00F80000) >> 8);
+    Green_Value = (uint16_t)((Color & 0x0000FC00) >> 5);
+    Blue_Value = (uint16_t)((Color & 0x000000F8) >> 3);
+    LCD_RGB.Color = (uint16_t)(Red_Value | Green_Value | Blue_Value);
+  } else if (LCD_RGB.ColorMode ==
+             LTDC_PIXEL_FORMAT_ARGB1555) // å°†32ä½è‰²è½¬æ¢ä¸ºARGB1555é¢œè‰²
+  {
+    if ((Color & 0xFF000000) == 0) // åˆ¤æ–­æ˜¯å¦ä½¿ç”¨é€æ˜è‰²
+      Alpha_Value = 0x0000;
+    else
+      Alpha_Value = 0x8000;
 
-		Red_Value = (uint16_t)((Color & 0x00F80000) >> 9);
-		Green_Value = (uint16_t)((Color & 0x0000F800) >> 6);
-		Blue_Value = (uint16_t)((Color & 0x000000F8) >> 3);
-		LCD_RGB.Color = (uint16_t)(Alpha_Value | Red_Value | Green_Value | Blue_Value);
-	}
-	else if (LCD_RGB.ColorMode == LTDC_PIXEL_FORMAT_ARGB4444) // ½«32Î»É«×ª»»ÎªARGB4444ÑÕÉ«
-	{
-		Alpha_Value = (uint16_t)((Color & 0xf0000000) >> 16);
-		Red_Value = (uint16_t)((Color & 0x00F00000) >> 12);
-		Green_Value = (uint16_t)((Color & 0x0000F000) >> 8);
-		Blue_Value = (uint16_t)((Color & 0x000000F8) >> 4);
-		LCD_RGB.Color = (uint16_t)(Alpha_Value | Red_Value | Green_Value | Blue_Value);
-	}
-	else
-		LCD_RGB.Color = Color; // 24Î»É«»ò32Î»É«²»ĞèÒª×ª»»
+    Red_Value = (uint16_t)((Color & 0x00F80000) >> 9);
+    Green_Value = (uint16_t)((Color & 0x0000F800) >> 6);
+    Blue_Value = (uint16_t)((Color & 0x000000F8) >> 3);
+    LCD_RGB.Color =
+        (uint16_t)(Alpha_Value | Red_Value | Green_Value | Blue_Value);
+  } else if (LCD_RGB.ColorMode ==
+             LTDC_PIXEL_FORMAT_ARGB4444) // å°†32ä½è‰²è½¬æ¢ä¸ºARGB4444é¢œè‰²
+  {
+    Alpha_Value = (uint16_t)((Color & 0xf0000000) >> 16);
+    Red_Value = (uint16_t)((Color & 0x00F00000) >> 12);
+    Green_Value = (uint16_t)((Color & 0x0000F000) >> 8);
+    Blue_Value = (uint16_t)((Color & 0x000000F8) >> 4);
+    LCD_RGB.Color =
+        (uint16_t)(Alpha_Value | Red_Value | Green_Value | Blue_Value);
+  } else
+    LCD_RGB.Color = Color; // 24ä½è‰²æˆ–32ä½è‰²ä¸éœ€è¦è½¬æ¢
 }
 
 /****************************************************************************************************************************************
  * @name   RGB_LCD_SetBackColor
- * @brief  ÉèÖÃRGB LCD±³¾°ÑÕÉ«
- * @param  Color - 32Î»ARGB8888ÑÕÉ«Öµ
+ * @brief  è®¾ç½®RGB LCDèƒŒæ™¯é¢œè‰²
+ * @param  Color - 32ä½ARGB8888é¢œè‰²å€¼
  * @retval None
- * @note   ÓÃÓÚÇåÆÁÒÔ¼°ÏÔÊ¾×Ö·ûµÄ±³¾°É«
+ * @note   ç”¨äºæ¸…å±ä»¥åŠæ˜¾ç¤ºå­—ç¬¦çš„èƒŒæ™¯è‰²
  ****************************************************************************************************************************************/
-void RGB_LCD_SetBackColor(uint32_t Color)
-{
-	uint16_t Alpha_Value = 0, Red_Value = 0, Green_Value = 0, Blue_Value = 0; // ¸÷¸öÑÕÉ«Í¨µÀµÄÖµ
+void RGB_LCD_SetBackColor(uint32_t Color) {
+  uint16_t Alpha_Value = 0, Red_Value = 0, Green_Value = 0,
+           Blue_Value = 0; // å„ä¸ªé¢œè‰²é€šé“çš„å€¼
 
-	if (LCD_RGB.ColorMode == LTDC_PIXEL_FORMAT_RGB565) // ½«32Î»É«×ª»»Îª16Î»É«
-	{
-		Red_Value = (uint16_t)((Color & 0x00F80000) >> 8);
-		Green_Value = (uint16_t)((Color & 0x0000FC00) >> 5);
-		Blue_Value = (uint16_t)((Color & 0x000000F8) >> 3);
-		LCD_RGB.BackColor = (uint16_t)(Red_Value | Green_Value | Blue_Value);
-	}
-	else if (LCD_RGB.ColorMode == LTDC_PIXEL_FORMAT_ARGB1555) // ½«32Î»É«×ª»»ÎªARGB1555ÑÕÉ«
-	{
-		if ((Color & 0xFF000000) == 0) // ÅĞ¶ÏÊÇ·ñÊ¹ÓÃÍ¸Ã÷É«
-			Alpha_Value = 0x0000;
-		else
-			Alpha_Value = 0x8000;
+  if (LCD_RGB.ColorMode == LTDC_PIXEL_FORMAT_RGB565) // å°†32ä½è‰²è½¬æ¢ä¸º16ä½è‰²
+  {
+    Red_Value = (uint16_t)((Color & 0x00F80000) >> 8);
+    Green_Value = (uint16_t)((Color & 0x0000FC00) >> 5);
+    Blue_Value = (uint16_t)((Color & 0x000000F8) >> 3);
+    LCD_RGB.BackColor = (uint16_t)(Red_Value | Green_Value | Blue_Value);
+  } else if (LCD_RGB.ColorMode ==
+             LTDC_PIXEL_FORMAT_ARGB1555) // å°†32ä½è‰²è½¬æ¢ä¸ºARGB1555é¢œè‰²
+  {
+    if ((Color & 0xFF000000) == 0) // åˆ¤æ–­æ˜¯å¦ä½¿ç”¨é€æ˜è‰²
+      Alpha_Value = 0x0000;
+    else
+      Alpha_Value = 0x8000;
 
-		Red_Value = (uint16_t)((Color & 0x00F80000) >> 9);
-		Green_Value = (uint16_t)((Color & 0x0000F800) >> 6);
-		Blue_Value = (uint16_t)((Color & 0x000000F8) >> 3);
-		LCD_RGB.BackColor = (uint16_t)(Alpha_Value | Red_Value | Green_Value | Blue_Value);
-	}
-	else if (LCD_RGB.ColorMode == LTDC_PIXEL_FORMAT_ARGB4444) // ½«32Î»É«×ª»»ÎªARGB4444ÑÕÉ«
-	{
-		Alpha_Value = (uint16_t)((Color & 0xf0000000) >> 16);
-		Red_Value = (uint16_t)((Color & 0x00F00000) >> 12);
-		Green_Value = (uint16_t)((Color & 0x0000F000) >> 8);
-		Blue_Value = (uint16_t)((Color & 0x000000F8) >> 4);
-		LCD_RGB.BackColor = (uint16_t)(Alpha_Value | Red_Value | Green_Value | Blue_Value);
-	}
-	else
-		LCD_RGB.BackColor = Color; // 24Î»É«»ò32Î»É«²»ĞèÒª×ª»»
+    Red_Value = (uint16_t)((Color & 0x00F80000) >> 9);
+    Green_Value = (uint16_t)((Color & 0x0000F800) >> 6);
+    Blue_Value = (uint16_t)((Color & 0x000000F8) >> 3);
+    LCD_RGB.BackColor =
+        (uint16_t)(Alpha_Value | Red_Value | Green_Value | Blue_Value);
+  } else if (LCD_RGB.ColorMode ==
+             LTDC_PIXEL_FORMAT_ARGB4444) // å°†32ä½è‰²è½¬æ¢ä¸ºARGB4444é¢œè‰²
+  {
+    Alpha_Value = (uint16_t)((Color & 0xf0000000) >> 16);
+    Red_Value = (uint16_t)((Color & 0x00F00000) >> 12);
+    Green_Value = (uint16_t)((Color & 0x0000F000) >> 8);
+    Blue_Value = (uint16_t)((Color & 0x000000F8) >> 4);
+    LCD_RGB.BackColor =
+        (uint16_t)(Alpha_Value | Red_Value | Green_Value | Blue_Value);
+  } else
+    LCD_RGB.BackColor = Color; // 24ä½è‰²æˆ–32ä½è‰²ä¸éœ€è¦è½¬æ¢
 }
-
 
 /****************************************************************************************************************************************
  * @name   RGB_LCD_DisplayDirection
- * @brief  ÉèÖÃRGB LCDÏÔÊ¾·½Ïò
- * @param  direction - ÏÔÊ¾·½Ïò (Direction_H_RGBºáÆÁ/Direction_V_RGBÊúÆÁ)
+ * @brief  è®¾ç½®RGB LCDæ˜¾ç¤ºæ–¹å‘
+ * @param  direction - æ˜¾ç¤ºæ–¹å‘ (Direction_H_RGBæ¨ªå±/Direction_V_RGBç«–å±)
  * @retval None
- * @note   Ê¾Àı£ºRGB_LCD_DisplayDirection(Direction_H_RGB) ÉèÖÃºáÆÁÏÔÊ¾
+ * @note   ç¤ºä¾‹ï¼šRGB_LCD_DisplayDirection(Direction_H_RGB) è®¾ç½®æ¨ªå±æ˜¾ç¤º
  ****************************************************************************************************************************************/
-void RGB_LCD_DisplayDirection(uint8_t direction)
-{
-	LCD_RGB.Direction = direction;
+void RGB_LCD_DisplayDirection(uint8_t direction) {
+  LCD_RGB.Direction = direction;
 }
 
 /****************************************************************************************************************************************
  * @name   RGB_LCD_Clear
- * @brief  RGB LCDÇåÆÁº¯Êı
+ * @brief  RGB LCDæ¸…å±å‡½æ•°
  * @param  None
  * @retval None
- * @note   ½«Õû¸öÆÁÄ»Çå³ıÎªµ±Ç°±³¾°É«£¬Ê¹ÓÃDMA2D¼ÓËÙ
- * @note   µÈ´ı´¹Ö±Êı¾İÊ¹ÄÜ×´Ì¬£¬±ÜÃâËºÁÑĞ§Ó¦
+ * @note   å°†æ•´ä¸ªå±å¹•æ¸…é™¤ä¸ºå½“å‰èƒŒæ™¯è‰²ï¼Œä½¿ç”¨DMA2DåŠ é€Ÿ
+ * @note   ç­‰å¾…å‚ç›´æ•°æ®ä½¿èƒ½çŠ¶æ€ï¼Œé¿å…æ’•è£‚æ•ˆåº”
  ****************************************************************************************************************************************/
-void RGB_LCD_Clear(void)
-{
-	DMA2D->CR &= ~(DMA2D_CR_START);						   // Í£Ö¹DMA2D
-	DMA2D->CR = DMA2D_R2M;								   // ¼Ä´æÆ÷µ½SDRAM
-	DMA2D->OPFCCR = LCD_RGB.ColorMode;					   // ÉèÖÃÑÕÉ«¸ñÊ½
-	DMA2D->OOR = 0;										   // ÉèÖÃĞĞÆ«ÒÆ
-	DMA2D->OMAR = LCD_RGB.LayerMemoryAdd;				   // µØÖ·
-	DMA2D->NLR = (RGB_LCD_Width << 16) | (RGB_LCD_Height); // Éè¶¨³¤¶ÈºÍ¿í¶È
-	DMA2D->OCOLR = LCD_RGB.BackColor;					   // ÑÕÉ«
+void RGB_LCD_Clear(void) {
+  DMA2D->CR &= ~(DMA2D_CR_START);                        // åœæ­¢DMA2D
+  DMA2D->CR = DMA2D_R2M;                                 // å¯„å­˜å™¨åˆ°SDRAM
+  DMA2D->OPFCCR = LCD_RGB.ColorMode;                     // è®¾ç½®é¢œè‰²æ ¼å¼
+  DMA2D->OOR = 0;                                        // è®¾ç½®è¡Œåç§»
+  DMA2D->OMAR = LCD_RGB.LayerMemoryAdd;                  // åœ°å€
+  DMA2D->NLR = (RGB_LCD_Width << 16) | (RGB_LCD_Height); // è®¾å®šé•¿åº¦å’Œå®½åº¦
+  DMA2D->OCOLR = LCD_RGB.BackColor;                      // é¢œè‰²
 
-	/******
-	µÈ´ı´¹Ö±Êı¾İÊ¹ÄÜÏÔÊ¾×´Ì¬£¬¼´LTDC¼´½«Ë¢ÍêÒ»ÕûÆÁÊı¾İµÄÊ±ºò
-	ÒòÎªÔÚÆÁÄ»Ã»ÓĞË¢ÍêÒ»Ö¡Ê±½øĞĞË¢ÆÁ£¬»áÓĞËºÁÑµÄÏÖÏó
-	ÓÃ»§Ò²¿ÉÒÔÊ¹ÓÃ¼Ä´æÆ÷ÖØÔØÖĞ¶Ï½øĞĞÅĞ¶Ï£¬²»¹ıÎªÁË±£Ö¤Àı³ÌµÄ¼ò½àÒÔ¼°ÒÆÖ²µÄ·½±ãĞÔ£¬ÕâÀïÖ±½ÓÊ¹ÓÃÅĞ¶Ï¼Ä´æÆ÷µÄ·½·¨
+  /******
+  ç­‰å¾…å‚ç›´æ•°æ®ä½¿èƒ½æ˜¾ç¤ºçŠ¶æ€ï¼Œå³LTDCå³å°†åˆ·å®Œä¸€æ•´å±æ•°æ®çš„æ—¶å€™
+  å› ä¸ºåœ¨å±å¹•æ²¡æœ‰åˆ·å®Œä¸€å¸§æ—¶è¿›è¡Œåˆ·å±ï¼Œä¼šæœ‰æ’•è£‚çš„ç°è±¡
+  ç”¨æˆ·ä¹Ÿå¯ä»¥ä½¿ç”¨å¯„å­˜å™¨é‡è½½ä¸­æ–­è¿›è¡Œåˆ¤æ–­ï¼Œä¸è¿‡ä¸ºäº†ä¿è¯ä¾‹ç¨‹çš„ç®€æ´ä»¥åŠç§»æ¤çš„æ–¹ä¾¿æ€§ï¼Œè¿™é‡Œç›´æ¥ä½¿ç”¨åˆ¤æ–­å¯„å­˜å™¨çš„æ–¹æ³•
 
-	Èç¹û²»×öÅĞ¶Ï£¬DMA2DË¢ÆÁËÙ¶ÈÈçÏÂ£º
-	ÑÕÉ«¸ñÊ½	RGB565	 RGB888	 ARGB888
-	ºÄÊ±	   4.3ms	 7.5ms	 11.9ms
+  å¦‚æœä¸åšåˆ¤æ–­ï¼ŒDMA2Dåˆ·å±é€Ÿåº¦å¦‚ä¸‹ï¼š
+  é¢œè‰²æ ¼å¼	RGB565	 RGB888	 ARGB888
+  è€—æ—¶	   4.3ms	 7.5ms	 11.9ms
 
-	¼ÓÁËÖ®ºó£¬²»¹ÜÄÄÖÖ¸ñÊ½£¬¶¼ĞèÒª17.6msË¢Ò»ÆÁ£¬²»¹ıÆÁÄ»±¾ÉíµÄË¢ĞÂÂÊÖ»ÓĞ60Ö¡×óÓÒ£¨LTDCÊ±ÖÓ33MHz£©£¬
-	17.6msµÄËÙ¶ÈÒÑ¾­×ã¹»ÁË£¬³ı·ÇÊÇ¶ÔËÙ¶ÈÒªÇóÌØ±ğ¸ßµÄ³¡ºÏ£¬²»È»½¨Òé¼ÓÉÏÅĞ¶Ï´¹Ö±µÈ´ıµÄÓï¾ä£¬¿ÉÒÔ±ÜÃâËºÁÑĞ§Ó¦
-	******/
+  åŠ äº†ä¹‹åï¼Œä¸ç®¡å“ªç§æ ¼å¼ï¼Œéƒ½éœ€è¦17.6msåˆ·ä¸€å±ï¼Œä¸è¿‡å±å¹•æœ¬èº«çš„åˆ·æ–°ç‡åªæœ‰60å¸§å·¦å³ï¼ˆLTDCæ—¶é’Ÿ33MHzï¼‰ï¼Œ
+  17.6msçš„é€Ÿåº¦å·²ç»è¶³å¤Ÿäº†ï¼Œé™¤éæ˜¯å¯¹é€Ÿåº¦è¦æ±‚ç‰¹åˆ«é«˜çš„åœºåˆï¼Œä¸ç„¶å»ºè®®åŠ ä¸Šåˆ¤æ–­å‚ç›´ç­‰å¾…çš„è¯­å¥ï¼Œå¯ä»¥é¿å…æ’•è£‚æ•ˆåº”
+  ******/
 
-	while (LTDC->CDSR != 0X00000001)
-		; // ÅĞ¶ÏÏÔÊ¾×´Ì¬¼Ä´æÆ÷LTDC_CDSRµÄµÚ0Î» VDES£º´¹Ö±Êı¾İÊ¹ÄÜÏÔÊ¾×´Ì¬
+  while (LTDC->CDSR != 0X00000001)
+    ; // åˆ¤æ–­æ˜¾ç¤ºçŠ¶æ€å¯„å­˜å™¨LTDC_CDSRçš„ç¬¬0ä½ VDESï¼šå‚ç›´æ•°æ®ä½¿èƒ½æ˜¾ç¤ºçŠ¶æ€
 
-	DMA2D->CR |= DMA2D_CR_START; // Æô¶¯DMA2D
-	while (DMA2D->CR & DMA2D_CR_START)
-		; // µÈ´ı´«ÊäÍê³É
+  DMA2D->CR |= DMA2D_CR_START; // å¯åŠ¨DMA2D
+  while (DMA2D->CR & DMA2D_CR_START)
+    ; // ç­‰å¾…ä¼ è¾“å®Œæˆ
 }
 
 /****************************************************************************************************************************************
  * @name   RGB_LCD_ClearRect
- * @brief  RGB LCD¾Ö²¿ÇåÆÁº¯Êı
- * @param  x - ÆğÊ¼Ë®Æ½×ø±ê (0~799)
- * @param  y - ÆğÊ¼´¹Ö±×ø±ê (0~479)
- * @param  width - Çå³ıÇøÓò¿í¶È
- * @param  height - Çå³ıÇøÓò¸ß¶È
+ * @brief  RGB LCDå±€éƒ¨æ¸…å±å‡½æ•°
+ * @param  x - èµ·å§‹æ°´å¹³åæ ‡ (0~799)
+ * @param  y - èµ·å§‹å‚ç›´åæ ‡ (0~479)
+ * @param  width - æ¸…é™¤åŒºåŸŸå®½åº¦
+ * @param  height - æ¸…é™¤åŒºåŸŸé«˜åº¦
  * @retval None
- * @note   ½«Ö¸¶¨ÇøÓòÇå³ıÎªµ±Ç°±³¾°É«£¬Ê¹ÓÃDMA2D¼ÓËÙ
+ * @note   å°†æŒ‡å®šåŒºåŸŸæ¸…é™¤ä¸ºå½“å‰èƒŒæ™¯è‰²ï¼Œä½¿ç”¨DMA2DåŠ é€Ÿ
  ****************************************************************************************************************************************/
-void RGB_LCD_ClearRect(uint16_t x, uint16_t y, uint16_t width, uint16_t height)
-{
-	DMA2D->CR &= ~(DMA2D_CR_START);	   // Í£Ö¹DMA2D
-	DMA2D->CR = DMA2D_R2M;			   // ¼Ä´æÆ÷µ½SDRAM
-	DMA2D->OPFCCR = LCD_RGB.ColorMode; // ÉèÖÃÑÕÉ«¸ñÊ½
-	DMA2D->OCOLR = LCD_RGB.BackColor;  // ÑÕÉ«
+void RGB_LCD_ClearRect(uint16_t x, uint16_t y, uint16_t width,
+                       uint16_t height) {
+  DMA2D->CR &= ~(DMA2D_CR_START);    // åœæ­¢DMA2D
+  DMA2D->CR = DMA2D_R2M;             // å¯„å­˜å™¨åˆ°SDRAM
+  DMA2D->OPFCCR = LCD_RGB.ColorMode; // è®¾ç½®é¢œè‰²æ ¼å¼
+  DMA2D->OCOLR = LCD_RGB.BackColor;  // é¢œè‰²
 
-	if (LCD_RGB.Direction == Direction_H_RGB) // ºáÆÁÌî³ä
-	{
-		DMA2D->OOR = RGB_LCD_Width - width;														// ÉèÖÃĞĞÆ«ÒÆ
-		DMA2D->OMAR = LCD_RGB.LayerMemoryAdd + LCD_RGB.BytesPerPixel * (RGB_LCD_Width * y + x); // µØÖ·
-		DMA2D->NLR = (width << 16) | (height);													// Éè¶¨³¤¶ÈºÍ¿í¶È
-	}
-	else // ÊúÆÁÌî³ä
-	{
-		DMA2D->OOR = RGB_LCD_Width - height;																			   // ÉèÖÃĞĞÆ«ÒÆ
-		DMA2D->OMAR = LCD_RGB.LayerMemoryAdd + LCD_RGB.BytesPerPixel * ((RGB_LCD_Height - x - width) * RGB_LCD_Width + y); // µØÖ·
-		DMA2D->NLR = (width) | (height << 16);																			   // Éè¶¨³¤¶ÈºÍ¿í¶È
-	}
+  if (LCD_RGB.Direction == Direction_H_RGB) // æ¨ªå±å¡«å……
+  {
+    DMA2D->OOR = RGB_LCD_Width - width; // è®¾ç½®è¡Œåç§»
+    DMA2D->OMAR = LCD_RGB.LayerMemoryAdd +
+                  LCD_RGB.BytesPerPixel * (RGB_LCD_Width * y + x); // åœ°å€
+    DMA2D->NLR = (width << 16) | (height); // è®¾å®šé•¿åº¦å’Œå®½åº¦
+  } else                                   // ç«–å±å¡«å……
+  {
+    DMA2D->OOR = RGB_LCD_Width - height; // è®¾ç½®è¡Œåç§»
+    DMA2D->OMAR =
+        LCD_RGB.LayerMemoryAdd +
+        LCD_RGB.BytesPerPixel *
+            ((RGB_LCD_Height - x - width) * RGB_LCD_Width + y); // åœ°å€
+    DMA2D->NLR = (width) | (height << 16); // è®¾å®šé•¿åº¦å’Œå®½åº¦
+  }
 
-	DMA2D->CR |= DMA2D_CR_START; // Æô¶¯DMA2D
-	while (DMA2D->CR & DMA2D_CR_START)
-		; // µÈ´ı´«ÊäÍê³É
+  DMA2D->CR |= DMA2D_CR_START; // å¯åŠ¨DMA2D
+  while (DMA2D->CR & DMA2D_CR_START)
+    ; // ç­‰å¾…ä¼ è¾“å®Œæˆ
 }
 
 /****************************************************************************************************************************************
  * @name   RGB_LCD_DrawPoint
- * @brief  RGB LCD»æÖÆµ¥¸öÏñËØµã
- * @param  x - Ë®Æ½×ø±ê (0~799)
- * @param  y - ´¹Ö±×ø±ê (0~479)
- * @param  color - ÑÕÉ«Öµ£¨ĞèÓëµ±Ç°ÑÕÉ«¸ñÊ½¶ÔÓ¦£©
+ * @brief  RGB LCDç»˜åˆ¶å•ä¸ªåƒç´ ç‚¹
+ * @param  x - æ°´å¹³åæ ‡ (0~799)
+ * @param  y - å‚ç›´åæ ‡ (0~479)
+ * @param  color - é¢œè‰²å€¼ï¼ˆéœ€ä¸å½“å‰é¢œè‰²æ ¼å¼å¯¹åº”ï¼‰
  * @retval None
- * @note   Ö±½ÓÔÚÏÔ´æ¶ÔÓ¦Î»ÖÃĞ´ÈëÑÕÉ«Öµ
+ * @note   ç›´æ¥åœ¨æ˜¾å­˜å¯¹åº”ä½ç½®å†™å…¥é¢œè‰²å€¼
  ****************************************************************************************************************************************/
-void RGB_LCD_DrawPoint(uint16_t x, uint16_t y, uint32_t color)
-{
-	/*----------------------- 32Î»É« ARGB8888 Ä£Ê½ ----------------------*/
+void RGB_LCD_DrawPoint(uint16_t x, uint16_t y, uint32_t color) {
+  /*----------------------- 32ä½è‰² ARGB8888 æ¨¡å¼ ----------------------*/
 
-	if (LCD_RGB.ColorMode == LTDC_PIXEL_FORMAT_ARGB8888)
-	{
-		if (LCD_RGB.Direction == Direction_H_RGB) // Ë®Æ½·½Ïò
-		{
-			*(__IO uint32_t *)(LCD_RGB.LayerMemoryAdd + 4 * (x + y * RGB_LCD_Width)) = color;
-		}
-		else if (LCD_RGB.Direction == Direction_V_RGB) // ´¹Ö±·½Ïò
-		{
-			*(__IO uint32_t *)(LCD_RGB.LayerMemoryAdd + 4 * ((RGB_LCD_Height - x - 1) * RGB_LCD_Width + y)) = color;
-		}
-	}
-	/*----------------------------- 24Î»É« RGB888 Ä£Ê½ -------------------------*/
+  if (LCD_RGB.ColorMode == LTDC_PIXEL_FORMAT_ARGB8888) {
+    if (LCD_RGB.Direction == Direction_H_RGB) // æ°´å¹³æ–¹å‘
+    {
+      *(__IO uint32_t *)(LCD_RGB.LayerMemoryAdd + 4 * (x + y * RGB_LCD_Width)) =
+          color;
+    } else if (LCD_RGB.Direction == Direction_V_RGB) // å‚ç›´æ–¹å‘
+    {
+      *(__IO uint32_t *)(LCD_RGB.LayerMemoryAdd +
+                         4 * ((RGB_LCD_Height - x - 1) * RGB_LCD_Width + y)) =
+          color;
+    }
+  }
+  /*----------------------------- 24ä½è‰² RGB888 æ¨¡å¼ -------------------------*/
 
-	else if (LCD_RGB.ColorMode == LTDC_PIXEL_FORMAT_RGB888)
-	{
-		if (LCD_RGB.Direction == Direction_H_RGB) // Ë®Æ½·½Ïò
-		{
-			*(__IO uint16_t *)(LCD_RGB.LayerMemoryAdd + 3 * (x + y * RGB_LCD_Width)) = color;
-			*(__IO uint8_t *)(LCD_RGB.LayerMemoryAdd + 3 * (x + y * RGB_LCD_Width) + 2) = color >> 16;
-		}
-		else if (LCD_RGB.Direction == Direction_V_RGB) // ´¹Ö±·½Ïò
-		{
-			*(__IO uint16_t *)(LCD_RGB.LayerMemoryAdd + 3 * ((RGB_LCD_Height - x - 1) * RGB_LCD_Width + y)) = color;
-			*(__IO uint8_t *)(LCD_RGB.LayerMemoryAdd + 3 * ((RGB_LCD_Height - x - 1) * RGB_LCD_Width + y) + 2) = color >> 16;
-		}
-	}
+  else if (LCD_RGB.ColorMode == LTDC_PIXEL_FORMAT_RGB888) {
+    if (LCD_RGB.Direction == Direction_H_RGB) // æ°´å¹³æ–¹å‘
+    {
+      *(__IO uint16_t *)(LCD_RGB.LayerMemoryAdd + 3 * (x + y * RGB_LCD_Width)) =
+          color;
+      *(__IO uint8_t *)(LCD_RGB.LayerMemoryAdd + 3 * (x + y * RGB_LCD_Width) +
+                        2) = color >> 16;
+    } else if (LCD_RGB.Direction == Direction_V_RGB) // å‚ç›´æ–¹å‘
+    {
+      *(__IO uint16_t *)(LCD_RGB.LayerMemoryAdd +
+                         3 * ((RGB_LCD_Height - x - 1) * RGB_LCD_Width + y)) =
+          color;
+      *(__IO uint8_t *)(LCD_RGB.LayerMemoryAdd +
+                        3 * ((RGB_LCD_Height - x - 1) * RGB_LCD_Width + y) +
+                        2) = color >> 16;
+    }
+  }
 
-	/*----------------------- 16Î»É« ARGB1555¡¢RGB565»òÕßARGB4444 Ä£Ê½ ----------------------*/
-	else
-	{
-		if (LCD_RGB.Direction == Direction_H_RGB) // Ë®Æ½·½Ïò
-		{
-			*(__IO uint16_t *)(LCD_RGB.LayerMemoryAdd + 2 * (x + y * RGB_LCD_Width)) = color;
-		}
-		else if (LCD_RGB.Direction == Direction_V_RGB) // ´¹Ö±·½Ïò
-		{
-			*(__IO uint16_t *)(LCD_RGB.LayerMemoryAdd + 2 * ((RGB_LCD_Height - x - 1) * RGB_LCD_Width + y)) = color;
-		}
-	}
+  /*----------------------- 16ä½è‰² ARGB1555ã€RGB565æˆ–è€…ARGB4444 æ¨¡å¼
+     ----------------------*/
+  else {
+    if (LCD_RGB.Direction == Direction_H_RGB) // æ°´å¹³æ–¹å‘
+    {
+      *(__IO uint16_t *)(LCD_RGB.LayerMemoryAdd + 2 * (x + y * RGB_LCD_Width)) =
+          color;
+    } else if (LCD_RGB.Direction == Direction_V_RGB) // å‚ç›´æ–¹å‘
+    {
+      *(__IO uint16_t *)(LCD_RGB.LayerMemoryAdd +
+                         2 * ((RGB_LCD_Height - x - 1) * RGB_LCD_Width + y)) =
+          color;
+    }
+  }
 }
 
 /****************************************************************************************************************************************
  * @name   RGB_LCD_ReadPoint
- * @brief  ¶ÁÈ¡RGB LCDÖ¸¶¨×ø±êµãµÄÑÕÉ«
- * @param  x - Ë®Æ½×ø±ê (0~799)
- * @param  y - ´¹Ö±×ø±ê (0~479)
- * @retval ¶ÁÈ¡µ½µÄÑÕÉ«Öµ
- * @note   Ö±½Ó¶ÁÈ¡ÏÔ´æ¶ÔÓ¦Î»ÖÃµÄÖµ
+ * @brief  è¯»å–RGB LCDæŒ‡å®šåæ ‡ç‚¹çš„é¢œè‰²
+ * @param  x - æ°´å¹³åæ ‡ (0~799)
+ * @param  y - å‚ç›´åæ ‡ (0~479)
+ * @retval è¯»å–åˆ°çš„é¢œè‰²å€¼
+ * @note   ç›´æ¥è¯»å–æ˜¾å­˜å¯¹åº”ä½ç½®çš„å€¼
  ****************************************************************************************************************************************/
-uint32_t RGB_LCD_ReadPoint(uint16_t x, uint16_t y)
-{
-	uint32_t color = 0;
+uint32_t RGB_LCD_ReadPoint(uint16_t x, uint16_t y) {
+  uint32_t color = 0;
 
-	/*----------------------- 32Î»É« ARGB8888 Ä£Ê½ ----------------------*/
-	if (LCD_RGB.ColorMode == LTDC_PIXEL_FORMAT_ARGB8888)
-	{
-		if (LCD_RGB.Direction == Direction_H_RGB) // Ë®Æ½·½Ïò
-		{
-			color = *(__IO uint32_t *)(LCD_RGB.LayerMemoryAdd + 4 * (x + y * RGB_LCD_Width));
-		}
-		else if (LCD_RGB.Direction == Direction_V_RGB) // ´¹Ö±·½Ïò
-		{
-			color = *(__IO uint32_t *)(LCD_RGB.LayerMemoryAdd + 4 * ((RGB_LCD_Height - x - 1) * RGB_LCD_Width + y));
-		}
-	}
+  /*----------------------- 32ä½è‰² ARGB8888 æ¨¡å¼ ----------------------*/
+  if (LCD_RGB.ColorMode == LTDC_PIXEL_FORMAT_ARGB8888) {
+    if (LCD_RGB.Direction == Direction_H_RGB) // æ°´å¹³æ–¹å‘
+    {
+      color = *(__IO uint32_t *)(LCD_RGB.LayerMemoryAdd +
+                                 4 * (x + y * RGB_LCD_Width));
+    } else if (LCD_RGB.Direction == Direction_V_RGB) // å‚ç›´æ–¹å‘
+    {
+      color = *(
+          __IO uint32_t *)(LCD_RGB.LayerMemoryAdd +
+                           4 * ((RGB_LCD_Height - x - 1) * RGB_LCD_Width + y));
+    }
+  }
 
-	/*----------------------------- 24Î»É« RGB888 Ä£Ê½ -------------------------*/
-	else if (LCD_RGB.ColorMode == LTDC_PIXEL_FORMAT_RGB888)
-	{
-		if (LCD_RGB.Direction == Direction_H_RGB) // Ë®Æ½·½Ïò
-		{
-			color = *(__IO uint32_t *)(LCD_RGB.LayerMemoryAdd + 3 * (x + y * RGB_LCD_Width)) & 0x00ffffff;
-		}
-		else if (LCD_RGB.Direction == Direction_V_RGB) // ´¹Ö±·½Ïò
-		{
-			color = *(__IO uint32_t *)(LCD_RGB.LayerMemoryAdd + 3 * ((RGB_LCD_Height - x - 1) * RGB_LCD_Width + y)) & 0x00ffffff;
-		}
-	}
+  /*----------------------------- 24ä½è‰² RGB888 æ¨¡å¼ -------------------------*/
+  else if (LCD_RGB.ColorMode == LTDC_PIXEL_FORMAT_RGB888) {
+    if (LCD_RGB.Direction == Direction_H_RGB) // æ°´å¹³æ–¹å‘
+    {
+      color = *(__IO uint32_t *)(LCD_RGB.LayerMemoryAdd +
+                                 3 * (x + y * RGB_LCD_Width)) &
+              0x00ffffff;
+    } else if (LCD_RGB.Direction == Direction_V_RGB) // å‚ç›´æ–¹å‘
+    {
+      color = *(__IO uint32_t *)(LCD_RGB.LayerMemoryAdd +
+                                 3 * ((RGB_LCD_Height - x - 1) * RGB_LCD_Width +
+                                      y)) &
+              0x00ffffff;
+    }
+  }
 
-	/*----------------------- 16Î»É« ARGB1555¡¢RGB565»òÕßARGB4444 Ä£Ê½ ----------------------*/
-	else
-	{
-		if (LCD_RGB.Direction == Direction_H_RGB) // Ë®Æ½·½Ïò
-		{
-			color = *(__IO uint16_t *)(LCD_RGB.LayerMemoryAdd + 2 * (x + y * RGB_LCD_Width));
-		}
-		else if (LCD_RGB.Direction == Direction_V_RGB) // ´¹Ö±·½Ïò
-		{
-			color = *(__IO uint16_t *)(LCD_RGB.LayerMemoryAdd + 2 * ((RGB_LCD_Height - x - 1) * RGB_LCD_Width + y));
-		}
-	}
-	return color;
+  /*----------------------- 16ä½è‰² ARGB1555ã€RGB565æˆ–è€…ARGB4444 æ¨¡å¼
+     ----------------------*/
+  else {
+    if (LCD_RGB.Direction == Direction_H_RGB) // æ°´å¹³æ–¹å‘
+    {
+      color = *(__IO uint16_t *)(LCD_RGB.LayerMemoryAdd +
+                                 2 * (x + y * RGB_LCD_Width));
+    } else if (LCD_RGB.Direction == Direction_V_RGB) // å‚ç›´æ–¹å‘
+    {
+      color = *(
+          __IO uint16_t *)(LCD_RGB.LayerMemoryAdd +
+                           2 * ((RGB_LCD_Height - x - 1) * RGB_LCD_Width + y));
+    }
+  }
+  return color;
 }
 
 /****************************************************************************************************************************************
  * @name   RGB_LCD_DisplayChar
- * @brief  RGB LCDÏÔÊ¾µ¥¸öASCII×Ö·û
- * @param  x - ÆğÊ¼Ë®Æ½×ø±ê (0~799)
- * @param  y - ÆğÊ¼´¹Ö±×ø±ê (0~479)
- * @param  c - ASCII×Ö·û
+ * @brief  RGB LCDæ˜¾ç¤ºå•ä¸ªASCIIå­—ç¬¦
+ * @param  x - èµ·å§‹æ°´å¹³åæ ‡ (0~799)
+ * @param  y - èµ·å§‹å‚ç›´åæ ‡ (0~479)
+ * @param  c - ASCIIå­—ç¬¦
  * @retval None
- * @note   ¸ù¾İ×ÖÄ£Êı¾İÖğµã»æÖÆ×Ö·û
+ * @note   æ ¹æ®å­—æ¨¡æ•°æ®é€ç‚¹ç»˜åˆ¶å­—ç¬¦
  ****************************************************************************************************************************************/
-void RGB_LCD_DisplayChar(uint16_t x, uint16_t y, uint8_t c)
-{
-	uint16_t index = 0, counter = 0; // ¼ÆÊı±äÁ¿
-	uint8_t disChar;				 // ´æ´¢×Ö·ûµÄµØÖ·
-	uint16_t Xaddress = x;			 // Ë®Æ½×ø±ê
+void RGB_LCD_DisplayChar(uint16_t x, uint16_t y, uint8_t c) {
+  uint16_t index = 0, counter = 0; // è®¡æ•°å˜é‡
+  uint8_t disChar;                 // å­˜å‚¨å­—ç¬¦çš„åœ°å€
+  uint16_t Xaddress = x;           // æ°´å¹³åæ ‡
 
-	c = c - 32; // ¼ÆËãASCII×Ö·ûµÄÆ«ÒÆ
+  c = c - 32; // è®¡ç®—ASCIIå­—ç¬¦çš„åç§»
 
-	for (index = 0; index < LCD_RGB_Fonts->Sizes; index++)
-	{
-		disChar = LCD_RGB_Fonts->pTable[c * LCD_RGB_Fonts->Sizes + index]; // »ñÈ¡×Ö·ûµÄÄ£Öµ
-		for (counter = 0; counter < 8; counter++)
-		{
-			if (disChar & 0x01)
-			{
-				RGB_LCD_DrawPoint(Xaddress, y, LCD_RGB.Color); // µ±Ç°Ä£Öµ²»Îª0Ê±£¬Ê¹ÓÃ»­±ÊÉ«»æµã
-			}
-			else
-			{
-				RGB_LCD_DrawPoint(Xaddress, y, LCD_RGB.BackColor); // ·ñÔòÊ¹ÓÃ±³¾°É«»æÖÆµã
-			}
-			disChar >>= 1;
-			Xaddress++; // Ë®Æ½×ø±ê×Ô¼Ó
+  for (index = 0; index < LCD_RGB_Fonts->Sizes; index++) {
+    disChar = LCD_RGB_Fonts
+                  ->pTable[c * LCD_RGB_Fonts->Sizes + index]; // è·å–å­—ç¬¦çš„æ¨¡å€¼
+    for (counter = 0; counter < 8; counter++) {
+      if (disChar & 0x01) {
+        RGB_LCD_DrawPoint(Xaddress, y,
+                          LCD_RGB.Color); // å½“å‰æ¨¡å€¼ä¸ä¸º0æ—¶ï¼Œä½¿ç”¨ç”»ç¬”è‰²ç»˜ç‚¹
+      } else {
+        RGB_LCD_DrawPoint(Xaddress, y,
+                          LCD_RGB.BackColor); // å¦åˆ™ä½¿ç”¨èƒŒæ™¯è‰²ç»˜åˆ¶ç‚¹
+      }
+      disChar >>= 1;
+      Xaddress++; // æ°´å¹³åæ ‡è‡ªåŠ 
 
-			if ((Xaddress - x) == LCD_RGB_Fonts->Width) // Èç¹ûË®Æ½×ø±ê´ïµ½ÁË×Ö·û¿í¶È£¬ÔòÍË³öµ±Ç°Ñ­»·
-			{											// ½øÈëÏÂÒ»ĞĞµÄ»æÖÆ
-				Xaddress = x;
-				y++;
-				break;
-			}
-		}
-	}
+      if ((Xaddress - x) ==
+          LCD_RGB_Fonts->Width) // å¦‚æœæ°´å¹³åæ ‡è¾¾åˆ°äº†å­—ç¬¦å®½åº¦ï¼Œåˆ™é€€å‡ºå½“å‰å¾ªç¯
+      {                         // è¿›å…¥ä¸‹ä¸€è¡Œçš„ç»˜åˆ¶
+        Xaddress = x;
+        y++;
+        break;
+      }
+    }
+  }
 }
 
 /****************************************************************************************************************************************
  * @name   RGB_LCD_DisplayString
- * @brief  RGB LCDÏÔÊ¾ASCII×Ö·û´®
- * @param  x - ÆğÊ¼Ë®Æ½×ø±ê (0~799)
- * @param  y - ÆğÊ¼´¹Ö±×ø±ê (0~479)
- * @param  p - ×Ö·û´®Ê×µØÖ·
+ * @brief  RGB LCDæ˜¾ç¤ºASCIIå­—ç¬¦ä¸²
+ * @param  x - èµ·å§‹æ°´å¹³åæ ‡ (0~799)
+ * @param  y - èµ·å§‹å‚ç›´åæ ‡ (0~479)
+ * @param  p - å­—ç¬¦ä¸²é¦–åœ°å€
  * @retval None
- * @note   Ñ­»·µ÷ÓÃRGB_LCD_DisplayChar()ÏÔÊ¾Ã¿¸ö×Ö·û
+ * @note   å¾ªç¯è°ƒç”¨RGB_LCD_DisplayChar()æ˜¾ç¤ºæ¯ä¸ªå­—ç¬¦
  ****************************************************************************************************************************************/
-void RGB_LCD_DisplayString(uint16_t x, uint16_t y, char *p)
-{
-	while ((x < RGB_LCD_Width) && (*p != 0)) // ÅĞ¶ÏÏÔÊ¾×ø±êÊÇ·ñ³¬³öÏÔÊ¾ÇøÓò²¢ÇÒ×Ö·ûÊÇ·ñÎª¿Õ×Ö·û
-	{
-		RGB_LCD_DisplayChar(x, y, *p);
-		x += LCD_RGB_Fonts->Width; // ÏÔÊ¾ÏÂÒ»¸ö×Ö·û
-		p++;					   // È¡ÏÂÒ»¸ö×Ö·ûµØÖ·
-	}
+void RGB_LCD_DisplayString(uint16_t x, uint16_t y, char *p) {
+  while ((x < RGB_LCD_Width) &&
+         (*p != 0)) // åˆ¤æ–­æ˜¾ç¤ºåæ ‡æ˜¯å¦è¶…å‡ºæ˜¾ç¤ºåŒºåŸŸå¹¶ä¸”å­—ç¬¦æ˜¯å¦ä¸ºç©ºå­—ç¬¦
+  {
+    RGB_LCD_DisplayChar(x, y, *p);
+    x += LCD_RGB_Fonts->Width; // æ˜¾ç¤ºä¸‹ä¸€ä¸ªå­—ç¬¦
+    p++;                       // å–ä¸‹ä¸€ä¸ªå­—ç¬¦åœ°å€
+  }
 }
 
 /****************************************************************************************************************************************
  * @name   RGB_LCD_SetTextFont
- * @brief  ÉèÖÃRGB LCDÖĞÓ¢ÎÄ»ìºÏ×ÖÌå
- * @param  font_size - ×ÖÌå´óĞ¡ (12/16/20/24/32)
+ * @brief  è®¾ç½®RGB LCDä¸­è‹±æ–‡æ··åˆå­—ä½“
+ * @param  font_size - å­—ä½“å¤§å° (12/16/20/24/32)
  * @retval None
- * @note   ×Ô¶¯Æ¥Åä¶ÔÓ¦µÄASCIIºÍÖĞÎÄ×ÖÌå
+ * @note   è‡ªåŠ¨åŒ¹é…å¯¹åº”çš„ASCIIå’Œä¸­æ–‡å­—ä½“
  ****************************************************************************************************************************************/
-void RGB_LCD_SetTextFont(uint8_t font_size)
-{
-	switch (font_size)
-	{
-	case 12:
-		LCD_RGB_Fonts = &ASCII_Font12;
-		LCD_RGB_CHFonts = &CH_Font12;
-		break;
-	case 16:
-		LCD_RGB_Fonts = &ASCII_Font16;
-		LCD_RGB_CHFonts = &CH_Font16;
-		break;
-	case 20:
-		LCD_RGB_Fonts = &ASCII_Font20;
-		LCD_RGB_CHFonts = &CH_Font20;
-		break;
-	case 24:
-		LCD_RGB_Fonts = &ASCII_Font24;
-		LCD_RGB_CHFonts = &CH_Font24;
-		break;
-	case 32:
-		LCD_RGB_Fonts = &ASCII_Font32;
-		LCD_RGB_CHFonts = &CH_Font32;
-		break;
-	default:
-		LCD_RGB_Fonts = &ASCII_Font12;
-		LCD_RGB_CHFonts = &CH_Font12;
-		break;
-	}
+void RGB_LCD_SetTextFont(uint8_t font_size) {
+  switch (font_size) {
+  case 12:
+    LCD_RGB_Fonts = &ASCII_Font12;
+    LCD_RGB_CHFonts = &CH_Font12;
+    break;
+  case 16:
+    LCD_RGB_Fonts = &ASCII_Font16;
+    LCD_RGB_CHFonts = &CH_Font16;
+    break;
+  case 20:
+    LCD_RGB_Fonts = &ASCII_Font20;
+    LCD_RGB_CHFonts = &CH_Font20;
+    break;
+  case 24:
+    LCD_RGB_Fonts = &ASCII_Font24;
+    LCD_RGB_CHFonts = &CH_Font24;
+    break;
+  case 32:
+    LCD_RGB_Fonts = &ASCII_Font32;
+    LCD_RGB_CHFonts = &CH_Font32;
+    break;
+  default:
+    LCD_RGB_Fonts = &ASCII_Font12;
+    LCD_RGB_CHFonts = &CH_Font12;
+    break;
+  }
 }
 /**
- * @brief  »ñÈ¡µ±Ç°RGB LCDÖĞÎÄ×ÖÌå´óĞ¡
- * @note   ÄÚ²¿º¯Êı,ÓÃÓÚFlash×Ö¿âÄ£Ê½
+ * @brief  è·å–å½“å‰RGB LCDä¸­æ–‡å­—ä½“å¤§å°
+ * @note   å†…éƒ¨å‡½æ•°,ç”¨äºFlashå­—åº“æ¨¡å¼
  */
-uint8_t RGB_LCD_GetChineseFontSize(void)
-{
-	if (LCD_RGB_CHFonts != NULL)
-	{
-		return LCD_RGB_CHFonts->Width;
-	}
-	return 12; // Ä¬ÈÏ12ºÅ×ÖÌå
+uint8_t RGB_LCD_GetChineseFontSize(void) {
+  if (LCD_RGB_CHFonts != NULL) {
+    return LCD_RGB_CHFonts->Width;
+  }
+  return 12; // é»˜è®¤12å·å­—ä½“
 }
 
 #ifdef USE_FLASH_FONT_RGB
 /**
- * @brief  »æÖÆ×ÖÄ£µ½RGB LCD(Ö§³Ö12/16/20/24/32)
- * @note   ÄÚ²¿º¯Êı,ÓÃÓÚFlash×Ö¿âÄ£Ê½
+ * @brief  ç»˜åˆ¶å­—æ¨¡åˆ°RGB LCD(æ”¯æŒ12/16/20/24/32)
+ * @note   å†…éƒ¨å‡½æ•°,ç”¨äºFlashå­—åº“æ¨¡å¼
  */
-static void RGB_DrawFont_Bitmap(uint16_t x, uint16_t y, uint8_t font_size, const uint8_t *pData)
-{
-	uint16_t i = 0;
-	uint16_t bytes_per_row = (font_size + 7) / 8; // Ã¿ĞĞ×Ö½ÚÊı
-	uint16_t total_bytes = bytes_per_row * font_size;
+static void RGB_DrawFont_Bitmap(uint16_t x, uint16_t y, uint8_t font_size,
+                                const uint8_t *pData) {
+  uint16_t i = 0;
+  uint16_t bytes_per_row = (font_size + 7) / 8; // æ¯è¡Œå­—èŠ‚æ•°
+  uint16_t total_bytes = bytes_per_row * font_size;
 
-	// Öğ×Ö½Ú½âÎö×ÖÄ£Êı¾İ
-	for (uint16_t byte_idx = 0; byte_idx < total_bytes; byte_idx++)
-	{
-		uint8_t byte_data = pData[byte_idx];
+  // é€å­—èŠ‚è§£æå­—æ¨¡æ•°æ®
+  for (uint16_t byte_idx = 0; byte_idx < total_bytes; byte_idx++) {
+    uint8_t byte_data = pData[byte_idx];
 
-		// Ã¿¸ö×Ö½Ú´ú±í8¸öÏñËØµã
-		for (uint8_t bit = 0; bit < 8; bit++)
-		{
-			if (byte_data & (0x01 << bit))
-			{
-				// Ç°¾°É«£¬»æÖÆÏñËØµã
-				RGB_LCD_DrawPoint(x + (i % font_size), y + (i / font_size), LCD_RGB.Color);
-			}
-			else
-			{
-				// ±³¾°É«
-				RGB_LCD_DrawPoint(x + (i % font_size), y + (i / font_size), LCD_RGB.BackColor);
-			}
-			i++;
+    // æ¯ä¸ªå­—èŠ‚ä»£è¡¨8ä¸ªåƒç´ ç‚¹
+    for (uint8_t bit = 0; bit < 8; bit++) {
+      if (byte_data & (0x01 << bit)) {
+        // å‰æ™¯è‰²ï¼Œç»˜åˆ¶åƒç´ ç‚¹
+        RGB_LCD_DrawPoint(x + (i % font_size), y + (i / font_size),
+                          LCD_RGB.Color);
+      } else {
+        // èƒŒæ™¯è‰²
+        RGB_LCD_DrawPoint(x + (i % font_size), y + (i / font_size),
+                          LCD_RGB.BackColor);
+      }
+      i++;
 
-			// Èç¹û³¬³ö×ÖÌå¿í¶È£¬Ìø¹ı¶àÓàµÄÎ»
-			if (i % font_size == 0)
-			{
-				break;
-			}
-		}
-	}
+      // å¦‚æœè¶…å‡ºå­—ä½“å®½åº¦ï¼Œè·³è¿‡å¤šä½™çš„ä½
+      if (i % font_size == 0) {
+        break;
+      }
+    }
+  }
 }
 #endif
 
 /****************************************************************************************************************************************
  * @name   RGB_LCD_DisplayChinese
- * @brief  RGB LCDÏÔÊ¾µ¥¸öºº×Ö
- * @param  x - ÆğÊ¼Ë®Æ½×ø±ê (0~799)
- * @param  y - ÆğÊ¼´¹Ö±×ø±ê (0~479)
- * @param  pText - ºº×Ö×Ö·û´®£¨µ¥¸öºº×Ö£©
+ * @brief  RGB LCDæ˜¾ç¤ºå•ä¸ªæ±‰å­—
+ * @param  x - èµ·å§‹æ°´å¹³åæ ‡ (0~799)
+ * @param  y - èµ·å§‹å‚ç›´åæ ‡ (0~479)
+ * @param  pText - æ±‰å­—å­—ç¬¦ä¸²ï¼ˆå•ä¸ªæ±‰å­—ï¼‰
  * @retval None
- * @note   Ö§³ÖFlash×Ö¿âºÍÄÚÖÃ×Ö¿âÁ½ÖÖ·½Ê½
+ * @note   æ”¯æŒFlashå­—åº“å’Œå†…ç½®å­—åº“ä¸¤ç§æ–¹å¼
  ****************************************************************************************************************************************/
-void RGB_LCD_DisplayChinese(uint16_t x, uint16_t y, char *pText)
-{
+void RGB_LCD_DisplayChinese(uint16_t x, uint16_t y, char *pText) {
 #ifdef USE_FLASH_FONT_RGB
-	uint8_t font_size = RGB_LCD_GetChineseFontSize();
+  uint8_t font_size = RGB_LCD_GetChineseFontSize();
 
-	// ÌáÈ¡GBK±àÂëµÄµ¥¸öºº×Ö£¨2×Ö½Ú£©
-	char single_char[3] = {0};
-	single_char[0] = pText[0];
-	single_char[1] = pText[1];
-	single_char[2] = '\0';
-
-	// Ê¹ÓÃ²éÕÒ±í»ñÈ¡×Ö¿âË÷Òı
-	int16_t index = GB2312_FindIndex_Flash(single_char);
-
-	if (index < 0)
-	{
-		// ²éÕÒÊ§°Ü£¬×Ö·û²»ÔÚ×Ö¿âÖĞ
-		return;
-	}
-
-	// Ö±½Ó¼ÆËã×ÖÄ£ÔÚFlashÖĞµÄµØÖ·
-	uint32_t base_addr = 0x90000000; // QSPIÄÚ´æÓ³ÉäÆğÊ¼µØÖ·
-	uint32_t font_offset = 0;
-	uint16_t bytes_per_char = 0;
-
-	// ¸ù¾İ×ÖÌå´óĞ¡È·¶¨Æ«ÒÆºÍ×Ö½ÚÊı
-	switch (font_size)
-	{
-	case 12:
-		font_offset = FONT_12x12_ADDR;
-		bytes_per_char = 24;
-		break;
-	case 16:
-		font_offset = FONT_16x16_ADDR;
-		bytes_per_char = 32;
-		break;
-	case 20:
-		font_offset = FONT_20x20_ADDR;
-		bytes_per_char = 60;
-		break;
-	case 24:
-		font_offset = FONT_24x24_ADDR;
-		bytes_per_char = 72;
-		break;
-	case 32:
-		font_offset = FONT_32x32_ADDR;
-		bytes_per_char = 128;
-		break;
-	default:
-		return;
-	}
-	// Ìø¹ı18×Ö½ÚµÄFontHeader_GB2312_tÍ·²¿
-	uint32_t header_size = 18;
-
-	// Ê¹ÓÃ²éÕÒ±í»ñµÃµÄË÷Òı¼ÆËã×îÖÕµØÖ·
-	const uint8_t *pFontData = (const uint8_t *)(base_addr + font_offset + header_size + index * bytes_per_char);
-
-	// äÖÈ¾µ½ÆÁÄ»
-	RGB_DrawFont_Bitmap(x, y, font_size, pFontData);
+#ifdef IS_GB2312_RGB
+  // ä½¿ç”¨æŸ¥æ‰¾è¡¨è·å¾—çš„ç´¢å¼•è®¡ç®—æœ€ç»ˆåœ°å€
+  const uint8_t *pFontData = GB2312_FindFont_Flash(pText, font_size);
 #else
-	uint16_t i = 0, index = 0, counter = 0; // ¼ÆÊı±äÁ¿
-	uint16_t addr = 0;						// ×ÖÄ£µØÖ·
-	uint8_t disChar;						// ×ÖÄ£µÄÖµ
-	uint16_t Xaddress = 0;					// Ë®Æ½×ø±ê
+  const uint8_t *pFontData =
+      UTF8_FindFont_Flash((const uint8_t *)pText, font_size);
+#endif
 
-	while (1)
-	{
-		// ¶Ô±ÈÊı×éÖĞµÄºº×Ö±àÂë£¬ÓÃÒÔ¶¨Î»¸Ãºº×Ö×ÖÄ£µÄµØÖ·
-		if ((LCD_RGB_CHFonts->pTable[addr] == *pText) && (LCD_RGB_CHFonts->pTable[addr + 1] == *(pText + 1)))
-		{
-			addr = addr + 2; // Æ«ÒÆµ½ºº×Ö×ÖÄ£µÄÆğÊ¼µØÖ·
-			break;
-		}
-		else
-		{
-			addr += (LCD_RGB_CHFonts->Sizes + 2); // Ö¸ÏòÏÂÒ»¸öºº×Ö×ÖÄ£µÄµØÖ·
-		}
-	}
+  // æ¸²æŸ“åˆ°å±å¹•
+  RGB_DrawFont_Bitmap(x, y, font_size, pFontData);
+#else
+  uint16_t i = 0, index = 0, counter = 0; // è®¡æ•°å˜é‡
+  uint16_t addr = 0;                      // å­—æ¨¡åœ°å€
+  uint8_t disChar;                        // å­—æ¨¡çš„å€¼
+  uint16_t Xaddress = 0;                  // æ°´å¹³åæ ‡
 
-	for (index = 0; index < LCD_RGB_CHFonts->Sizes; index++)
-	{
-		disChar = LCD_RGB_CHFonts->pTable[addr]; // »ñÈ¡×ÖÄ£µÄÖµ
-		addr += 1;
-		Xaddress = x; // Ë®Æ½×ø±ê¸´Î»
+  while (1) {
+    // å¯¹æ¯”æ•°ç»„ä¸­çš„æ±‰å­—ç¼–ç ï¼Œç”¨ä»¥å®šä½è¯¥æ±‰å­—å­—æ¨¡çš„åœ°å€
+    if ((LCD_RGB_CHFonts->pTable[addr] == *pText) &&
+        (LCD_RGB_CHFonts->pTable[addr + 1] == *(pText + 1))) {
+      addr = addr + 2; // åç§»åˆ°æ±‰å­—å­—æ¨¡çš„èµ·å§‹åœ°å€
+      break;
+    } else {
+      addr += (LCD_RGB_CHFonts->Sizes + 2); // æŒ‡å‘ä¸‹ä¸€ä¸ªæ±‰å­—å­—æ¨¡çš„åœ°å€
+    }
+  }
 
-		for (counter = 0; counter < 8; counter++)
-		{
-			if (disChar & 0x01)
-			{
-				RGB_LCD_DrawPoint(Xaddress, y, LCD_RGB.Color); // µ±Ç°Ä£Öµ²»Îª0Ê±£¬Ê¹ÓÃ»­±ÊÉ«»æµã
-			}
-			else
-			{
-				RGB_LCD_DrawPoint(Xaddress, y, LCD_RGB.BackColor); // µ±Ç°Ä£ÖµÎª0Ê±£¬Ê¹ÓÃ±³¾°É«»æÖÆµã
-			}
-			disChar >>= 1;
-			Xaddress++; // Ë®Æ½×ø±ê×Ô¼Ó
+  for (index = 0; index < LCD_RGB_CHFonts->Sizes; index++) {
+    disChar = LCD_RGB_CHFonts->pTable[addr]; // è·å–å­—æ¨¡çš„å€¼
+    addr += 1;
+    Xaddress = x; // æ°´å¹³åæ ‡å¤ä½
 
-			if ((Xaddress - x) == LCD_RGB_CHFonts->Width) // Èç¹ûË®Æ½×ø±ê´ïµ½ÁË×Ö·û¿í¶È£¬ÔòÍË³öµ±Ç°Ñ­»·
-			{											  // ½øÈëÏÂÒ»ĞĞµÄ»æÖÆ
-				Xaddress = x;
-				y++;
-				break;
-			}
-		}
-	}
+    for (counter = 0; counter < 8; counter++) {
+      if (disChar & 0x01) {
+        RGB_LCD_DrawPoint(Xaddress, y,
+                          LCD_RGB.Color); // å½“å‰æ¨¡å€¼ä¸ä¸º0æ—¶ï¼Œä½¿ç”¨ç”»ç¬”è‰²ç»˜ç‚¹
+      } else {
+        RGB_LCD_DrawPoint(Xaddress, y,
+                          LCD_RGB.BackColor); // å½“å‰æ¨¡å€¼ä¸º0æ—¶ï¼Œä½¿ç”¨èƒŒæ™¯è‰²ç»˜åˆ¶ç‚¹
+      }
+      disChar >>= 1;
+      Xaddress++; // æ°´å¹³åæ ‡è‡ªåŠ 
+
+      if ((Xaddress - x) ==
+          LCD_RGB_CHFonts->Width) // å¦‚æœæ°´å¹³åæ ‡è¾¾åˆ°äº†å­—ç¬¦å®½åº¦ï¼Œåˆ™é€€å‡ºå½“å‰å¾ªç¯
+      {                           // è¿›å…¥ä¸‹ä¸€è¡Œçš„ç»˜åˆ¶
+        Xaddress = x;
+        y++;
+        break;
+      }
+    }
+  }
 #endif
 }
 
 /****************************************************************************************************************************************
  * @name   RGB_LCD_DisplayText
- * @brief  RGB LCDÏÔÊ¾ÖĞÓ¢ÎÄ»ìºÏ×Ö·û´®
- * @param  x - ÆğÊ¼Ë®Æ½×ø±ê (0~799)
- * @param  y - ÆğÊ¼´¹Ö±×ø±ê (0~479)
- * @param  pText - ×Ö·û´®Ê×µØÖ·
+ * @brief  RGB LCDæ˜¾ç¤ºä¸­è‹±æ–‡æ··åˆå­—ç¬¦ä¸²
+ * @param  x - èµ·å§‹æ°´å¹³åæ ‡ (0~799)
+ * @param  y - èµ·å§‹å‚ç›´åæ ‡ (0~479)
+ * @param  pText - å­—ç¬¦ä¸²é¦–åœ°å€
  * @retval None
- * @note   ×Ô¶¯Ê¶±ğÖĞÓ¢ÎÄ×Ö·û£¬Ö§³Ö»»ĞĞ
+ * @note   è‡ªåŠ¨è¯†åˆ«ä¸­è‹±æ–‡å­—ç¬¦ï¼Œæ”¯æŒæ¢è¡Œ
  ****************************************************************************************************************************************/
-void RGB_LCD_DisplayText(uint16_t x, uint16_t y, char *pText)
-{
+void RGB_LCD_DisplayText(uint16_t x, uint16_t y, char *pText) {
 #ifdef USE_FLASH_FONT_RGB
-	uint8_t font_size = RGB_LCD_GetChineseFontSize();
+  uint8_t font_size = RGB_LCD_GetChineseFontSize();
 #endif
-	uint16_t x_start = x; // ¼ÇÂ¼ÆğÊ¼X×ø±ê,ÓÃÓÚ»»ĞĞ
+  uint16_t x_start = x; // è®°å½•èµ·å§‹Xåæ ‡,ç”¨äºæ¢è¡Œ
 
-	while (*pText != 0)
-	{
-		if (*pText <= 0x7F) // ASCII×Ö·û
-		{
-			// ¼ì²éÊÇ·ñĞèÒª»»ĞĞ
-			if (x + LCD_RGB_Fonts->Width > RGB_LCD_Width)
-			{
-				x = x_start;
+  while (*pText != 0) {
+    if (*pText <= 0x7F) // ASCIIå­—ç¬¦
+    {
+      // æ£€æŸ¥æ˜¯å¦éœ€è¦æ¢è¡Œ
+      if (x + LCD_RGB_Fonts->Width > RGB_LCD_Width) {
+        x = x_start;
 #ifdef USE_FLASH_FONT_RGB
-				y += font_size;
+        y += font_size;
 #else
-				y += LCD_RGB_CHFonts->Height;
+        y += LCD_RGB_CHFonts->Height;
 #endif
-			}
+      }
 
-			RGB_LCD_DisplayChar(x, y, *pText);
-			x += LCD_RGB_Fonts->Width;
-			pText++;
-		}
-		else // ºº×Ö(GBK±àÂë,Ë«×Ö½Ú)
-		{
+      RGB_LCD_DisplayChar(x, y, *pText);
+      x += LCD_RGB_Fonts->Width;
+      pText++;
+    } else // æ±‰å­—(GBKç¼–ç ,åŒå­—èŠ‚)
+    {
 #ifdef USE_FLASH_FONT_RGB
-			// ¼ì²éÊÇ·ñĞèÒª»»ĞĞ
-			if (x + font_size > RGB_LCD_Width)
-			{
-				x = x_start;
-				y += font_size;
-			}
+      // æ£€æŸ¥æ˜¯å¦éœ€è¦æ¢è¡Œ
+      if (x + font_size > RGB_LCD_Width) {
+        x = x_start;
+        y += font_size;
+      }
 #else
-			// ¼ì²éÊÇ·ñĞèÒª»»ĞĞ
-			if (x + LCD_RGB_CHFonts->Width > RGB_LCD_Width)
-			{
-				x = x_start;
-				y += LCD_RGB_CHFonts->Height;
-			}
+      // æ£€æŸ¥æ˜¯å¦éœ€è¦æ¢è¡Œ
+      if (x + LCD_RGB_CHFonts->Width > RGB_LCD_Width) {
+        x = x_start;
+        y += LCD_RGB_CHFonts->Height;
+      }
 #endif
 
-			RGB_LCD_DisplayChinese(x, y, pText);
+      RGB_LCD_DisplayChinese(x, y, pText);
 
 #ifdef USE_FLASH_FONT_RGB
-			x += font_size; // Flash×Ö¿âÊ¹ÓÃ¶¯Ì¬×ÖÌå´óĞ¡
+      x += font_size; // Flashå­—åº“ä½¿ç”¨åŠ¨æ€å­—ä½“å¤§å°
 #else
-			x += LCD_RGB_CHFonts->Width; // ÄÚÖÃ×Ö¿âÊ¹ÓÃ¹Ì¶¨¿í¶È
+      x += LCD_RGB_CHFonts->Width; // å†…ç½®å­—åº“ä½¿ç”¨å›ºå®šå®½åº¦
 #endif
-			pText += 2; // GBKË«×Ö½Ú
-		}
-	}
+#if defined(USE_FLASH_FONT_RGB) && !defined(IS_GB2312_RGB)
+      uint8_t utf8_code = (uint8_t)*pText;
+      if ((utf8_code & 0xE0) == 0xC0)
+        pText += 2; // 2å­—èŠ‚ UTF-8
+      else if ((utf8_code & 0xF0) == 0xE0)
+        pText += 3; // 3å­—èŠ‚ UTF-8 (å¸¸ç”¨æ±‰å­—)
+      else if ((utf8_code & 0xF8) == 0xF0)
+        pText += 4;
+#else
+      pText += 2; // GBKåŒå­—èŠ‚
+#endif
+    }
+  }
 }
 
 /****************************************************************************************************************************************
  * @name   RGB_LCD_ShowNumMode
- * @brief  ÉèÖÃRGB LCDÊı×ÖÏÔÊ¾Ä£Ê½
- * @param  mode - Ìî³äÄ£Ê½ (Fill_Zero_RGB/Fill_Space_RGB)
+ * @brief  è®¾ç½®RGB LCDæ•°å­—æ˜¾ç¤ºæ¨¡å¼
+ * @param  mode - å¡«å……æ¨¡å¼ (Fill_Zero_RGB/Fill_Space_RGB)
  * @retval None
- * @note   ½öÓÃÓÚRGB_LCD_DisplayNumber()ºÍRGB_LCD_DisplayDecimals()
+ * @note   ä»…ç”¨äºRGB_LCD_DisplayNumber()å’ŒRGB_LCD_DisplayDecimals()
  ****************************************************************************************************************************************/
-void RGB_LCD_ShowNumMode(uint8_t mode)
-{
-	LCD_RGB.ShowNum_Mode = mode;
-}
+void RGB_LCD_ShowNumMode(uint8_t mode) { LCD_RGB.ShowNum_Mode = mode; }
 
 /****************************************************************************************************************************************
  * @name   RGB_LCD_DisplayNumber
- * @brief  RGB LCDÏÔÊ¾ÕûÊı
- * @param  x - ÆğÊ¼Ë®Æ½×ø±ê (0~799)
- * @param  y - ÆğÊ¼´¹Ö±×ø±ê (0~479)
- * @param  number - ÕûÊıÖµ (-2147483648~2147483647)
- * @param  len - ÏÔÊ¾Î»Êı£¨º¬·ûºÅÎ»£©
+ * @brief  RGB LCDæ˜¾ç¤ºæ•´æ•°
+ * @param  x - èµ·å§‹æ°´å¹³åæ ‡ (0~799)
+ * @param  y - èµ·å§‹å‚ç›´åæ ‡ (0~479)
+ * @param  number - æ•´æ•°å€¼ (-2147483648~2147483647)
+ * @param  len - æ˜¾ç¤ºä½æ•°ï¼ˆå«ç¬¦å·ä½ï¼‰
  * @retval None
- * @note   ¸ù¾İRGB_LCD_ShowNumMode()µÄÉèÖÃ£¬¶àÓàÎ»Ìî³ä0»ò¿Õ¸ñ
+ * @note   æ ¹æ®RGB_LCD_ShowNumMode()çš„è®¾ç½®ï¼Œå¤šä½™ä½å¡«å……0æˆ–ç©ºæ ¼
  ****************************************************************************************************************************************/
-void RGB_LCD_DisplayNumber(uint16_t x, uint16_t y, int32_t number, uint8_t len)
-{
-	char Number_Buffer[15]; // ÓÃÓÚ´æ´¢×ª»»ºóµÄ×Ö·û´®
+void RGB_LCD_DisplayNumber(uint16_t x, uint16_t y, int32_t number,
+                           uint8_t len) {
+  char Number_Buffer[15]; // ç”¨äºå­˜å‚¨è½¬æ¢åçš„å­—ç¬¦ä¸²
 
-	if (LCD_RGB.ShowNum_Mode == Fill_Zero_RGB) // ¶àÓàÎ»²¹0
-	{
-		sprintf(Number_Buffer, "%0.*d", len, number); // ½« number ×ª»»³É×Ö·û´®£¬±ãÓÚÏÔÊ¾
-	}
-	else // ¶àÓàÎ»²¹¿Õ¸ñ
-	{
-		sprintf(Number_Buffer, "%*d", len, number); // ½« number ×ª»»³É×Ö·û´®£¬±ãÓÚÏÔÊ¾
-	}
+  if (LCD_RGB.ShowNum_Mode == Fill_Zero_RGB) // å¤šä½™ä½è¡¥0
+  {
+    sprintf(Number_Buffer, "%0.*d", len,
+            number); // å°† number è½¬æ¢æˆå­—ç¬¦ä¸²ï¼Œä¾¿äºæ˜¾ç¤º
+  } else             // å¤šä½™ä½è¡¥ç©ºæ ¼
+  {
+    sprintf(Number_Buffer, "%*d", len,
+            number); // å°† number è½¬æ¢æˆå­—ç¬¦ä¸²ï¼Œä¾¿äºæ˜¾ç¤º
+  }
 
-	RGB_LCD_DisplayString(x, y, (char *)Number_Buffer); // ½«×ª»»µÃµ½µÄ×Ö·û´®ÏÔÊ¾³öÀ´
+  RGB_LCD_DisplayString(x, y,
+                        (char *)Number_Buffer); // å°†è½¬æ¢å¾—åˆ°çš„å­—ç¬¦ä¸²æ˜¾ç¤ºå‡ºæ¥
 }
 
 /****************************************************************************************************************************************
  * @name   RGB_LCD_DisplayDecimals
- * @brief  RGB LCDÏÔÊ¾Ğ¡Êı
- * @param  x - ÆğÊ¼Ë®Æ½×ø±ê (0~799)
- * @param  y - ÆğÊ¼´¹Ö±×ø±ê (0~479)
- * @param  decimals - ¸¡µãÊıÖµ
- * @param  len - ×ÜÎ»Êı£¨º¬Ğ¡ÊıµãºÍ·ûºÅ£©
- * @param  decs - Ğ¡ÊıÎ»Êı
+ * @brief  RGB LCDæ˜¾ç¤ºå°æ•°
+ * @param  x - èµ·å§‹æ°´å¹³åæ ‡ (0~799)
+ * @param  y - èµ·å§‹å‚ç›´åæ ‡ (0~479)
+ * @param  decimals - æµ®ç‚¹æ•°å€¼
+ * @param  len - æ€»ä½æ•°ï¼ˆå«å°æ•°ç‚¹å’Œç¬¦å·ï¼‰
+ * @param  decs - å°æ•°ä½æ•°
  * @retval None
- * @note   ¸ù¾İRGB_LCD_ShowNumMode()µÄÉèÖÃ£¬¶àÓàÎ»Ìî³ä0»ò¿Õ¸ñ
- * @note   Ğ¡Êı²¿·Ö³¬¹ıÖ¸¶¨Î»ÊıÊ±ËÄÉáÎåÈë
+ * @note   æ ¹æ®RGB_LCD_ShowNumMode()çš„è®¾ç½®ï¼Œå¤šä½™ä½å¡«å……0æˆ–ç©ºæ ¼
+ * @note   å°æ•°éƒ¨åˆ†è¶…è¿‡æŒ‡å®šä½æ•°æ—¶å››èˆäº”å…¥
  ****************************************************************************************************************************************/
-void RGB_LCD_DisplayDecimals(uint16_t x, uint16_t y, double decimals, uint8_t len, uint8_t decs)
-{
-	char Number_Buffer[20]; // ÓÃÓÚ´æ´¢×ª»»ºóµÄ×Ö·û´®
+void RGB_LCD_DisplayDecimals(uint16_t x, uint16_t y, double decimals,
+                             uint8_t len, uint8_t decs) {
+  char Number_Buffer[20]; // ç”¨äºå­˜å‚¨è½¬æ¢åçš„å­—ç¬¦ä¸²
 
-	if (LCD_RGB.ShowNum_Mode == Fill_Zero_RGB) // ¶àÓàÎ»Ìî³ä0Ä£Ê½
-	{
-		sprintf(Number_Buffer, "%0*.*lf", len, decs, decimals); // ½« number ×ª»»³É×Ö·û´®£¬±ãÓÚÏÔÊ¾
-	}
-	else // ¶àÓàÎ»Ìî³ä¿Õ¸ñ
-	{
-		sprintf(Number_Buffer, "%*.*lf", len, decs, decimals); // ½« number ×ª»»³É×Ö·û´®£¬±ãÓÚÏÔÊ¾
-	}
+  if (LCD_RGB.ShowNum_Mode == Fill_Zero_RGB) // å¤šä½™ä½å¡«å……0æ¨¡å¼
+  {
+    sprintf(Number_Buffer, "%0*.*lf", len, decs,
+            decimals); // å°† number è½¬æ¢æˆå­—ç¬¦ä¸²ï¼Œä¾¿äºæ˜¾ç¤º
+  } else               // å¤šä½™ä½å¡«å……ç©ºæ ¼
+  {
+    sprintf(Number_Buffer, "%*.*lf", len, decs,
+            decimals); // å°† number è½¬æ¢æˆå­—ç¬¦ä¸²ï¼Œä¾¿äºæ˜¾ç¤º
+  }
 
-	RGB_LCD_DisplayString(x, y, (char *)Number_Buffer); // ½«×ª»»µÃµ½µÄ×Ö·û´®ÏÔÊ¾³öÀ´
+  RGB_LCD_DisplayString(x, y,
+                        (char *)Number_Buffer); // å°†è½¬æ¢å¾—åˆ°çš„å­—ç¬¦ä¸²æ˜¾ç¤ºå‡ºæ¥
 }
 
 /****************************************************************************************************************************************
  * @name   RGB_LCD_DrawImage
- * @brief  RGB LCDÏÔÊ¾µ¥É«Í¼Ïñ
- * @param  x - ÆğÊ¼Ë®Æ½×ø±ê (0~799)
- * @param  y - ÆğÊ¼´¹Ö±×ø±ê (0~479)
- * @param  width - Í¼Ïñ¿í¶È
- * @param  height - Í¼Ïñ¸ß¶È
- * @param  pImage - Í¼ÏñÊı¾İÊ×µØÖ·£¨È¡Ä£Êı¾İ£©
+ * @brief  RGB LCDæ˜¾ç¤ºå•è‰²å›¾åƒ
+ * @param  x - èµ·å§‹æ°´å¹³åæ ‡ (0~799)
+ * @param  y - èµ·å§‹å‚ç›´åæ ‡ (0~479)
+ * @param  width - å›¾åƒå®½åº¦
+ * @param  height - å›¾åƒé«˜åº¦
+ * @param  pImage - å›¾åƒæ•°æ®é¦–åœ°å€ï¼ˆå–æ¨¡æ•°æ®ï¼‰
  * @retval None
- * @note   ĞèÊÂÏÈÍ¨¹ıÈ¡Ä£Èí¼şÉú³ÉÍ¼ÏñÊı¾İ
+ * @note   éœ€äº‹å…ˆé€šè¿‡å–æ¨¡è½¯ä»¶ç”Ÿæˆå›¾åƒæ•°æ®
  ****************************************************************************************************************************************/
-void RGB_LCD_DrawImage(uint16_t x, uint16_t y, uint16_t width, uint16_t height, const uint8_t *pImage)
-{
-	uint8_t disChar;	   // ×ÖÄ£µÄÖµ
-	uint16_t Xaddress = x; // Ë®Æ½×ø±ê
-	uint16_t i = 0, j = 0, m = 0;
+void RGB_LCD_DrawImage(uint16_t x, uint16_t y, uint16_t width, uint16_t height,
+                       const uint8_t *pImage) {
+  uint8_t disChar;       // å­—æ¨¡çš„å€¼
+  uint16_t Xaddress = x; // æ°´å¹³åæ ‡
+  uint16_t i = 0, j = 0, m = 0;
 
-	for (i = 0; i < height; i++)
-	{
-		for (j = 0; j < (float)width / 8; j++)
-		{
-			disChar = *pImage;
+  for (i = 0; i < height; i++) {
+    for (j = 0; j < (float)width / 8; j++) {
+      disChar = *pImage;
 
-			for (m = 0; m < 8; m++)
-			{
-				if (disChar & 0x01)
-				{
-					RGB_LCD_DrawPoint(Xaddress, y, LCD_RGB.Color); // µ±Ç°Ä£Öµ²»Îª0Ê±£¬Ê¹ÓÃ»­±ÊÉ«»æµã
-				}
-				else
-				{
-					RGB_LCD_DrawPoint(Xaddress, y, LCD_RGB.BackColor); // ·ñÔòÊ¹ÓÃ±³¾°É«»æÖÆµã
-				}
-				disChar >>= 1;
-				Xaddress++; // Ë®Æ½×ø±ê×Ô¼Ó
+      for (m = 0; m < 8; m++) {
+        if (disChar & 0x01) {
+          RGB_LCD_DrawPoint(Xaddress, y,
+                            LCD_RGB.Color); // å½“å‰æ¨¡å€¼ä¸ä¸º0æ—¶ï¼Œä½¿ç”¨ç”»ç¬”è‰²ç»˜ç‚¹
+        } else {
+          RGB_LCD_DrawPoint(Xaddress, y,
+                            LCD_RGB.BackColor); // å¦åˆ™ä½¿ç”¨èƒŒæ™¯è‰²ç»˜åˆ¶ç‚¹
+        }
+        disChar >>= 1;
+        Xaddress++; // æ°´å¹³åæ ‡è‡ªåŠ 
 
-				if ((Xaddress - x) == width) // Èç¹ûË®Æ½×ø±ê´ïµ½ÁË×Ö·û¿í¶È£¬ÔòÍË³öµ±Ç°Ñ­»·
-				{							 // ½øÈëÏÂÒ»ĞĞµÄ»æÖÆ
-					Xaddress = x;
-					y++;
-					break;
-				}
-			}
-			pImage++;
-		}
-	}
+        if ((Xaddress - x) ==
+            width) // å¦‚æœæ°´å¹³åæ ‡è¾¾åˆ°äº†å­—ç¬¦å®½åº¦ï¼Œåˆ™é€€å‡ºå½“å‰å¾ªç¯
+        {          // è¿›å…¥ä¸‹ä¸€è¡Œçš„ç»˜åˆ¶
+          Xaddress = x;
+          y++;
+          break;
+        }
+      }
+      pImage++;
+    }
+  }
 }
 
 /****************************************************************************************************************************************
  * @name   RGB_LCD_DrawLine
- * @brief  RGB LCDÁ½µã¼ä»æÖÆÖ±Ïß£¨BresenhamËã·¨£©
- * @param  x1 - ÆğµãË®Æ½×ø±ê (0~799)
- * @param  y1 - Æğµã´¹Ö±×ø±ê (0~479)
- * @param  x2 - ÖÕµãË®Æ½×ø±ê (0~799)
- * @param  y2 - ÖÕµã´¹Ö±×ø±ê (0~479)
+ * @brief  RGB LCDä¸¤ç‚¹é—´ç»˜åˆ¶ç›´çº¿ï¼ˆBresenhamç®—æ³•ï¼‰
+ * @param  x1 - èµ·ç‚¹æ°´å¹³åæ ‡ (0~799)
+ * @param  y1 - èµ·ç‚¹å‚ç›´åæ ‡ (0~479)
+ * @param  x2 - ç»ˆç‚¹æ°´å¹³åæ ‡ (0~799)
+ * @param  y2 - ç»ˆç‚¹å‚ç›´åæ ‡ (0~479)
  * @retval None
- * @note   ÒÆÖ²×ÔST¹Ù·½ÆÀ¹À°åÀı³Ì
+ * @note   ç§»æ¤è‡ªSTå®˜æ–¹è¯„ä¼°æ¿ä¾‹ç¨‹
  ****************************************************************************************************************************************/
 
 #define RGB_ABS(X) ((X) > 0 ? (X) : -(X))
 
-void RGB_LCD_DrawLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2)
-{
-	int16_t deltax = 0, deltay = 0, x = 0, y = 0, xinc1 = 0, xinc2 = 0,
-			yinc1 = 0, yinc2 = 0, den = 0, num = 0, numadd = 0, numpixels = 0,
-			curpixel = 0;
+void RGB_LCD_DrawLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2) {
+  int16_t deltax = 0, deltay = 0, x = 0, y = 0, xinc1 = 0, xinc2 = 0, yinc1 = 0,
+          yinc2 = 0, den = 0, num = 0, numadd = 0, numpixels = 0, curpixel = 0;
 
-	deltax = RGB_ABS(x2 - x1); /* The difference between the x's */
-	deltay = RGB_ABS(y2 - y1); /* The difference between the y's */
-	x = x1;					   /* Start x off at the first pixel */
-	y = y1;					   /* Start y off at the first pixel */
+  deltax = RGB_ABS(x2 - x1); /* The difference between the x's */
+  deltay = RGB_ABS(y2 - y1); /* The difference between the y's */
+  x = x1;                    /* Start x off at the first pixel */
+  y = y1;                    /* Start y off at the first pixel */
 
-	if (x2 >= x1) /* The x-values are increasing */
-	{
-		xinc1 = 1;
-		xinc2 = 1;
-	}
-	else /* The x-values are decreasing */
-	{
-		xinc1 = -1;
-		xinc2 = -1;
-	}
+  if (x2 >= x1) /* The x-values are increasing */
+  {
+    xinc1 = 1;
+    xinc2 = 1;
+  } else /* The x-values are decreasing */
+  {
+    xinc1 = -1;
+    xinc2 = -1;
+  }
 
-	if (y2 >= y1) /* The y-values are increasing */
-	{
-		yinc1 = 1;
-		yinc2 = 1;
-	}
-	else /* The y-values are decreasing */
-	{
-		yinc1 = -1;
-		yinc2 = -1;
-	}
+  if (y2 >= y1) /* The y-values are increasing */
+  {
+    yinc1 = 1;
+    yinc2 = 1;
+  } else /* The y-values are decreasing */
+  {
+    yinc1 = -1;
+    yinc2 = -1;
+  }
 
-	if (deltax >= deltay) /* There is at least one x-value for every y-value */
-	{
-		xinc1 = 0; /* Don't change the x when numerator >= denominator */
-		yinc2 = 0; /* Don't change the y for every iteration */
-		den = deltax;
-		num = deltax / 2;
-		numadd = deltay;
-		numpixels = deltax; /* There are more x-values than y-values */
-	}
-	else /* There is at least one y-value for every x-value */
-	{
-		xinc2 = 0; /* Don't change the x for every iteration */
-		yinc1 = 0; /* Don't change the y when numerator >= denominator */
-		den = deltay;
-		num = deltay / 2;
-		numadd = deltax;
-		numpixels = deltay; /* There are more y-values than x-values */
-	}
-	for (curpixel = 0; curpixel <= numpixels; curpixel++)
-	{
-		RGB_LCD_DrawPoint(x, y, LCD_RGB.Color); /* Draw the current pixel */
-		num += numadd;							/* Increase the numerator by the top of the fraction */
-		if (num >= den)							/* Check if numerator >= denominator */
-		{
-			num -= den; /* Calculate the new numerator value */
-			x += xinc1; /* Change the x as appropriate */
-			y += yinc1; /* Change the y as appropriate */
-		}
-		x += xinc2; /* Change the x as appropriate */
-		y += yinc2; /* Change the y as appropriate */
-	}
+  if (deltax >= deltay) /* There is at least one x-value for every y-value */
+  {
+    xinc1 = 0; /* Don't change the x when numerator >= denominator */
+    yinc2 = 0; /* Don't change the y for every iteration */
+    den = deltax;
+    num = deltax / 2;
+    numadd = deltay;
+    numpixels = deltax; /* There are more x-values than y-values */
+  } else                /* There is at least one y-value for every x-value */
+  {
+    xinc2 = 0; /* Don't change the x for every iteration */
+    yinc1 = 0; /* Don't change the y when numerator >= denominator */
+    den = deltay;
+    num = deltay / 2;
+    numadd = deltax;
+    numpixels = deltay; /* There are more y-values than x-values */
+  }
+  for (curpixel = 0; curpixel <= numpixels; curpixel++) {
+    RGB_LCD_DrawPoint(x, y, LCD_RGB.Color); /* Draw the current pixel */
+    num += numadd;  /* Increase the numerator by the top of the fraction */
+    if (num >= den) /* Check if numerator >= denominator */
+    {
+      num -= den; /* Calculate the new numerator value */
+      x += xinc1; /* Change the x as appropriate */
+      y += yinc1; /* Change the y as appropriate */
+    }
+    x += xinc2; /* Change the x as appropriate */
+    y += yinc2; /* Change the y as appropriate */
+  }
 }
 
 /****************************************************************************************************************************************
  * @name   RGB_LCD_DrawRect
- * @brief  RGB LCD»æÖÆ¾ØĞÎ¿ò
- * @param  x - ÆğÊ¼Ë®Æ½×ø±ê (0~799)
- * @param  y - ÆğÊ¼´¹Ö±×ø±ê (0~479)
- * @param  width - ¾ØĞÎ¿í¶È
- * @param  height - ¾ØĞÎ¸ß¶È
+ * @brief  RGB LCDç»˜åˆ¶çŸ©å½¢æ¡†
+ * @param  x - èµ·å§‹æ°´å¹³åæ ‡ (0~799)
+ * @param  y - èµ·å§‹å‚ç›´åæ ‡ (0~479)
+ * @param  width - çŸ©å½¢å®½åº¦
+ * @param  height - çŸ©å½¢é«˜åº¦
  * @retval None
- * @note   ÒÆÖ²×ÔST¹Ù·½ÆÀ¹À°åÀı³Ì
+ * @note   ç§»æ¤è‡ªSTå®˜æ–¹è¯„ä¼°æ¿ä¾‹ç¨‹
  ****************************************************************************************************************************************/
-void RGB_LCD_DrawRect(uint16_t x, uint16_t y, uint16_t width, uint16_t height)
-{
-	/* draw horizontal lines */
-	RGB_LCD_DrawLine(x, y, x + width, y);
-	RGB_LCD_DrawLine(x, y + height, x + width, y + height);
+void RGB_LCD_DrawRect(uint16_t x, uint16_t y, uint16_t width, uint16_t height) {
+  /* draw horizontal lines */
+  RGB_LCD_DrawLine(x, y, x + width, y);
+  RGB_LCD_DrawLine(x, y + height, x + width, y + height);
 
-	/* draw vertical lines */
-	RGB_LCD_DrawLine(x, y, x, y + height);
-	RGB_LCD_DrawLine(x + width, y, x + width, y + height);
+  /* draw vertical lines */
+  RGB_LCD_DrawLine(x, y, x, y + height);
+  RGB_LCD_DrawLine(x + width, y, x + width, y + height);
 }
 
 /****************************************************************************************************************************************
  * @name   RGB_LCD_DrawCircle
- * @brief  RGB LCD»æÖÆÔ²ĞÎÂÖÀª
- * @param  x - Ô²ĞÄË®Æ½×ø±ê (0~799)
- * @param  y - Ô²ĞÄ´¹Ö±×ø±ê (0~479)
- * @param  r - °ë¾¶
+ * @brief  RGB LCDç»˜åˆ¶åœ†å½¢è½®å»“
+ * @param  x - åœ†å¿ƒæ°´å¹³åæ ‡ (0~799)
+ * @param  y - åœ†å¿ƒå‚ç›´åæ ‡ (0~479)
+ * @param  r - åŠå¾„
  * @retval None
- * @note   ÒÆÖ²×ÔST¹Ù·½ÆÀ¹À°åÀı³Ì
+ * @note   ç§»æ¤è‡ªSTå®˜æ–¹è¯„ä¼°æ¿ä¾‹ç¨‹
  ****************************************************************************************************************************************/
-void RGB_LCD_DrawCircle(uint16_t x, uint16_t y, uint16_t r)
-{
-	int Xadd = -r, Yadd = 0, err = 2 - 2 * r, e2;
-	do
-	{
-		RGB_LCD_DrawPoint(x - Xadd, y + Yadd, LCD_RGB.Color);
-		RGB_LCD_DrawPoint(x + Xadd, y + Yadd, LCD_RGB.Color);
-		RGB_LCD_DrawPoint(x + Xadd, y - Yadd, LCD_RGB.Color);
-		RGB_LCD_DrawPoint(x - Xadd, y - Yadd, LCD_RGB.Color);
+void RGB_LCD_DrawCircle(uint16_t x, uint16_t y, uint16_t r) {
+  int Xadd = -r, Yadd = 0, err = 2 - 2 * r, e2;
+  do {
+    RGB_LCD_DrawPoint(x - Xadd, y + Yadd, LCD_RGB.Color);
+    RGB_LCD_DrawPoint(x + Xadd, y + Yadd, LCD_RGB.Color);
+    RGB_LCD_DrawPoint(x + Xadd, y - Yadd, LCD_RGB.Color);
+    RGB_LCD_DrawPoint(x - Xadd, y - Yadd, LCD_RGB.Color);
 
-		e2 = err;
-		if (e2 <= Yadd)
-		{
-			err += ++Yadd * 2 + 1;
-			if (-Xadd == Yadd && e2 <= Xadd)
-				e2 = 0;
-		}
-		if (e2 > Xadd)
-			err += ++Xadd * 2 + 1;
-	} while (Xadd <= 0);
+    e2 = err;
+    if (e2 <= Yadd) {
+      err += ++Yadd * 2 + 1;
+      if (-Xadd == Yadd && e2 <= Xadd)
+        e2 = 0;
+    }
+    if (e2 > Xadd)
+      err += ++Xadd * 2 + 1;
+  } while (Xadd <= 0);
 }
 
 /****************************************************************************************************************************************
  * @name   RGB_LCD_DrawEllipse
- * @brief  RGB LCD»æÖÆÍÖÔ²ÂÖÀª
- * @param  x - ÖĞĞÄË®Æ½×ø±ê (0~799)
- * @param  y - ÖĞĞÄ´¹Ö±×ø±ê (0~479)
- * @param  r1 - Ë®Æ½°ëÖá³¤¶È
- * @param  r2 - ´¹Ö±°ëÖá³¤¶È
+ * @brief  RGB LCDç»˜åˆ¶æ¤­åœ†è½®å»“
+ * @param  x - ä¸­å¿ƒæ°´å¹³åæ ‡ (0~799)
+ * @param  y - ä¸­å¿ƒå‚ç›´åæ ‡ (0~479)
+ * @param  r1 - æ°´å¹³åŠè½´é•¿åº¦
+ * @param  r2 - å‚ç›´åŠè½´é•¿åº¦
  * @retval None
- * @note   ÒÆÖ²×ÔST¹Ù·½ÆÀ¹À°åÀı³Ì
+ * @note   ç§»æ¤è‡ªSTå®˜æ–¹è¯„ä¼°æ¿ä¾‹ç¨‹
  ****************************************************************************************************************************************/
-void RGB_LCD_DrawEllipse(int x, int y, int r1, int r2)
-{
-	int Xadd = -r1, Yadd = 0, err = 2 - 2 * r1, e2;
-	float K = 0, rad1 = 0, rad2 = 0;
+void RGB_LCD_DrawEllipse(int x, int y, int r1, int r2) {
+  int Xadd = -r1, Yadd = 0, err = 2 - 2 * r1, e2;
+  float K = 0, rad1 = 0, rad2 = 0;
 
-	rad1 = r1;
-	rad2 = r2;
+  rad1 = r1;
+  rad2 = r2;
 
-	if (r1 > r2)
-	{
-		do
-		{
-			K = (float)(rad1 / rad2);
+  if (r1 > r2) {
+    do {
+      K = (float)(rad1 / rad2);
 
-			RGB_LCD_DrawPoint(x - Xadd, y + (uint16_t)(Yadd / K), LCD_RGB.Color);
-			RGB_LCD_DrawPoint(x + Xadd, y + (uint16_t)(Yadd / K), LCD_RGB.Color);
-			RGB_LCD_DrawPoint(x + Xadd, y - (uint16_t)(Yadd / K), LCD_RGB.Color);
-			RGB_LCD_DrawPoint(x - Xadd, y - (uint16_t)(Yadd / K), LCD_RGB.Color);
+      RGB_LCD_DrawPoint(x - Xadd, y + (uint16_t)(Yadd / K), LCD_RGB.Color);
+      RGB_LCD_DrawPoint(x + Xadd, y + (uint16_t)(Yadd / K), LCD_RGB.Color);
+      RGB_LCD_DrawPoint(x + Xadd, y - (uint16_t)(Yadd / K), LCD_RGB.Color);
+      RGB_LCD_DrawPoint(x - Xadd, y - (uint16_t)(Yadd / K), LCD_RGB.Color);
 
-			e2 = err;
-			if (e2 <= Yadd)
-			{
-				err += ++Yadd * 2 + 1;
-				if (-Xadd == Yadd && e2 <= Xadd)
-					e2 = 0;
-			}
-			if (e2 > Xadd)
-				err += ++Xadd * 2 + 1;
-		} while (Xadd <= 0);
-	}
-	else
-	{
-		Yadd = -r2;
-		Xadd = 0;
-		do
-		{
-			K = (float)(rad2 / rad1);
+      e2 = err;
+      if (e2 <= Yadd) {
+        err += ++Yadd * 2 + 1;
+        if (-Xadd == Yadd && e2 <= Xadd)
+          e2 = 0;
+      }
+      if (e2 > Xadd)
+        err += ++Xadd * 2 + 1;
+    } while (Xadd <= 0);
+  } else {
+    Yadd = -r2;
+    Xadd = 0;
+    do {
+      K = (float)(rad2 / rad1);
 
-			RGB_LCD_DrawPoint(x - (uint16_t)(Xadd / K), y + Yadd, LCD_RGB.Color);
-			RGB_LCD_DrawPoint(x + (uint16_t)(Xadd / K), y + Yadd, LCD_RGB.Color);
-			RGB_LCD_DrawPoint(x + (uint16_t)(Xadd / K), y - Yadd, LCD_RGB.Color);
-			RGB_LCD_DrawPoint(x - (uint16_t)(Xadd / K), y - Yadd, LCD_RGB.Color);
+      RGB_LCD_DrawPoint(x - (uint16_t)(Xadd / K), y + Yadd, LCD_RGB.Color);
+      RGB_LCD_DrawPoint(x + (uint16_t)(Xadd / K), y + Yadd, LCD_RGB.Color);
+      RGB_LCD_DrawPoint(x + (uint16_t)(Xadd / K), y - Yadd, LCD_RGB.Color);
+      RGB_LCD_DrawPoint(x - (uint16_t)(Xadd / K), y - Yadd, LCD_RGB.Color);
 
-			e2 = err;
-			if (e2 <= Xadd)
-			{
-				err += ++Xadd * 3 + 1;
-				if (-Yadd == Xadd && e2 <= Yadd)
-					e2 = 0;
-			}
-			if (e2 > Yadd)
-				err += ++Yadd * 3 + 1;
-		} while (Yadd <= 0);
-	}
+      e2 = err;
+      if (e2 <= Xadd) {
+        err += ++Xadd * 3 + 1;
+        if (-Yadd == Xadd && e2 <= Yadd)
+          e2 = 0;
+      }
+      if (e2 > Yadd)
+        err += ++Yadd * 3 + 1;
+    } while (Yadd <= 0);
+  }
 }
 
 /****************************************************************************************************************************************
  * @name   RGB_LCD_FillRect
- * @brief  RGB LCDÌî³ä¾ØĞÎÇøÓò
- * @param  x - ÆğÊ¼Ë®Æ½×ø±ê (0~799)
- * @param  y - ÆğÊ¼´¹Ö±×ø±ê (0~479)
- * @param  width - ¾ØĞÎ¿í¶È
- * @param  height - ¾ØĞÎ¸ß¶È
+ * @brief  RGB LCDå¡«å……çŸ©å½¢åŒºåŸŸ
+ * @param  x - èµ·å§‹æ°´å¹³åæ ‡ (0~799)
+ * @param  y - èµ·å§‹å‚ç›´åæ ‡ (0~479)
+ * @param  width - çŸ©å½¢å®½åº¦
+ * @param  height - çŸ©å½¢é«˜åº¦
  * @retval None
- * @note   Ê¹ÓÃµ±Ç°»­±ÊÉ«Ìî³ä£¬DMA2D¼ÓËÙ
+ * @note   ä½¿ç”¨å½“å‰ç”»ç¬”è‰²å¡«å……ï¼ŒDMA2DåŠ é€Ÿ
  ****************************************************************************************************************************************/
-void RGB_LCD_FillRect(uint16_t x, uint16_t y, uint16_t width, uint16_t height)
-{
-	DMA2D->CR &= ~(DMA2D_CR_START);	   // Í£Ö¹DMA2D
-	DMA2D->CR = DMA2D_R2M;			   // ¼Ä´æÆ÷µ½SDRAM
-	DMA2D->OPFCCR = LCD_RGB.ColorMode; // ÉèÖÃÑÕÉ«¸ñÊ½
-	DMA2D->OCOLR = LCD_RGB.Color;	   // ÑÕÉ«
+void RGB_LCD_FillRect(uint16_t x, uint16_t y, uint16_t width, uint16_t height) {
+  DMA2D->CR &= ~(DMA2D_CR_START);    // åœæ­¢DMA2D
+  DMA2D->CR = DMA2D_R2M;             // å¯„å­˜å™¨åˆ°SDRAM
+  DMA2D->OPFCCR = LCD_RGB.ColorMode; // è®¾ç½®é¢œè‰²æ ¼å¼
+  DMA2D->OCOLR = LCD_RGB.Color;      // é¢œè‰²
 
-	if (LCD_RGB.Direction == Direction_H_RGB) // ºáÆÁÌî³ä
-	{
-		DMA2D->OOR = RGB_LCD_Width - width;														// ÉèÖÃĞĞÆ«ÒÆ
-		DMA2D->OMAR = LCD_RGB.LayerMemoryAdd + LCD_RGB.BytesPerPixel * (RGB_LCD_Width * y + x); // µØÖ·
-		DMA2D->NLR = (width << 16) | (height);													// Éè¶¨³¤¶ÈºÍ¿í¶È
-	}
-	else // ÊúÆÁÌî³ä
-	{
-		DMA2D->OOR = RGB_LCD_Width - height;																				   // ÉèÖÃĞĞÆ«ÒÆ
-		DMA2D->OMAR = LCD_RGB.LayerMemoryAdd + LCD_RGB.BytesPerPixel * ((RGB_LCD_Height - x - 1 - width) * RGB_LCD_Width + y); // µØÖ·
-		DMA2D->NLR = (width) | (height << 16);																				   // Éè¶¨³¤¶ÈºÍ¿í¶È
-	}
+  if (LCD_RGB.Direction == Direction_H_RGB) // æ¨ªå±å¡«å……
+  {
+    DMA2D->OOR = RGB_LCD_Width - width; // è®¾ç½®è¡Œåç§»
+    DMA2D->OMAR = LCD_RGB.LayerMemoryAdd +
+                  LCD_RGB.BytesPerPixel * (RGB_LCD_Width * y + x); // åœ°å€
+    DMA2D->NLR = (width << 16) | (height); // è®¾å®šé•¿åº¦å’Œå®½åº¦
+  } else                                   // ç«–å±å¡«å……
+  {
+    DMA2D->OOR = RGB_LCD_Width - height; // è®¾ç½®è¡Œåç§»
+    DMA2D->OMAR =
+        LCD_RGB.LayerMemoryAdd +
+        LCD_RGB.BytesPerPixel *
+            ((RGB_LCD_Height - x - 1 - width) * RGB_LCD_Width + y); // åœ°å€
+    DMA2D->NLR = (width) | (height << 16); // è®¾å®šé•¿åº¦å’Œå®½åº¦
+  }
 
-	DMA2D->CR |= DMA2D_CR_START; // Æô¶¯DMA2D
-	while (DMA2D->CR & DMA2D_CR_START)
-		; // µÈ´ı´«ÊäÍê³É
+  DMA2D->CR |= DMA2D_CR_START; // å¯åŠ¨DMA2D
+  while (DMA2D->CR & DMA2D_CR_START)
+    ; // ç­‰å¾…ä¼ è¾“å®Œæˆ
 }
 
 /****************************************************************************************************************************************
  * @name   RGB_LCD_FillCircle
- * @brief  RGB LCDÌî³äÔ²ĞÎÇøÓò
- * @param  x - Ô²ĞÄË®Æ½×ø±ê (0~799)
- * @param  y - Ô²ĞÄ´¹Ö±×ø±ê (0~479)
- * @param  r - °ë¾¶
+ * @brief  RGB LCDå¡«å……åœ†å½¢åŒºåŸŸ
+ * @param  x - åœ†å¿ƒæ°´å¹³åæ ‡ (0~799)
+ * @param  y - åœ†å¿ƒå‚ç›´åæ ‡ (0~479)
+ * @param  r - åŠå¾„
  * @retval None
- * @note   ÒÆÖ²×ÔST¹Ù·½ÆÀ¹À°åÀı³Ì
+ * @note   ç§»æ¤è‡ªSTå®˜æ–¹è¯„ä¼°æ¿ä¾‹ç¨‹
  ****************************************************************************************************************************************/
-void RGB_LCD_FillCircle(uint16_t x, uint16_t y, uint16_t r)
-{
-	int32_t D;	   /* Decision Variable */
-	uint32_t CurX; /* Current X Value */
-	uint32_t CurY; /* Current Y Value */
+void RGB_LCD_FillCircle(uint16_t x, uint16_t y, uint16_t r) {
+  int32_t D;     /* Decision Variable */
+  uint32_t CurX; /* Current X Value */
+  uint32_t CurY; /* Current Y Value */
 
-	D = 3 - (r << 1);
+  D = 3 - (r << 1);
 
-	CurX = 0;
-	CurY = r;
+  CurX = 0;
+  CurY = r;
 
-	while (CurX <= CurY)
-	{
-		if (CurY > 0)
-		{
-			RGB_LCD_DrawLine(x - CurX, y - CurY, x - CurX, y - CurY + 2 * CurY);
-			RGB_LCD_DrawLine(x + CurX, y - CurY, x + CurX, y - CurY + 2 * CurY);
-		}
+  while (CurX <= CurY) {
+    if (CurY > 0) {
+      RGB_LCD_DrawLine(x - CurX, y - CurY, x - CurX, y - CurY + 2 * CurY);
+      RGB_LCD_DrawLine(x + CurX, y - CurY, x + CurX, y - CurY + 2 * CurY);
+    }
 
-		if (CurX > 0)
-		{
-			RGB_LCD_DrawLine(x - CurY, y - CurX, x - CurY, y - CurX + 2 * CurX);
-			RGB_LCD_DrawLine(x + CurY, y - CurX, x + CurY, y - CurX + 2 * CurX);
-		}
-		if (D < 0)
-		{
-			D += (CurX << 2) + 6;
-		}
-		else
-		{
-			D += ((CurX - CurY) << 2) + 10;
-			CurY--;
-		}
-		CurX++;
-	}
+    if (CurX > 0) {
+      RGB_LCD_DrawLine(x - CurY, y - CurX, x - CurY, y - CurX + 2 * CurX);
+      RGB_LCD_DrawLine(x + CurY, y - CurX, x + CurY, y - CurX + 2 * CurX);
+    }
+    if (D < 0) {
+      D += (CurX << 2) + 6;
+    } else {
+      D += ((CurX - CurY) << 2) + 10;
+      CurY--;
+    }
+    CurX++;
+  }
 
-	RGB_LCD_DrawCircle(x, y, r);
+  RGB_LCD_DrawCircle(x, y, r);
 }
 
 /**
- * @brief  RGB LCD ×ÛºÏ¹¦ÄÜ²âÊÔ
+ * @brief  RGB LCD ç»¼åˆåŠŸèƒ½æµ‹è¯•
  * @param  None
  * @retval None
- * @note   ÑİÊ¾ËùÓĞÖ÷Òª¹¦ÄÜ£¬°üÀ¨£º
- *         1. ÇåÆÁºÍÑÕÉ«ÉèÖÃ
- *         2. ÎÄ×ÖÏÔÊ¾£¨ASCII¡¢ÖĞÎÄ¡¢»ìºÏ£©
- *         3. Êı×ÖÏÔÊ¾
- *         4. 2DÍ¼ĞÎ»æÖÆ£¨Ö±Ïß¡¢¾ØĞÎ¡¢Ô²ĞÎ¡¢ÍÖÔ²£©
- *         5. ÇøÓòÌî³ä
+ * @note   æ¼”ç¤ºæ‰€æœ‰ä¸»è¦åŠŸèƒ½ï¼ŒåŒ…æ‹¬ï¼š
+ *         1. æ¸…å±å’Œé¢œè‰²è®¾ç½®
+ *         2. æ–‡å­—æ˜¾ç¤ºï¼ˆASCIIã€ä¸­æ–‡ã€æ··åˆï¼‰
+ *         3. æ•°å­—æ˜¾ç¤º
+ *         4. 2Då›¾å½¢ç»˜åˆ¶ï¼ˆç›´çº¿ã€çŸ©å½¢ã€åœ†å½¢ã€æ¤­åœ†ï¼‰
+ *         5. åŒºåŸŸå¡«å……
  */
-void lcd_test(void)
-{
-	/* ===== ²âÊÔ1: »ù´¡ÇåÆÁºÍÑÕÉ«ÉèÖÃ ===== */
-	RGB_LCD_SetBackColor(RGB_LCD_WHITE);
-	RGB_LCD_Clear();
-	HAL_Delay(1000);
+void lcd_test(void) {
+  /* ===== æµ‹è¯•1: åŸºç¡€æ¸…å±å’Œé¢œè‰²è®¾ç½® ===== */
+  RGB_LCD_SetBackColor(RGB_LCD_WHITE);
+  RGB_LCD_Clear();
+  HAL_Delay(1000);
 
-	/* ===== ²âÊÔ2: ÏÔÊ¾±êÌâ ===== */
-	RGB_LCD_SetColor(RGB_LCD_BLUE);
-	RGB_LCD_SetTextFont(24);
-	RGB_LCD_DisplayString(10, 10, "LCD Test");
-	RGB_LCD_DisplayText(10, 40, "LCD²âÊÔ");
-	HAL_Delay(1000);
+  /* ===== æµ‹è¯•2: æ˜¾ç¤ºæ ‡é¢˜ ===== */
+  RGB_LCD_SetColor(RGB_LCD_BLUE);
+  RGB_LCD_SetTextFont(24);
+  RGB_LCD_DisplayString(10, 10, "LCD Test");
+  RGB_LCD_DisplayText(10, 40, "LCDæµ‹è¯•");
+  HAL_Delay(1000);
 
-	/* ===== ²âÊÔ3: ASCII×Ö·ûÏÔÊ¾ ===== */
-	RGB_LCD_SetBackColor(RGB_LCD_WHITE);
-	RGB_LCD_SetColor(RGB_LCD_RED);
-	RGB_LCD_SetTextFont(20);
-	RGB_LCD_DisplayString(10, 80, "ASCII Font:");
-	RGB_LCD_SetTextFont(16);
-	RGB_LCD_DisplayString(10, 110, "Hello World 0123456789");
-	HAL_Delay(1000);
+  /* ===== æµ‹è¯•3: ASCIIå­—ç¬¦æ˜¾ç¤º ===== */
+  RGB_LCD_SetBackColor(RGB_LCD_WHITE);
+  RGB_LCD_SetColor(RGB_LCD_RED);
+  RGB_LCD_SetTextFont(20);
+  RGB_LCD_DisplayString(10, 80, "ASCII Font:");
+  RGB_LCD_SetTextFont(16);
+  RGB_LCD_DisplayString(10, 110, "Hello World 0123456789");
+  HAL_Delay(1000);
 
-	/* ===== ²âÊÔ4: ÖĞÓ¢ÎÄ»ìºÏÎÄ±¾ ===== */
-	RGB_LCD_SetColor(RGB_LCD_GREEN);
-	RGB_LCD_SetTextFont(20);
-	RGB_LCD_DisplayString(10, 150, "Chinese Text:");
-	RGB_LCD_SetTextFont(24);
-	RGB_LCD_DisplayText(10, 180, "ÄãºÃ Hello STM32");
-	HAL_Delay(1000);
+  /* ===== æµ‹è¯•4: ä¸­è‹±æ–‡æ··åˆæ–‡æœ¬ ===== */
+  RGB_LCD_SetColor(RGB_LCD_GREEN);
+  RGB_LCD_SetTextFont(20);
+  RGB_LCD_DisplayString(10, 150, "Chinese Text:");
+  RGB_LCD_SetTextFont(24);
+  RGB_LCD_DisplayText(10, 180, "ä½ å¥½ Hello STM32");
+  HAL_Delay(1000);
 
-	/* ===== ²âÊÔ5: Êı×ÖÏÔÊ¾ ===== */
-	RGB_LCD_SetBackColor(RGB_LCD_WHITE);
-	RGB_LCD_SetColor(RGB_LCD_MAGENTA);
-	RGB_LCD_SetTextFont(20);
-	RGB_LCD_DisplayString(10, 230, "Numbers:");
-	RGB_LCD_SetTextFont(16);
+  /* ===== æµ‹è¯•5: æ•°å­—æ˜¾ç¤º ===== */
+  RGB_LCD_SetBackColor(RGB_LCD_WHITE);
+  RGB_LCD_SetColor(RGB_LCD_MAGENTA);
+  RGB_LCD_SetTextFont(20);
+  RGB_LCD_DisplayString(10, 230, "Numbers:");
+  RGB_LCD_SetTextFont(16);
 
-	/* ÏÔÊ¾ÕûÊı£¨Ìî³ä¿Õ¸ñÄ£Ê½£© */
-	RGB_LCD_ShowNumMode(Fill_Space_RGB);
-	RGB_LCD_DisplayString(10, 260, "Integer:");
-	RGB_LCD_DisplayNumber(120, 260, 12345, 6);
+  /* æ˜¾ç¤ºæ•´æ•°ï¼ˆå¡«å……ç©ºæ ¼æ¨¡å¼ï¼‰ */
+  RGB_LCD_ShowNumMode(Fill_Space_RGB);
+  RGB_LCD_DisplayString(10, 260, "Integer:");
+  RGB_LCD_DisplayNumber(120, 260, 12345, 6);
 
-	/* ÏÔÊ¾ÕûÊı£¨Ìî³ä0Ä£Ê½£© */
-	RGB_LCD_ShowNumMode(Fill_Zero_RGB);
-	RGB_LCD_DisplayString(10, 285, "Fill Zero:");
-	RGB_LCD_DisplayNumber(120, 285, 42, 6);
+  /* æ˜¾ç¤ºæ•´æ•°ï¼ˆå¡«å……0æ¨¡å¼ï¼‰ */
+  RGB_LCD_ShowNumMode(Fill_Zero_RGB);
+  RGB_LCD_DisplayString(10, 285, "Fill Zero:");
+  RGB_LCD_DisplayNumber(120, 285, 42, 6);
 
-	/* ÏÔÊ¾Ğ¡Êı */
-	RGB_LCD_DisplayString(10, 310, "Decimal:");
-	RGB_LCD_DisplayDecimals(120, 310, 3.14159, 8, 4);
+  /* æ˜¾ç¤ºå°æ•° */
+  RGB_LCD_DisplayString(10, 310, "Decimal:");
+  RGB_LCD_DisplayDecimals(120, 310, 3.14159, 8, 4);
 
-	HAL_Delay(2000);
+  HAL_Delay(2000);
 
-	/* ===== ²âÊÔ6: 2DÍ¼ĞÎ - Ö±Ïß ===== */
-	RGB_LCD_SetBackColor(RGB_LCD_WHITE);
-	RGB_LCD_Clear();
+  /* ===== æµ‹è¯•6: 2Då›¾å½¢ - ç›´çº¿ ===== */
+  RGB_LCD_SetBackColor(RGB_LCD_WHITE);
+  RGB_LCD_Clear();
 
-	RGB_LCD_SetColor(RGB_LCD_RED);
-	RGB_LCD_SetTextFont(20);
-	RGB_LCD_DisplayString(10, 10, "2D Graphics - Lines:");
+  RGB_LCD_SetColor(RGB_LCD_RED);
+  RGB_LCD_SetTextFont(20);
+  RGB_LCD_DisplayString(10, 10, "2D Graphics - Lines:");
 
-	RGB_LCD_SetColor(RGB_LCD_RED);
-	RGB_LCD_DrawLine(50, 50, 300, 50);
-	RGB_LCD_DrawLine(50, 50, 50, 150);
-	RGB_LCD_DrawLine(300, 50, 300, 150);
-	RGB_LCD_DrawLine(50, 150, 300, 150);
-	HAL_Delay(1000);
+  RGB_LCD_SetColor(RGB_LCD_RED);
+  RGB_LCD_DrawLine(50, 50, 300, 50);
+  RGB_LCD_DrawLine(50, 50, 50, 150);
+  RGB_LCD_DrawLine(300, 50, 300, 150);
+  RGB_LCD_DrawLine(50, 150, 300, 150);
+  HAL_Delay(1000);
 
-	/* ===== ²âÊÔ7: 2DÍ¼ĞÎ - ¾ØĞÎ ===== */
-	RGB_LCD_SetColor(RGB_LCD_GREEN);
-	RGB_LCD_DrawRect(350, 50, 150, 100);
-	RGB_LCD_DrawRect(360, 60, 130, 80);
+  /* ===== æµ‹è¯•7: 2Då›¾å½¢ - çŸ©å½¢ ===== */
+  RGB_LCD_SetColor(RGB_LCD_GREEN);
+  RGB_LCD_DrawRect(350, 50, 150, 100);
+  RGB_LCD_DrawRect(360, 60, 130, 80);
 
-	/* Ìî³ä¾ØĞÎ */
-	RGB_LCD_FillRect(530, 60, 100, 80);
-	HAL_Delay(1000);
+  /* å¡«å……çŸ©å½¢ */
+  RGB_LCD_FillRect(530, 60, 100, 80);
+  HAL_Delay(1000);
 
-	/* ===== ²âÊÔ8: 2DÍ¼ĞÎ - Ô²ĞÎ ===== */
-	RGB_LCD_SetColor(RGB_LCD_BLUE);
-	RGB_LCD_DrawCircle(100, 250, 40);
-	RGB_LCD_DrawCircle(100, 250, 30);
-	RGB_LCD_DrawCircle(100, 250, 20);
+  /* ===== æµ‹è¯•8: 2Då›¾å½¢ - åœ†å½¢ ===== */
+  RGB_LCD_SetColor(RGB_LCD_BLUE);
+  RGB_LCD_DrawCircle(100, 250, 40);
+  RGB_LCD_DrawCircle(100, 250, 30);
+  RGB_LCD_DrawCircle(100, 250, 20);
 
-	/* Ìî³äÔ²ĞÎ */
-	RGB_LCD_FillCircle(220, 250, 35);
-	HAL_Delay(1000);
+  /* å¡«å……åœ†å½¢ */
+  RGB_LCD_FillCircle(220, 250, 35);
+  HAL_Delay(1000);
 
-	/* ===== ²âÊÔ9: 2DÍ¼ĞÎ - ÍÖÔ² ===== */
-	RGB_LCD_SetColor(RGB_LCD_CYAN);
-	RGB_LCD_DrawEllipse(350, 250, 60, 40);
-	RGB_LCD_DrawEllipse(520, 250, 50, 30);
-	HAL_Delay(1000);
+  /* ===== æµ‹è¯•9: 2Då›¾å½¢ - æ¤­åœ† ===== */
+  RGB_LCD_SetColor(RGB_LCD_CYAN);
+  RGB_LCD_DrawEllipse(350, 250, 60, 40);
+  RGB_LCD_DrawEllipse(520, 250, 50, 30);
+  HAL_Delay(1000);
 
-	/* ===== ²âÊÔ10: ²ÊÉ«·½¿é ===== */
-	RGB_LCD_SetBackColor(RGB_LCD_WHITE);
-	RGB_LCD_Clear();
+  /* ===== æµ‹è¯•10: å½©è‰²æ–¹å— ===== */
+  RGB_LCD_SetBackColor(RGB_LCD_WHITE);
+  RGB_LCD_Clear();
 
-	RGB_LCD_SetTextFont(16);
-	RGB_LCD_SetColor(RGB_LCD_BLACK);
-	RGB_LCD_DisplayString(10, 10, "Color Blocks:");
+  RGB_LCD_SetTextFont(16);
+  RGB_LCD_SetColor(RGB_LCD_BLACK);
+  RGB_LCD_DisplayString(10, 10, "Color Blocks:");
 
-	/* »æÖÆ²»Í¬ÑÕÉ«µÄ·½¿é */
-	RGB_LCD_FillRect(20, 50, 60, 60); // ºÚÉ«ÒÑÉèÖÃ
+  /* ç»˜åˆ¶ä¸åŒé¢œè‰²çš„æ–¹å— */
+  RGB_LCD_FillRect(20, 50, 60, 60); // é»‘è‰²å·²è®¾ç½®
 
-	RGB_LCD_SetColor(RGB_LCD_RED);
-	RGB_LCD_FillRect(100, 50, 60, 60);
+  RGB_LCD_SetColor(RGB_LCD_RED);
+  RGB_LCD_FillRect(100, 50, 60, 60);
 
-	RGB_LCD_SetColor(RGB_LCD_GREEN);
-	RGB_LCD_FillRect(180, 50, 60, 60);
+  RGB_LCD_SetColor(RGB_LCD_GREEN);
+  RGB_LCD_FillRect(180, 50, 60, 60);
 
-	RGB_LCD_SetColor(RGB_LCD_BLUE);
-	RGB_LCD_FillRect(260, 50, 60, 60);
+  RGB_LCD_SetColor(RGB_LCD_BLUE);
+  RGB_LCD_FillRect(260, 50, 60, 60);
 
-	RGB_LCD_SetColor(RGB_LCD_YELLOW);
-	RGB_LCD_FillRect(340, 50, 60, 60);
+  RGB_LCD_SetColor(RGB_LCD_YELLOW);
+  RGB_LCD_FillRect(340, 50, 60, 60);
 
-	RGB_LCD_SetColor(RGB_LCD_CYAN);
-	RGB_LCD_FillRect(420, 50, 60, 60);
+  RGB_LCD_SetColor(RGB_LCD_CYAN);
+  RGB_LCD_FillRect(420, 50, 60, 60);
 
-	RGB_LCD_SetColor(RGB_LCD_MAGENTA);
-	RGB_LCD_FillRect(500, 50, 60, 60);
+  RGB_LCD_SetColor(RGB_LCD_MAGENTA);
+  RGB_LCD_FillRect(500, 50, 60, 60);
 
-	/* ÁÁÉ«Ïµ */
-	RGB_LCD_SetColor(RGB_LIGHT_RED);
-	RGB_LCD_FillRect(20, 130, 60, 60);
+  /* äº®è‰²ç³» */
+  RGB_LCD_SetColor(RGB_LIGHT_RED);
+  RGB_LCD_FillRect(20, 130, 60, 60);
 
-	RGB_LCD_SetColor(RGB_LIGHT_GREEN);
-	RGB_LCD_FillRect(100, 130, 60, 60);
+  RGB_LCD_SetColor(RGB_LIGHT_GREEN);
+  RGB_LCD_FillRect(100, 130, 60, 60);
 
-	RGB_LCD_SetColor(RGB_LIGHT_BLUE);
-	RGB_LCD_FillRect(180, 130, 60, 60);
+  RGB_LCD_SetColor(RGB_LIGHT_BLUE);
+  RGB_LCD_FillRect(180, 130, 60, 60);
 
-	HAL_Delay(2000);
+  HAL_Delay(2000);
 
-	/* ===== ²âÊÔ11: ½¥±äĞ§¹û£¨»æÖÆ¶àÌõË®Æ½Ïß£© ===== */
-	RGB_LCD_SetBackColor(RGB_LCD_WHITE);
-	RGB_LCD_Clear();
+  /* ===== æµ‹è¯•11: æ¸å˜æ•ˆæœï¼ˆç»˜åˆ¶å¤šæ¡æ°´å¹³çº¿ï¼‰ ===== */
+  RGB_LCD_SetBackColor(RGB_LCD_WHITE);
+  RGB_LCD_Clear();
 
-	RGB_LCD_SetTextFont(16);
-	RGB_LCD_SetColor(RGB_LCD_BLACK);
-	RGB_LCD_DisplayString(10, 10, "Gradient Lines:");
+  RGB_LCD_SetTextFont(16);
+  RGB_LCD_SetColor(RGB_LCD_BLACK);
+  RGB_LCD_DisplayString(10, 10, "Gradient Lines:");
 
-	/* »æÖÆÑÕÉ«½¥±äµÄË®Æ½Ïß */
-	for (uint16_t i = 0; i < 200; i += 5)
-	{
-		if (i < 50)
-		{
-			RGB_LCD_SetColor(RGB_LCD_RED);
-		}
-		else if (i < 100)
-		{
-			RGB_LCD_SetColor(RGB_LCD_YELLOW);
-		}
-		else if (i < 150)
-		{
-			RGB_LCD_SetColor(RGB_LCD_GREEN);
-		}
-		else
-		{
-			RGB_LCD_SetColor(RGB_LCD_BLUE);
-		}
-		RGB_LCD_DrawLine(50, 50 + i, 400, 50 + i);
-	}
-	HAL_Delay(2000);
+  /* ç»˜åˆ¶é¢œè‰²æ¸å˜çš„æ°´å¹³çº¿ */
+  for (uint16_t i = 0; i < 200; i += 5) {
+    if (i < 50) {
+      RGB_LCD_SetColor(RGB_LCD_RED);
+    } else if (i < 100) {
+      RGB_LCD_SetColor(RGB_LCD_YELLOW);
+    } else if (i < 150) {
+      RGB_LCD_SetColor(RGB_LCD_GREEN);
+    } else {
+      RGB_LCD_SetColor(RGB_LCD_BLUE);
+    }
+    RGB_LCD_DrawLine(50, 50 + i, 400, 50 + i);
+  }
+  HAL_Delay(2000);
 
-	/* ===== ²âÊÔ12: ¼¸ºÎÍ¼°¸×éºÏ ===== */
-	RGB_LCD_SetBackColor(RGB_LCD_WHITE);
-	RGB_LCD_Clear();
+  /* ===== æµ‹è¯•12: å‡ ä½•å›¾æ¡ˆç»„åˆ ===== */
+  RGB_LCD_SetBackColor(RGB_LCD_WHITE);
+  RGB_LCD_Clear();
 
-	RGB_LCD_SetTextFont(20);
-	RGB_LCD_SetColor(RGB_LCD_BLACK);
-	RGB_LCD_DisplayString(10, 10, "Combination:");
+  RGB_LCD_SetTextFont(20);
+  RGB_LCD_SetColor(RGB_LCD_BLACK);
+  RGB_LCD_DisplayString(10, 10, "Combination:");
 
-	/* »æÖÆÇ¶Ì×µÄÍ¼ĞÎ */
-	RGB_LCD_SetColor(RGB_LCD_RED);
-	RGB_LCD_DrawRect(50, 60, 200, 150);
+  /* ç»˜åˆ¶åµŒå¥—çš„å›¾å½¢ */
+  RGB_LCD_SetColor(RGB_LCD_RED);
+  RGB_LCD_DrawRect(50, 60, 200, 150);
 
-	RGB_LCD_SetColor(RGB_LCD_GREEN);
-	RGB_LCD_DrawCircle(150, 135, 50);
+  RGB_LCD_SetColor(RGB_LCD_GREEN);
+  RGB_LCD_DrawCircle(150, 135, 50);
 
-	RGB_LCD_SetColor(RGB_LCD_BLUE);
-	RGB_LCD_FillRect(320, 60, 100, 100);
-	RGB_LCD_DrawLine(320, 60, 420, 160);
-	RGB_LCD_DrawLine(320, 160, 420, 60);
+  RGB_LCD_SetColor(RGB_LCD_BLUE);
+  RGB_LCD_FillRect(320, 60, 100, 100);
+  RGB_LCD_DrawLine(320, 60, 420, 160);
+  RGB_LCD_DrawLine(320, 160, 420, 60);
 
-	HAL_Delay(2000);
+  HAL_Delay(2000);
 
-	/* ===== ²âÊÔÍê³É ===== */
-	RGB_LCD_SetBackColor(RGB_LCD_WHITE);
-	RGB_LCD_Clear();
+  /* ===== æµ‹è¯•å®Œæˆ ===== */
+  RGB_LCD_SetBackColor(RGB_LCD_WHITE);
+  RGB_LCD_Clear();
 
-	RGB_LCD_SetColor(RGB_LCD_GREEN);
-	RGB_LCD_SetTextFont(24);
-	RGB_LCD_DisplayText(200, 200, "²âÊÔÍê³É");
-	RGB_LCD_DisplayString(200, 240, "Test Finished");
+  RGB_LCD_SetColor(RGB_LCD_GREEN);
+  RGB_LCD_SetTextFont(24);
+  RGB_LCD_DisplayText(200, 200, "æµ‹è¯•å®Œæˆ");
+  RGB_LCD_DisplayString(200, 240, "Test Finished");
 
-	HAL_Delay(3000);
+  HAL_Delay(3000);
 
-	/* »Ö¸´µ½³õÊ¼×´Ì¬ */
-	RGB_LCD_SetBackColor(RGB_LCD_BLACK);
-	RGB_LCD_SetColor(RGB_LCD_WHITE);
-	RGB_LCD_Clear();
+  /* æ¢å¤åˆ°åˆå§‹çŠ¶æ€ */
+  RGB_LCD_SetBackColor(RGB_LCD_BLACK);
+  RGB_LCD_SetColor(RGB_LCD_WHITE);
+  RGB_LCD_Clear();
 }

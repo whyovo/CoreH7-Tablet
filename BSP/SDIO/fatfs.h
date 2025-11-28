@@ -1,18 +1,18 @@
 /**
  ******************************************************************************
  * @file    fatfs.h
- * @author  ²Ë²Ëwhy£¨BÕ¾£º²Ë²Ëwhyy£©
- * @brief   FatFs ÎÄ¼şÏµÍ³Í·ÎÄ¼ş£¬Ìá¹© SD ¿¨ÎÄ¼ş²Ù×÷½Ó¿Ú
- *          ¼¯³É×Ô¶¯¹ÒÔØ¡¢¸ñÊ½»¯¡¢ÎÄ¼ş¶ÁĞ´¡¢Ä¿Â¼¹ÜÀíµÈ¹¦ÄÜ
+ * @author  èœèœwhyï¼ˆBç«™ï¼šèœèœwhyyï¼‰
+ * @brief   FatFs æ–‡ä»¶ç³»ç»Ÿå¤´æ–‡ä»¶ï¼Œæä¾› SD å¡æ–‡ä»¶æ“ä½œæ¥å£
+ *          é›†æˆè‡ªåŠ¨æŒ‚è½½ã€æ ¼å¼åŒ–ã€æ–‡ä»¶è¯»å†™ã€ç›®å½•ç®¡ç†ç­‰åŠŸèƒ½
  ******************************************************************************
  * @attention
  *
- * Ê¹ÓÃËµÃ÷£º
- * 1. ĞèÒªÏÈÆôÓÃ SDMMC_ENABLE ºÍ FATFS_ENABLE ºê¶¨Òå£¨ÔÚ init.h ÖĞÅäÖÃ£©
- * 2. init_all() »á×Ô¶¯³õÊ¼»¯ SD ¿¨²¢¹ÒÔØ FatFs ÎÄ¼şÏµÍ³
- * 3. Èô SD ¿¨Î´¸ñÊ½»¯£¬»á×Ô¶¯½øĞĞ FAT32 ¸ñÊ½»¯
- * 4. ËùÓĞ²Ù×÷½á¹ûÍ¨¹ı DEBUG_INFO/DEBUG_ERROR Êä³ö
- * 5. ÎÄ¼şÂ·¾¶¸ñÊ½£º´øÇ°×º "0:" »ò "0:/" ¿ªÍ·£¨Àı£º"0:test.txt"¡¢"0:MyDir/data.bin"£©
+ * ä½¿ç”¨è¯´æ˜ï¼š
+ * 1. éœ€è¦å…ˆå¯ç”¨ SDMMC_ENABLE å’Œ FATFS_ENABLE å®å®šä¹‰ï¼ˆåœ¨ init.h ä¸­é…ç½®ï¼‰
+ * 2. init_all() ä¼šè‡ªåŠ¨åˆå§‹åŒ– SD å¡å¹¶æŒ‚è½½ FatFs æ–‡ä»¶ç³»ç»Ÿ
+ * 3. è‹¥ SD å¡æœªæ ¼å¼åŒ–ï¼Œä¼šè‡ªåŠ¨è¿›è¡Œ FAT32 æ ¼å¼åŒ–
+ * 4. æ‰€æœ‰æ“ä½œç»“æœé€šè¿‡ DEBUG_INFO/DEBUG_ERROR è¾“å‡º
+ * 5. æ–‡ä»¶è·¯å¾„æ ¼å¼ï¼šå¸¦å‰ç¼€ "0:" æˆ– "0:/" å¼€å¤´ï¼ˆä¾‹ï¼š"0:test.txt"ã€"0:MyDir/data.bin"ï¼‰
  *
  ******************************************************************************
  */
@@ -30,94 +30,94 @@ extern "C"
 #include "FatFs/sd_diskio.h"
 #include <stdint.h>
 
-    /* È«¾Ö±äÁ¿£¨ÔÚ fatfs.c ÖĞ¶¨Òå£© */
-    extern FATFS SD_FatFs;     /* ÎÄ¼şÏµÍ³¶ÔÏó */
-    extern FRESULT MyFile_Res; /* ×î½üÒ»´ÎÎÄ¼ş²Ù×÷½á¹û */
-    extern char SDPath[4];     /* SD ¿¨Âß¼­Çı¶¯Â·¾¶£¬ÀıÈç "0:" */
+    /* å…¨å±€å˜é‡ï¼ˆåœ¨ fatfs.c ä¸­å®šä¹‰ï¼‰ */
+    extern FATFS SD_FatFs;     /* æ–‡ä»¶ç³»ç»Ÿå¯¹è±¡ */
+    extern FRESULT MyFile_Res; /* æœ€è¿‘ä¸€æ¬¡æ–‡ä»¶æ“ä½œç»“æœ */
+    extern char SDPath[4];     /* SD å¡é€»è¾‘é©±åŠ¨è·¯å¾„ï¼Œä¾‹å¦‚ "0:" */
 
-    /* µ¼³öº¯Êı£¨¹© main.c µ÷ÓÃ£© */
-    void FatFs_Check(void);       /* ¹ÒÔØ / ³õÊ¼»¯ FatFs£¨ÈôĞèÒª¿É¸ñÊ½»¯£© */
-    void FatFs_GetVolume(void);   /* ¼ÆËã SD ¿¨ÈİÁ¿²¢Í¨¹ı DEBUG Êä³ö */
-    uint8_t FatFs_FileTest(void); /* ÎÄ¼ş´´½¨/Ğ´Èë/¶ÁÈ¡²âÊÔ£¬·µ»Ø 1=³É¹¦£¬0=Ê§°Ü */
+    /* å¯¼å‡ºå‡½æ•°ï¼ˆä¾› main.c è°ƒç”¨ï¼‰ */
+    void FatFs_Check(void);       /* æŒ‚è½½ / åˆå§‹åŒ– FatFsï¼ˆè‹¥éœ€è¦å¯æ ¼å¼åŒ–ï¼‰ */
+    void FatFs_GetVolume(void);   /* è®¡ç®— SD å¡å®¹é‡å¹¶é€šè¿‡ DEBUG è¾“å‡º */
+    uint8_t FatFs_FileTest(void); /* æ–‡ä»¶åˆ›å»º/å†™å…¥/è¯»å–æµ‹è¯•ï¼Œè¿”å› 1=æˆåŠŸï¼Œ0=å¤±è´¥ */
 
-    /* ==================== ±ã½İÎÄ¼ş²Ù×÷º¯Êı ==================== */
+    /* ==================== ä¾¿æ·æ–‡ä»¶æ“ä½œå‡½æ•° ==================== */
 
     /**
-     * @brief »ñÈ¡´íÎóĞÅÏ¢ÃèÊö
-     * @param res FatFs ²Ù×÷½á¹û
-     * @return ´íÎóĞÅÏ¢×Ö·û´®
+     * @brief è·å–é”™è¯¯ä¿¡æ¯æè¿°
+     * @param res FatFs æ“ä½œç»“æœ
+     * @return é”™è¯¯ä¿¡æ¯å­—ç¬¦ä¸²
      */
     const char *FatFs_GetErrorMsg(FRESULT res);
 
     /**
-     * @brief ´´½¨²¢Ğ´ÈëÎÄ¼ş
-     * @param filename ÎÄ¼şÂ·¾¶£¨Àı£º"0:test.txt"£©
-     * @param data Ğ´ÈëµÄÊı¾İÖ¸Õë
-     * @param size Ğ´ÈëµÄÊı¾İ´óĞ¡£¨×Ö½Ú£©
-     * @return FR_OK=³É¹¦, ÆäËû=Ê§°Ü
-     * @note Èç¹ûÎÄ¼şÒÑ´æÔÚ£¬Ôò¸²¸Ç
+     * @brief åˆ›å»ºå¹¶å†™å…¥æ–‡ä»¶
+     * @param filename æ–‡ä»¶è·¯å¾„ï¼ˆä¾‹ï¼š"0:test.txt"ï¼‰
+     * @param data å†™å…¥çš„æ•°æ®æŒ‡é’ˆ
+     * @param size å†™å…¥çš„æ•°æ®å¤§å°ï¼ˆå­—èŠ‚ï¼‰
+     * @return FR_OK=æˆåŠŸ, å…¶ä»–=å¤±è´¥
+     * @note å¦‚æœæ–‡ä»¶å·²å­˜åœ¨ï¼Œåˆ™è¦†ç›–
      */
     FRESULT FatFs_WriteFile(const char *filename, const void *data, uint32_t size);
 
     /**
-     * @brief ¶ÁÈ¡ÎÄ¼ş
-     * @param filename ÎÄ¼şÂ·¾¶
-     * @param buffer ¶ÁÈ¡»º³åÇø
-     * @param size »º³åÇø´óĞ¡£¨×Ö½Ú£©
-     * @return Êµ¼Ê¶ÁÈ¡µÄ×Ö½ÚÊı£¬Ê§°Ü·µ»Ø 0
+     * @brief è¯»å–æ–‡ä»¶
+     * @param filename æ–‡ä»¶è·¯å¾„
+     * @param buffer è¯»å–ç¼“å†²åŒº
+     * @param size ç¼“å†²åŒºå¤§å°ï¼ˆå­—èŠ‚ï¼‰
+     * @return å®é™…è¯»å–çš„å­—èŠ‚æ•°ï¼Œå¤±è´¥è¿”å› 0
      */
     uint32_t FatFs_ReadFile(const char *filename, void *buffer, uint32_t size);
 
     /**
-     * @brief ×·¼ÓĞ´ÈëÎÄ¼ş
-     * @param filename ÎÄ¼şÂ·¾¶
-     * @param data Ğ´ÈëµÄÊı¾İÖ¸Õë
-     * @param size Ğ´ÈëµÄÊı¾İ´óĞ¡£¨×Ö½Ú£©
-     * @return FR_OK=³É¹¦, ÆäËû=Ê§°Ü
-     * @note Èç¹ûÎÄ¼ş²»´æÔÚ£¬Ôò´´½¨ÎÄ¼ş
+     * @brief è¿½åŠ å†™å…¥æ–‡ä»¶
+     * @param filename æ–‡ä»¶è·¯å¾„
+     * @param data å†™å…¥çš„æ•°æ®æŒ‡é’ˆ
+     * @param size å†™å…¥çš„æ•°æ®å¤§å°ï¼ˆå­—èŠ‚ï¼‰
+     * @return FR_OK=æˆåŠŸ, å…¶ä»–=å¤±è´¥
+     * @note å¦‚æœæ–‡ä»¶ä¸å­˜åœ¨ï¼Œåˆ™åˆ›å»ºæ–‡ä»¶
      */
     FRESULT FatFs_AppendFile(const char *filename, const void *data, uint32_t size);
 
     /**
-     * @brief É¾³ıÎÄ¼ş
-     * @param filename ÎÄ¼şÂ·¾¶
-     * @return FR_OK=³É¹¦, ÆäËû=Ê§°Ü
+     * @brief åˆ é™¤æ–‡ä»¶
+     * @param filename æ–‡ä»¶è·¯å¾„
+     * @return FR_OK=æˆåŠŸ, å…¶ä»–=å¤±è´¥
      */
     FRESULT FatFs_DeleteFile(const char *filename);
 
     /**
-     * @brief ¼ì²éÎÄ¼şÊÇ·ñ´æÔÚ
-     * @param filename ÎÄ¼şÂ·¾¶
-     * @return 1=´æÔÚ, 0=²»´æÔÚ
+     * @brief æ£€æŸ¥æ–‡ä»¶æ˜¯å¦å­˜åœ¨
+     * @param filename æ–‡ä»¶è·¯å¾„
+     * @return 1=å­˜åœ¨, 0=ä¸å­˜åœ¨
      */
     uint8_t FatFs_FileExists(const char *filename);
 
     /**
-     * @brief »ñÈ¡ÎÄ¼ş´óĞ¡
-     * @param filename ÎÄ¼şÂ·¾¶
-     * @return ÎÄ¼ş´óĞ¡£¨×Ö½Ú£©£¬Ê§°Ü·µ»Ø 0
+     * @brief è·å–æ–‡ä»¶å¤§å°
+     * @param filename æ–‡ä»¶è·¯å¾„
+     * @return æ–‡ä»¶å¤§å°ï¼ˆå­—èŠ‚ï¼‰ï¼Œå¤±è´¥è¿”å› 0
      */
     uint32_t FatFs_GetFileSize(const char *filename);
 
     /**
-     * @brief ´´½¨Ä¿Â¼
-     * @param dirname Ä¿Â¼Â·¾¶£¨Àı£º"0:MyDir"£©
-     * @return FR_OK=³É¹¦, ÆäËû=Ê§°Ü
+     * @brief åˆ›å»ºç›®å½•
+     * @param dirname ç›®å½•è·¯å¾„ï¼ˆä¾‹ï¼š"0:MyDir"ï¼‰
+     * @return FR_OK=æˆåŠŸ, å…¶ä»–=å¤±è´¥
      */
     FRESULT FatFs_CreateDir(const char *dirname);
 
     /**
-     * @brief É¾³ıÄ¿Â¼£¨Ä¿Â¼±ØĞëÎª¿Õ£©
-     * @param dirname Ä¿Â¼Â·¾¶
-     * @return FR_OK=³É¹¦, ÆäËû=Ê§°Ü
+     * @brief åˆ é™¤ç›®å½•ï¼ˆç›®å½•å¿…é¡»ä¸ºç©ºï¼‰
+     * @param dirname ç›®å½•è·¯å¾„
+     * @return FR_OK=æˆåŠŸ, å…¶ä»–=å¤±è´¥
      */
     FRESULT FatFs_DeleteDir(const char *dirname);
 
     /**
-     * @brief ÁĞ³öÄ¿Â¼ÖĞµÄÎÄ¼şºÍ×ÓÄ¿Â¼
-     * @param dirname Ä¿Â¼Â·¾¶
-     * @param max_items ×î¶àÏÔÊ¾µÄÏîÄ¿Êı
-     * @return FR_OK=³É¹¦, ÆäËû=Ê§°Ü
+     * @brief åˆ—å‡ºç›®å½•ä¸­çš„æ–‡ä»¶å’Œå­ç›®å½•
+     * @param dirname ç›®å½•è·¯å¾„
+     * @param max_items æœ€å¤šæ˜¾ç¤ºçš„é¡¹ç›®æ•°
+     * @return FR_OK=æˆåŠŸ, å…¶ä»–=å¤±è´¥
      */
     FRESULT FatFs_ListDir(const char *dirname, uint32_t max_items);
 

@@ -1,23 +1,23 @@
 /**
  ******************************************************************************
  * @file    lcd_fonts.h
- * @author  ²Ë²Ëwhy£¨BÕ¾£º²Ë²Ëwhyy£©
- * @brief   LCD×ÖÌå¶¨ÒåÍ·ÎÄ¼þ
- *          °üº¬ASCIIºÍÖÐÎÄ×ÖÄ£Êý¾Ý½á¹¹¶¨Òå
+ * @author  èœèœwhyï¼ˆBç«™ï¼šèœèœwhyyï¼‰
+ * @brief   LCDå­—ä½“å®šä¹‰å¤´æ–‡ä»¶
+ *          åŒ…å«ASCIIå’Œä¸­æ–‡å­—æ¨¡æ•°æ®ç»“æž„å®šä¹‰
  ******************************************************************************
  * @attention
  *
- * ×ÖÌåËµÃ÷£º
- * - ASCII×ÖÌå£º3216¡¢2412¡¢2010¡¢1608¡¢1206£¨ËÎÌå£©
- * - ÖÐÎÄ×ÖÌå£º3232¡¢2424¡¢2020¡¢1616¡¢1212£¨ËÎÌå£©
- * - ÖÐÎÄ×Ö¿âÎªÐ¡×Ö¿â£¬ÓÃµ½µÄºº×ÖÐèÌáÇ°È¡Ä£
+ * å­—ä½“è¯´æ˜Žï¼š
+ * - ASCIIå­—ä½“ï¼š3216ã€2412ã€2010ã€1608ã€1206ï¼ˆå®‹ä½“ï¼‰
+ * - ä¸­æ–‡å­—ä½“ï¼š3232ã€2424ã€2020ã€1616ã€1212ï¼ˆå®‹ä½“ï¼‰
+ * - ä¸­æ–‡å­—åº“ä¸ºå°å­—åº“ï¼Œç”¨åˆ°çš„æ±‰å­—éœ€æå‰å–æ¨¡
  *
- * È¡Ä£Èí¼þ£ºPCtolCD
- * È¡Ä£·½Ê½£ºÒõÂë¡¢ÄæÏò¡¢ÖðÐÐÊ½¡¢C51¸ñÊ½
+ * å–æ¨¡è½¯ä»¶ï¼šPCtolCD
+ * å–æ¨¡æ–¹å¼ï¼šé˜´ç ã€é€†å‘ã€é€è¡Œå¼ã€C51æ ¼å¼
  *
- * ×¢ÒâÊÂÏî£º
- * - ÖÐÎÄ±êµã·ûºÅºÍÓ¢ÎÄ±êµã·ûºÅ±àÂë²»Í¬
- * - Ã¿¸öÖÐÎÄ×ÖÄ£ºó±ØÐë¸ú¶ÔÓ¦ºº×Ö×÷ÎªË÷Òý
+ * æ³¨æ„äº‹é¡¹ï¼š
+ * - ä¸­æ–‡æ ‡ç‚¹ç¬¦å·å’Œè‹±æ–‡æ ‡ç‚¹ç¬¦å·ç¼–ç ä¸åŒ
+ * - æ¯ä¸ªä¸­æ–‡å­—æ¨¡åŽå¿…é¡»è·Ÿå¯¹åº”æ±‰å­—ä½œä¸ºç´¢å¼•
  *
  ******************************************************************************
  */
@@ -33,40 +33,40 @@ extern "C"
 #include <stdint.h>
 #include "init.h"
 	/*******************************************************************************
-	 *                              ×ÖÌå½á¹¹¶¨Òå
+	 *                              å­—ä½“ç»“æž„å®šä¹‰
 	 ******************************************************************************/
 
 	/**
-	 * @brief ×ÖÌåÊý¾Ý½á¹¹
+	 * @brief å­—ä½“æ•°æ®ç»“æž„
 	 */
 	typedef struct _pFont
 	{
-		const uint8_t *pTable; /*!< ×ÖÄ£Êý×éµØÖ· */
-		uint16_t Width;		   /*!< µ¥×Ö·û¿í¶È£¨ÏñËØ£© */
-		uint16_t Height;	   /*!< µ¥×Ö·û¸ß¶È£¨ÏñËØ£© */
-		uint16_t Sizes;		   /*!< µ¥×Ö·û×ÖÄ£Êý¾Ý×Ö½ÚÊý */
-		uint16_t Table_Rows;   /*!< ÖÐÎÄ×ÖÄ£¶þÎ¬Êý×éÐÐÊý */
+		const uint8_t *pTable; /*!< å­—æ¨¡æ•°ç»„åœ°å€ */
+		uint16_t Width;		   /*!< å•å­—ç¬¦å®½åº¦ï¼ˆåƒç´ ï¼‰ */
+		uint16_t Height;	   /*!< å•å­—ç¬¦é«˜åº¦ï¼ˆåƒç´ ï¼‰ */
+		uint16_t Sizes;		   /*!< å•å­—ç¬¦å­—æ¨¡æ•°æ®å­—èŠ‚æ•° */
+		uint16_t Table_Rows;   /*!< ä¸­æ–‡å­—æ¨¡äºŒç»´æ•°ç»„è¡Œæ•° */
 	} pFONT;
 
 	/*******************************************************************************
-	 *                              ÖÐÎÄ×ÖÌå
+	 *                              ä¸­æ–‡å­—ä½“
 	 ******************************************************************************/
 
-	extern pFONT CH_Font12; /*!< 1212ÖÐÎÄ×ÖÌå */
-	extern pFONT CH_Font16; /*!< 1616ÖÐÎÄ×ÖÌå */
-	extern pFONT CH_Font20; /*!< 2020ÖÐÎÄ×ÖÌå */
-	extern pFONT CH_Font24; /*!< 2424ÖÐÎÄ×ÖÌå */
-	extern pFONT CH_Font32; /*!< 3232ÖÐÎÄ×ÖÌå */
+	extern pFONT CH_Font12; /*!< 1212ä¸­æ–‡å­—ä½“ */
+	extern pFONT CH_Font16; /*!< 1616ä¸­æ–‡å­—ä½“ */
+	extern pFONT CH_Font20; /*!< 2020ä¸­æ–‡å­—ä½“ */
+	extern pFONT CH_Font24; /*!< 2424ä¸­æ–‡å­—ä½“ */
+	extern pFONT CH_Font32; /*!< 3232ä¸­æ–‡å­—ä½“ */
 
 	/*******************************************************************************
-	 *                              ASCII×ÖÌå
+	 *                              ASCIIå­—ä½“
 	 ******************************************************************************/
 
-	extern pFONT ASCII_Font32; /*!< 3216 ASCII×ÖÌå */
-	extern pFONT ASCII_Font24; /*!< 2412 ASCII×ÖÌå */
-	extern pFONT ASCII_Font20; /*!< 2010 ASCII×ÖÌå */
-	extern pFONT ASCII_Font16; /*!< 1608 ASCII×ÖÌå */
-	extern pFONT ASCII_Font12; /*!< 1206 ASCII×ÖÌå */
+	extern pFONT ASCII_Font32; /*!< 3216 ASCIIå­—ä½“ */
+	extern pFONT ASCII_Font24; /*!< 2412 ASCIIå­—ä½“ */
+	extern pFONT ASCII_Font20; /*!< 2010 ASCIIå­—ä½“ */
+	extern pFONT ASCII_Font16; /*!< 1608 ASCIIå­—ä½“ */
+	extern pFONT ASCII_Font12; /*!< 1206 ASCIIå­—ä½“ */
 
 #ifdef __cplusplus
 }

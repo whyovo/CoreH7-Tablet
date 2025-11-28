@@ -231,6 +231,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # LVGL Porting
     ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/lvgl-8.3.11/porting/lv_port_disp.c
     ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/lvgl-8.3.11/porting/lv_port_indev.c
+    ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/lvgl-8.3.11/porting/lv_font_qspi.c
 
     # LVGL Demos
     ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/lvgl-8.3.11/demos/benchmark/lv_demo_benchmark.c

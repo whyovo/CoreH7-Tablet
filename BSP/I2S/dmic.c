@@ -1,21 +1,21 @@
 /**
  ******************************************************************************
  * @file    dmic.c
- * @author  ²Ë²Ëwhy(BÕ¾:²Ë²Ëwhyy)
- * @brief   INMP441 Êı×ÖÂó¿Ë·ç I2S DMA Çı¶¯ÊµÏÖÎÄ¼ş
+ * @author  èœèœwhy(Bç«™:èœèœwhyy)
+ * @brief   INMP441 æ•°å­—éº¦å…‹é£ I2S DMA é©±åŠ¨å®ç°æ–‡ä»¶
  ******************************************************************************
  * @attention
  *
- * ÊµÏÖËµÃ÷£º
- * 1. Ê¹ÓÃ I2S Ö÷»ú½ÓÊÕÄ£Ê½ + DMA Ñ­»·Ä£Ê½ÊµÏÖË«»º³å
- * 2. DMA ÅäÖÃÎªÑ­»·Ä£Ê½£¬»º³åÇø·ÖÎªÇ°°ë/ºó°ëÁ½²¿·Ö
- * 3. °ë´«ÊäÖĞ¶Ï´¦ÀíÇ°°ë»º³å£¬È«´«ÊäÖĞ¶Ï´¦Àíºó°ë»º³å
- * 4. Êı¾İ¸ñÊ½£ºI2S½ÓÊÕ24Î»Êı¾İ
- * 5. ÉùµÀÑ¡Ôñ£ºÍ¨¹ı INMP441 µÄ L/R Òı½ÅÑ¡Ôñ£¨GND=×ó£¬VCC=ÓÒ£©
- * 6. Ö§³ÖWAVÎÄ¼şÂ¼ÖÆµ½SD¿¨
+ * å®ç°è¯´æ˜ï¼š
+ * 1. ä½¿ç”¨ I2S ä¸»æœºæ¥æ”¶æ¨¡å¼ + DMA å¾ªç¯æ¨¡å¼å®ç°åŒç¼“å†²
+ * 2. DMA é…ç½®ä¸ºå¾ªç¯æ¨¡å¼ï¼Œç¼“å†²åŒºåˆ†ä¸ºå‰åŠ/ååŠä¸¤éƒ¨åˆ†
+ * 3. åŠä¼ è¾“ä¸­æ–­å¤„ç†å‰åŠç¼“å†²ï¼Œå…¨ä¼ è¾“ä¸­æ–­å¤„ç†ååŠç¼“å†²
+ * 4. æ•°æ®æ ¼å¼ï¼šI2Sæ¥æ”¶24ä½æ•°æ®
+ * 5. å£°é“é€‰æ‹©ï¼šé€šè¿‡ INMP441 çš„ L/R å¼•è„šé€‰æ‹©ï¼ˆGND=å·¦ï¼ŒVCC=å³ï¼‰
+ * 6. æ”¯æŒWAVæ–‡ä»¶å½•åˆ¶åˆ°SDå¡
  *
- * Êı¾İÁ÷³Ì£º
- * INMP441 -> I2SÍâÉè -> DMA -> »º³åÇø -> »Øµ÷º¯Êı -> ÓÃ»§´¦Àí/SD¿¨±£´æ
+ * æ•°æ®æµç¨‹ï¼š
+ * INMP441 -> I2Så¤–è®¾ -> DMA -> ç¼“å†²åŒº -> å›è°ƒå‡½æ•° -> ç”¨æˆ·å¤„ç†/SDå¡ä¿å­˜
  *
  ******************************************************************************
  */
@@ -28,57 +28,57 @@
 #ifdef DMIC_ENABLE
 
 /*******************************************************************************
- *                          WAV ÎÄ¼şÍ·½á¹¹¶¨Òå
+ *                          WAV æ–‡ä»¶å¤´ç»“æ„å®šä¹‰
  ******************************************************************************/
 
 /**
- * @brief WAVÎÄ¼şÍ·½á¹¹£¨RIFF¸ñÊ½£©
+ * @brief WAVæ–‡ä»¶å¤´ç»“æ„ï¼ˆRIFFæ ¼å¼ï¼‰
  */
 typedef struct __attribute__((packed))
 {
     /* RIFF chunk */
     char riff[4];       /*!< "RIFF" */
-    uint32_t riff_size; /*!< ÎÄ¼ş´óĞ¡ - 8£¨ĞèÒªÔÚÂ¼ÖÆ½áÊøÊ±¸üĞÂ£© */
+    uint32_t riff_size; /*!< æ–‡ä»¶å¤§å° - 8ï¼ˆéœ€è¦åœ¨å½•åˆ¶ç»“æŸæ—¶æ›´æ–°ï¼‰ */
     char wave[4];       /*!< "WAVE" */
 
     /* fmt chunk */
     char fmt[4];              /*!< "fmt " */
-    uint32_t fmt_size;        /*!< fmt×Ó¿é´óĞ¡£¬PCMÎª16 */
-    uint16_t audio_format;    /*!< ÒôÆµ¸ñÊ½£¨1=PCM£© */
-    uint16_t channels;        /*!< ÉùµÀÊı */
-    uint32_t sample_rate;     /*!< ²ÉÑùÂÊ */
-    uint32_t byte_rate;       /*!< ×Ö½ÚÂÊ£¨²ÉÑùÂÊ * ÉùµÀÊı * Î»Éî/8£© */
-    uint16_t block_align;     /*!< Êı¾İ¿é¶ÔÆë£¨ÉùµÀÊı * Î»Éî/8£© */
-    uint16_t bits_per_sample; /*!< Î»Éî */
+    uint32_t fmt_size;        /*!< fmtå­å—å¤§å°ï¼ŒPCMä¸º16 */
+    uint16_t audio_format;    /*!< éŸ³é¢‘æ ¼å¼ï¼ˆ1=PCMï¼‰ */
+    uint16_t channels;        /*!< å£°é“æ•° */
+    uint32_t sample_rate;     /*!< é‡‡æ ·ç‡ */
+    uint32_t byte_rate;       /*!< å­—èŠ‚ç‡ï¼ˆé‡‡æ ·ç‡ * å£°é“æ•° * ä½æ·±/8ï¼‰ */
+    uint16_t block_align;     /*!< æ•°æ®å—å¯¹é½ï¼ˆå£°é“æ•° * ä½æ·±/8ï¼‰ */
+    uint16_t bits_per_sample; /*!< ä½æ·± */
 
     /* data chunk */
     char data[4];       /*!< "data" */
-    uint32_t data_size; /*!< ÒôÆµÊı¾İ´óĞ¡£¨ĞèÒªÔÚÂ¼ÖÆ½áÊøÊ±¸üĞÂ£© */
+    uint32_t data_size; /*!< éŸ³é¢‘æ•°æ®å¤§å°ï¼ˆéœ€è¦åœ¨å½•åˆ¶ç»“æŸæ—¶æ›´æ–°ï¼‰ */
 } WAV_Header_t;
 
 /*******************************************************************************
- *                              Ë½ÓĞ±äÁ¿
+ *                              ç§æœ‰å˜é‡
  ******************************************************************************/
 
-/* DMA Ë«»º³åÇø£¨Ñ­»·Ä£Ê½£© */
+/* DMA åŒç¼“å†²åŒºï¼ˆå¾ªç¯æ¨¡å¼ï¼‰ */
 static int32_t s_dma_buffer[DMIC_BUFFER_SIZE] __attribute__((aligned(4)));
 
-/* ×´Ì¬±äÁ¿ */
+/* çŠ¶æ€å˜é‡ */
 static DMIC_State s_state = DMIC_STATE_RESET;
 static DMIC_DataReadyCallback_t s_callback = NULL;
 
-/* WAVÂ¼ÖÆÏà¹Ø±äÁ¿ */
+/* WAVå½•åˆ¶ç›¸å…³å˜é‡ */
 static DMIC_RecordState s_record_state = DMIC_RECORD_IDLE;
 static FIL s_record_file;
 static char s_record_filename[DMIC_MAX_FILENAME_LEN];
 static uint32_t s_record_data_size = 0;
 static uint8_t s_record_enabled = 0;
 
-/* I2S ¾ä±úÒıÓÃ£¨ÔÚ i2s.c ÖĞ¶¨Òå£© */
+/* I2S å¥æŸ„å¼•ç”¨ï¼ˆåœ¨ i2s.c ä¸­å®šä¹‰ï¼‰ */
 extern I2S_HandleTypeDef DMIC_I2S_HANDLE;
 
 /*******************************************************************************
- *                              Ë½ÓĞº¯ÊıÉùÃ÷
+ *                              ç§æœ‰å‡½æ•°å£°æ˜
  ******************************************************************************/
 static void process_buffer(uint8_t isHalfBuffer);
 static HAL_StatusTypeDef DMIC_WriteWAVHeader(void);
@@ -87,10 +87,10 @@ static void DMIC_GenerateTimestampFilename(char *filename, size_t len);
 static HAL_StatusTypeDef DMIC_FindAvailableFilename(char *filename, size_t max_len);
 
 /*******************************************************************************
- *                              µ¼³öº¯ÊıÊµÏÖ
+ *                              å¯¼å‡ºå‡½æ•°å®ç°
  ******************************************************************************/
 
-/* Ìá¹©ÈõÄ¬ÈÏ»Øµ÷ÊµÏÖ£¬ÓÃ»§ÔÚÈÎÒâ C ÎÄ¼şÖĞÊµÏÖÍ¬Ãûº¯Êı¼´¿É¸²¸Ç */
+/* æä¾›å¼±é»˜è®¤å›è°ƒå®ç°ï¼Œç”¨æˆ·åœ¨ä»»æ„ C æ–‡ä»¶ä¸­å®ç°åŒåå‡½æ•°å³å¯è¦†ç›– */
 #if defined(__GNUC__) || defined(__clang__)
 __attribute__((weak)) void DMIC_DataReadyCallback(int32_t *pData, uint32_t size, uint8_t isHalfBuffer)
 {
@@ -115,38 +115,38 @@ __weak void DMIC_DataReadyCallback(int32_t *pData, uint32_t size, uint8_t isHalf
 #endif
 
 /**
- * @brief  ³õÊ¼»¯Êı×ÖÂó¿Ë·ç
- * @note   ¼ÙÉè I2S ºÍ DMA ÒÑÔÚ CubeMX Éú³ÉµÄ´úÂëÖĞÅäÖÃ
+ * @brief  åˆå§‹åŒ–æ•°å­—éº¦å…‹é£
+ * @note   å‡è®¾ I2S å’Œ DMA å·²åœ¨ CubeMX ç”Ÿæˆçš„ä»£ç ä¸­é…ç½®
  */
 HAL_StatusTypeDef DMIC_Init(void)
 {
-    /* ¼ì²é×´Ì¬ */
+    /* æ£€æŸ¥çŠ¶æ€ */
     if (s_state == DMIC_STATE_RECORDING)
     {
-        DEBUG_ERROR("DMIC_Init: Âó¿Ë·çÕıÔÚÂ¼ÒôÖĞ£¬ÇëÏÈÍ£Ö¹");
+        DEBUG_ERROR("DMIC_Init: éº¦å…‹é£æ­£åœ¨å½•éŸ³ä¸­ï¼Œè¯·å…ˆåœæ­¢");
         return HAL_ERROR;
     }
 
-    /* Çå¿Õ»º³åÇø */
+    /* æ¸…ç©ºç¼“å†²åŒº */
     memset(s_dma_buffer, 0, sizeof(s_dma_buffer));
     memset(s_record_filename, 0, sizeof(s_record_filename));
 
-    /* ³õÊ¼»¯Â¼ÖÆÏà¹Ø±äÁ¿ */
+    /* åˆå§‹åŒ–å½•åˆ¶ç›¸å…³å˜é‡ */
     s_record_state = DMIC_RECORD_IDLE;
     s_record_data_size = 0;
     s_record_enabled = 0;
 
-    /* ÉèÖÃÎª¾ÍĞ÷×´Ì¬£¨Î´Æô¶¯Â¼Òô£© */
+    /* è®¾ç½®ä¸ºå°±ç»ªçŠ¶æ€ï¼ˆæœªå¯åŠ¨å½•éŸ³ï¼‰ */
     s_state = DMIC_STATE_READY;
 
-    /* ×¢²áÄ¬ÈÏÈõ»Øµ÷£¨ÓÃ»§¿É²»µ÷ÓÃ×¢²á¶øÖ±½ÓÊµÏÖÍ¬ÃûÈõº¯Êı¸²¸Ç£© */
+    /* æ³¨å†Œé»˜è®¤å¼±å›è°ƒï¼ˆç”¨æˆ·å¯ä¸è°ƒç”¨æ³¨å†Œè€Œç›´æ¥å®ç°åŒåå¼±å‡½æ•°è¦†ç›–ï¼‰ */
     DMIC_RegisterCallback(DMIC_DataReadyCallback);
 
     return HAL_OK;
 }
 
 /**
- * @brief  Æô¶¯Âó¿Ë·çÂ¼Òô
+ * @brief  å¯åŠ¨éº¦å…‹é£å½•éŸ³
  */
 HAL_StatusTypeDef DMIC_Start(void)
 {
@@ -154,32 +154,32 @@ HAL_StatusTypeDef DMIC_Start(void)
 
     if (s_state == DMIC_STATE_RECORDING)
     {
-        DEBUG_INFO("DMIC_Start: Âó¿Ë·çÒÑÔÚÂ¼ÒôÖĞ");
+        DEBUG_INFO("DMIC_Start: éº¦å…‹é£å·²åœ¨å½•éŸ³ä¸­");
         return HAL_OK;
     }
 
     if (s_state == DMIC_STATE_RESET)
     {
-        DEBUG_ERROR("DMIC_Start: ÇëÏÈµ÷ÓÃ DMIC_Init() ³õÊ¼»¯");
+        DEBUG_ERROR("DMIC_Start: è¯·å…ˆè°ƒç”¨ DMIC_Init() åˆå§‹åŒ–");
         return HAL_ERROR;
     }
 
-    /* Æô¶¯ I2S DMA ½ÓÊÕ£¨Ñ­»·Ä£Ê½£© */
+    /* å¯åŠ¨ I2S DMA æ¥æ”¶ï¼ˆå¾ªç¯æ¨¡å¼ï¼‰ */
     status = HAL_I2S_Receive_DMA(&DMIC_I2S_HANDLE, (uint16_t *)s_dma_buffer, DMIC_BUFFER_SIZE);
     if (status != HAL_OK)
     {
-        DEBUG_ERROR("DMIC_Start: I2S DMA Æô¶¯Ê§°Ü");
+        DEBUG_ERROR("DMIC_Start: I2S DMA å¯åŠ¨å¤±è´¥");
         s_state = DMIC_STATE_ERROR;
         return status;
     }
 
     s_state = DMIC_STATE_RECORDING;
-    DEBUG_INFO("¿ªÊ¼Â¼Òô");
+    DEBUG_INFO("å¼€å§‹å½•éŸ³");
     return HAL_OK;
 }
 
 /**
- * @brief  Í£Ö¹Âó¿Ë·çÂ¼Òô
+ * @brief  åœæ­¢éº¦å…‹é£å½•éŸ³
  */
 HAL_StatusTypeDef DMIC_Stop(void)
 {
@@ -187,26 +187,26 @@ HAL_StatusTypeDef DMIC_Stop(void)
 
     if (s_state != DMIC_STATE_RECORDING)
     {
-        DEBUG_INFO("DMIC_Stop: Âó¿Ë·çÎ´ÔÚÂ¼ÒôÖĞ");
+        DEBUG_INFO("DMIC_Stop: éº¦å…‹é£æœªåœ¨å½•éŸ³ä¸­");
         return HAL_OK;
     }
 
-    /* Í£Ö¹ I2S DMA ½ÓÊÕ */
+    /* åœæ­¢ I2S DMA æ¥æ”¶ */
     status = HAL_I2S_DMAStop(&DMIC_I2S_HANDLE);
     if (status != HAL_OK)
     {
-        DEBUG_ERROR("DMIC_Stop: I2S DMA Í£Ö¹Ê§°Ü");
+        DEBUG_ERROR("DMIC_Stop: I2S DMA åœæ­¢å¤±è´¥");
         s_state = DMIC_STATE_ERROR;
         return status;
     }
 
     s_state = DMIC_STATE_READY;
-    DEBUG_INFO("Í£Ö¹Â¼Òô");
+    DEBUG_INFO("åœæ­¢å½•éŸ³");
     return HAL_OK;
 }
 
 /**
- * @brief  »ñÈ¡µ±Ç°×´Ì¬
+ * @brief  è·å–å½“å‰çŠ¶æ€
  */
 DMIC_State DMIC_GetState(void)
 {
@@ -214,20 +214,20 @@ DMIC_State DMIC_GetState(void)
 }
 
 /**
- * @brief  ×¢²áÊı¾İ¾ÍĞ÷»Øµ÷º¯Êı
+ * @brief  æ³¨å†Œæ•°æ®å°±ç»ªå›è°ƒå‡½æ•°
  */
 void DMIC_RegisterCallback(DMIC_DataReadyCallback_t callback)
 {
     if (callback == NULL)
     {
-        DEBUG_ERROR("DMIC_RegisterCallback: »Øµ÷Ö¸ÕëÎª¿Õ");
+        DEBUG_ERROR("DMIC_RegisterCallback: å›è°ƒæŒ‡é’ˆä¸ºç©º");
         return;
     }
     s_callback = callback;
 }
 
 /**
- * @brief  È¡Ïû»Øµ÷×¢²á
+ * @brief  å–æ¶ˆå›è°ƒæ³¨å†Œ
  */
 void DMIC_UnregisterCallback(void)
 {
@@ -235,11 +235,11 @@ void DMIC_UnregisterCallback(void)
 }
 
 /*******************************************************************************
- *                      WAV ÎÄ¼şÂ¼ÖÆº¯ÊıÊµÏÖ
+ *                      WAV æ–‡ä»¶å½•åˆ¶å‡½æ•°å®ç°
  ******************************************************************************/
 
 /**
- * @brief  Æô¶¯WAVÎÄ¼şÂ¼ÖÆ
+ * @brief  å¯åŠ¨WAVæ–‡ä»¶å½•åˆ¶
  */
 HAL_StatusTypeDef DMIC_StartRecord(const char *filename)
 {
@@ -247,76 +247,76 @@ HAL_StatusTypeDef DMIC_StartRecord(const char *filename)
     char full_path[DMIC_MAX_FILENAME_LEN];
     char buf[256];
 
-    /* ¼ì²é×´Ì¬ */
+    /* æ£€æŸ¥çŠ¶æ€ */
     if (s_record_state == DMIC_RECORD_RUNNING)
     {
-        DEBUG_ERROR("DMIC_StartRecord: ÒÑÓĞÂ¼ÖÆÔÚ½øĞĞÖĞ");
+        DEBUG_ERROR("DMIC_StartRecord: å·²æœ‰å½•åˆ¶åœ¨è¿›è¡Œä¸­");
         return HAL_ERROR;
     }
 
-    /* ĞèÒªFATFSºÍSD¿¨Ö§³Ö */
+    /* éœ€è¦FATFSå’ŒSDå¡æ”¯æŒ */
 #ifdef FATFS_ENABLE
     extern char SDPath[4];
 #else
-    DEBUG_ERROR("DMIC_StartRecord: ĞèÒªÆôÓÃ FATFS_ENABLE");
+    DEBUG_ERROR("DMIC_StartRecord: éœ€è¦å¯ç”¨ FATFS_ENABLE");
     return HAL_ERROR;
 #endif
 
-    /* Éú³ÉÎÄ¼şÃû */
+    /* ç”Ÿæˆæ–‡ä»¶å */
     if (filename == NULL)
     {
-        /* Ê¹ÓÃÊ±¼ä´ÁÃüÃû */
+        /* ä½¿ç”¨æ—¶é—´æˆ³å‘½å */
         DMIC_GenerateTimestampFilename(full_path, sizeof(full_path));
     }
     else
     {
-        /* ¼ì²éÎÄ¼şÃûÊÇ·ñÒÑÓĞÖØ¸´£¬×Ô¶¯Ìí¼ÓĞòºÅ */
+        /* æ£€æŸ¥æ–‡ä»¶åæ˜¯å¦å·²æœ‰é‡å¤ï¼Œè‡ªåŠ¨æ·»åŠ åºå· */
         strncpy(full_path, filename, sizeof(full_path) - 1);
         full_path[sizeof(full_path) - 1] = '\0';
 
         if (DMIC_FindAvailableFilename(full_path, sizeof(full_path)) != HAL_OK)
         {
-            DEBUG_ERROR("DMIC_StartRecord: ÎŞ·¨Éú³É¿ÉÓÃµÄÎÄ¼şÃû");
+            DEBUG_ERROR("DMIC_StartRecord: æ— æ³•ç”Ÿæˆå¯ç”¨çš„æ–‡ä»¶å");
             return HAL_ERROR;
         }
     }
 
-    /* ±£´æÎÄ¼şÃû */
+    /* ä¿å­˜æ–‡ä»¶å */
     strncpy(s_record_filename, full_path, sizeof(s_record_filename) - 1);
     s_record_filename[sizeof(s_record_filename) - 1] = '\0';
 
-    /* ´ò¿ª»ò´´½¨ÎÄ¼ş */
+    /* æ‰“å¼€æˆ–åˆ›å»ºæ–‡ä»¶ */
     fresult = f_open(&s_record_file, full_path, FA_CREATE_ALWAYS | FA_WRITE);
     if (fresult != FR_OK)
     {
-        snprintf(buf, sizeof(buf), "DMIC_StartRecord: ´ò¿ªÎÄ¼şÊ§°Ü£¬´íÎóÂë: %d", fresult);
+        snprintf(buf, sizeof(buf), "DMIC_StartRecord: æ‰“å¼€æ–‡ä»¶å¤±è´¥ï¼Œé”™è¯¯ç : %d", fresult);
         DEBUG_ERROR(buf);
         s_record_state = DMIC_RECORD_ERROR;
         return HAL_ERROR;
     }
 
-    /* Ğ´ÈëWAVÎÄ¼şÍ·£¨ÔİÊ±ĞÔµÄ£¬´ıÂ¼ÖÆ½áÊøÊ±¸üĞÂ£© */
+    /* å†™å…¥WAVæ–‡ä»¶å¤´ï¼ˆæš‚æ—¶æ€§çš„ï¼Œå¾…å½•åˆ¶ç»“æŸæ—¶æ›´æ–°ï¼‰ */
     if (DMIC_WriteWAVHeader() != HAL_OK)
     {
-        DEBUG_ERROR("DMIC_StartRecord: Ğ´ÈëWAVÍ·Ê§°Ü");
+        DEBUG_ERROR("DMIC_StartRecord: å†™å…¥WAVå¤´å¤±è´¥");
         f_close(&s_record_file);
         s_record_state = DMIC_RECORD_ERROR;
         return HAL_ERROR;
     }
 
-    /* ÖØÖÃÊı¾İ¼ÆÊı */
+    /* é‡ç½®æ•°æ®è®¡æ•° */
     s_record_data_size = 0;
     s_record_enabled = 1;
     s_record_state = DMIC_RECORD_RUNNING;
 
-    snprintf(buf, sizeof(buf), "¿ªÊ¼Â¼ÖÆWAVÎÄ¼ş: %s", full_path);
+    snprintf(buf, sizeof(buf), "å¼€å§‹å½•åˆ¶WAVæ–‡ä»¶: %s", full_path);
     DEBUG_INFO(buf);
     DMIC_Start();
     return HAL_OK;
 }
 
 /**
- * @brief  Í£Ö¹WAVÎÄ¼şÂ¼ÖÆ
+ * @brief  åœæ­¢WAVæ–‡ä»¶å½•åˆ¶
  */
 HAL_StatusTypeDef DMIC_StopRecord(void)
 {
@@ -326,33 +326,33 @@ HAL_StatusTypeDef DMIC_StopRecord(void)
 
     if (s_record_state != DMIC_RECORD_RUNNING)
     {
-        DEBUG_INFO("DMIC_StopRecord: Î´ÔÚÂ¼ÖÆÖĞ");
+        DEBUG_INFO("DMIC_StopRecord: æœªåœ¨å½•åˆ¶ä¸­");
         return HAL_OK;
     }
 
-    /* ½ûÖ¹¼ÌĞøĞ´Èë */
+    /* ç¦æ­¢ç»§ç»­å†™å…¥ */
     s_record_enabled = 0;
 
-    /* ¸üĞÂWAVÎÄ¼şÍ· */
+    /* æ›´æ–°WAVæ–‡ä»¶å¤´ */
     if (DMIC_UpdateWAVHeader() != HAL_OK)
     {
-        DEBUG_ERROR("DMIC_StopRecord: ¸üĞÂWAVÍ·Ê§°Ü");
+        DEBUG_ERROR("DMIC_StopRecord: æ›´æ–°WAVå¤´å¤±è´¥");
         f_close(&s_record_file);
         s_record_state = DMIC_RECORD_ERROR;
         return HAL_ERROR;
     }
 
-    /* ¹Ø±ÕÎÄ¼ş */
+    /* å…³é—­æ–‡ä»¶ */
     fresult = f_close(&s_record_file);
     if (fresult != FR_OK)
     {
-        snprintf(buf, sizeof(buf), "DMIC_StopRecord: ¹Ø±ÕÎÄ¼şÊ§°Ü£¬´íÎóÂë: %d", fresult);
+        snprintf(buf, sizeof(buf), "DMIC_StopRecord: å…³é—­æ–‡ä»¶å¤±è´¥ï¼Œé”™è¯¯ç : %d", fresult);
         DEBUG_ERROR(buf);
         s_record_state = DMIC_RECORD_ERROR;
         return HAL_ERROR;
     }
 
-    snprintf(buf, sizeof(buf), "Í£Ö¹Â¼ÖÆ£¬Êı¾İ´óĞ¡: %u ×Ö½Ú", s_record_data_size);
+    snprintf(buf, sizeof(buf), "åœæ­¢å½•åˆ¶ï¼Œæ•°æ®å¤§å°: %u å­—èŠ‚", s_record_data_size);
     DEBUG_INFO(buf);
 
     s_record_state = DMIC_RECORD_IDLE;
@@ -360,7 +360,7 @@ HAL_StatusTypeDef DMIC_StopRecord(void)
 }
 
 /**
- * @brief  »ñÈ¡µ±Ç°Â¼ÖÆ×´Ì¬
+ * @brief  è·å–å½“å‰å½•åˆ¶çŠ¶æ€
  */
 DMIC_RecordState DMIC_GetRecordState(void)
 {
@@ -368,7 +368,7 @@ DMIC_RecordState DMIC_GetRecordState(void)
 }
 
 /**
- * @brief  »ñÈ¡ÒÑÂ¼ÖÆµÄÒôÆµÊı¾İ´óĞ¡£¨×Ö½Ú£©
+ * @brief  è·å–å·²å½•åˆ¶çš„éŸ³é¢‘æ•°æ®å¤§å°ï¼ˆå­—èŠ‚ï¼‰
  */
 uint32_t DMIC_GetRecordedSize(void)
 {
@@ -376,7 +376,7 @@ uint32_t DMIC_GetRecordedSize(void)
 }
 
 /**
- * @brief  »ñÈ¡×îºóÒ»´ÎÂ¼ÖÆµÄÎÄ¼şÃû
+ * @brief  è·å–æœ€åä¸€æ¬¡å½•åˆ¶çš„æ–‡ä»¶å
  */
 const char *DMIC_GetLastRecordFile(void)
 {
@@ -384,32 +384,32 @@ const char *DMIC_GetLastRecordFile(void)
 }
 
 /*******************************************************************************
- *                              DMA ÖĞ¶Ï»Øµ÷
+ *                              DMA ä¸­æ–­å›è°ƒ
  ******************************************************************************/
 
 /**
- * @brief  DMA °ë´«ÊäÍê³É»Øµ÷£¨Ç°°ë»º³åÇø¾ÍĞ÷£©
+ * @brief  DMA åŠä¼ è¾“å®Œæˆå›è°ƒï¼ˆå‰åŠç¼“å†²åŒºå°±ç»ªï¼‰
  */
 void DMIC_DMA_HalfTransfer_Callback(void)
 {
-    process_buffer(1); // Ç°°ë»º³å¾ÍĞ÷
+    process_buffer(1); // å‰åŠç¼“å†²å°±ç»ª
 }
 
 /**
- * @brief  DMA ´«ÊäÍê³É»Øµ÷£¨ºó°ë»º³åÇø¾ÍĞ÷£©
+ * @brief  DMA ä¼ è¾“å®Œæˆå›è°ƒï¼ˆååŠç¼“å†²åŒºå°±ç»ªï¼‰
  */
 void DMIC_DMA_TransferComplete_Callback(void)
 {
-    process_buffer(0); // ºó°ë»º³å¾ÍĞ÷
+    process_buffer(0); // ååŠç¼“å†²å°±ç»ª
 }
 
 /*******************************************************************************
- *                              Ë½ÓĞº¯ÊıÊµÏÖ
+ *                              ç§æœ‰å‡½æ•°å®ç°
  ******************************************************************************/
 
 /**
- * @brief  ´¦Àí¾ÍĞ÷µÄ»º³åÇøÊı¾İ
- * @param  isHalfBuffer: 1=Ç°°ë»º³å, 0=ºó°ë»º³å
+ * @brief  å¤„ç†å°±ç»ªçš„ç¼“å†²åŒºæ•°æ®
+ * @param  isHalfBuffer: 1=å‰åŠç¼“å†², 0=ååŠç¼“å†²
  */
 static void process_buffer(uint8_t isHalfBuffer)
 {
@@ -433,13 +433,13 @@ static void process_buffer(uint8_t isHalfBuffer)
     }
 #endif
 
-    /* Èç¹ûÆôÓÃWAVÂ¼ÖÆ£¬½«Êı¾İĞ´ÈëSD¿¨ */
+    /* å¦‚æœå¯ç”¨WAVå½•åˆ¶ï¼Œå°†æ•°æ®å†™å…¥SDå¡ */
     if (s_record_enabled && s_record_state == DMIC_RECORD_RUNNING)
     {
         DMIC_RecordAudioData(&s_dma_buffer[offset], size);
     }
 
-    /* µ÷ÓÃÓÃ»§»Øµ÷ */
+    /* è°ƒç”¨ç”¨æˆ·å›è°ƒ */
     if (s_callback != NULL)
     {
         s_callback(&s_dma_buffer[offset], size, isHalfBuffer);
@@ -451,10 +451,10 @@ static void process_buffer(uint8_t isHalfBuffer)
 }
 
 /**
- * @brief  ½«ÒôÆµÊı¾İĞ´ÈëWAVÎÄ¼ş
- * @param  pData: ÒôÆµÊı¾İÖ¸Õë
- * @param  size: Êı¾İ´óĞ¡£¨²ÉÑùµãÊı£©
- * @note   ÄÚ²¿º¯Êı£¬ÔÚÖĞ¶ÏÖĞµ÷ÓÃ£¬ĞèÒª¸ßĞ§´¦Àí
+ * @brief  å°†éŸ³é¢‘æ•°æ®å†™å…¥WAVæ–‡ä»¶
+ * @param  pData: éŸ³é¢‘æ•°æ®æŒ‡é’ˆ
+ * @param  size: æ•°æ®å¤§å°ï¼ˆé‡‡æ ·ç‚¹æ•°ï¼‰
+ * @note   å†…éƒ¨å‡½æ•°ï¼Œåœ¨ä¸­æ–­ä¸­è°ƒç”¨ï¼Œéœ€è¦é«˜æ•ˆå¤„ç†
  */
 static HAL_StatusTypeDef DMIC_RecordAudioData(int32_t *pData, uint32_t size)
 {
@@ -463,23 +463,23 @@ static HAL_StatusTypeDef DMIC_RecordAudioData(int32_t *pData, uint32_t size)
     uint16_t i;
     int16_t pcm_sample;
 
-    /* ½«32Î»I2SÊı¾İ×ª»»Îª16Î»PCM²¢Ğ´ÈëÎÄ¼ş */
+    /* å°†32ä½I2Sæ•°æ®è½¬æ¢ä¸º16ä½PCMå¹¶å†™å…¥æ–‡ä»¶ */
     for (i = 0; i < size; i++)
     {
-        /* ½«32Î»Êı¾İ×ª»»Îª16Î»£¨È¡¸ß16Î»£© */
+        /* å°†32ä½æ•°æ®è½¬æ¢ä¸º16ä½ï¼ˆå–é«˜16ä½ï¼‰ */
         pcm_sample = (int16_t)(pData[i] >> 8);
 
-        /* Ğ´ÈëÎÄ¼ş */
+        /* å†™å…¥æ–‡ä»¶ */
         fresult = f_write(&s_record_file, &pcm_sample, sizeof(int16_t), &bytes_written);
         if (fresult != FR_OK)
         {
-            DEBUG_ERROR("DMIC_RecordAudioData: Ğ´ÈëÎÄ¼şÊ§°Ü");
+            DEBUG_ERROR("DMIC_RecordAudioData: å†™å…¥æ–‡ä»¶å¤±è´¥");
             return HAL_ERROR;
         }
 
         if (bytes_written != sizeof(int16_t))
         {
-            DEBUG_ERROR("DMIC_RecordAudioData: Ğ´Èë×Ö½ÚÊı²»ÍêÕû");
+            DEBUG_ERROR("DMIC_RecordAudioData: å†™å…¥å­—èŠ‚æ•°ä¸å®Œæ•´");
             return HAL_ERROR;
         }
 
@@ -490,7 +490,7 @@ static HAL_StatusTypeDef DMIC_RecordAudioData(int32_t *pData, uint32_t size)
 }
 
 /**
- * @brief  Ğ´ÈëWAVÎÄ¼şÍ·
+ * @brief  å†™å…¥WAVæ–‡ä»¶å¤´
  */
 static HAL_StatusTypeDef DMIC_WriteWAVHeader(void)
 {
@@ -498,13 +498,13 @@ static HAL_StatusTypeDef DMIC_WriteWAVHeader(void)
     UINT bytes_written;
     WAV_Header_t wav_header;
 
-    /* ³õÊ¼»¯WAVÎÄ¼şÍ· */
+    /* åˆå§‹åŒ–WAVæ–‡ä»¶å¤´ */
     memcpy(wav_header.riff, "RIFF", 4);
     memcpy(wav_header.wave, "WAVE", 4);
     memcpy(wav_header.fmt, "fmt ", 4);
     memcpy(wav_header.data, "data", 4);
 
-    wav_header.fmt_size = 16;    /* PCM¸ñÊ½ */
+    wav_header.fmt_size = 16;    /* PCMæ ¼å¼ */
     wav_header.audio_format = 1; /* 1 = PCM */
     wav_header.channels = DMIC_CHANNELS;
     wav_header.sample_rate = DMIC_SAMPLE_RATE;
@@ -512,15 +512,15 @@ static HAL_StatusTypeDef DMIC_WriteWAVHeader(void)
     wav_header.block_align = DMIC_CHANNELS * (DMIC_BITS_PER_SAMPLE / 8);
     wav_header.byte_rate = DMIC_SAMPLE_RATE * wav_header.block_align;
 
-    /* ÔİÊ±ÉèÎª0£¬Â¼ÖÆ½áÊøÊ±¸üĞÂ */
+    /* æš‚æ—¶è®¾ä¸º0ï¼Œå½•åˆ¶ç»“æŸæ—¶æ›´æ–° */
     wav_header.data_size = 0;
     wav_header.riff_size = 36 + wav_header.data_size;
 
-    /* Ğ´ÈëÎÄ¼şÍ· */
+    /* å†™å…¥æ–‡ä»¶å¤´ */
     fresult = f_write(&s_record_file, &wav_header, sizeof(wav_header), &bytes_written);
     if (fresult != FR_OK || bytes_written != sizeof(wav_header))
     {
-        DEBUG_ERROR("DMIC_WriteWAVHeader: Ğ´ÈëWAVÍ·Ê§°Ü");
+        DEBUG_ERROR("DMIC_WriteWAVHeader: å†™å…¥WAVå¤´å¤±è´¥");
         return HAL_ERROR;
     }
 
@@ -528,7 +528,7 @@ static HAL_StatusTypeDef DMIC_WriteWAVHeader(void)
 }
 
 /**
- * @brief  ¸üĞÂWAVÎÄ¼şÍ·£¨²¹ÆëÎÄ¼ş´óĞ¡µÈĞÅÏ¢£©
+ * @brief  æ›´æ–°WAVæ–‡ä»¶å¤´ï¼ˆè¡¥é½æ–‡ä»¶å¤§å°ç­‰ä¿¡æ¯ï¼‰
  */
 static HAL_StatusTypeDef DMIC_UpdateWAVHeader(void)
 {
@@ -536,7 +536,7 @@ static HAL_StatusTypeDef DMIC_UpdateWAVHeader(void)
     UINT bytes_written;
     WAV_Header_t wav_header;
 
-    /* ³õÊ¼»¯WAVÎÄ¼şÍ· */
+    /* åˆå§‹åŒ–WAVæ–‡ä»¶å¤´ */
     memcpy(wav_header.riff, "RIFF", 4);
     memcpy(wav_header.wave, "WAVE", 4);
     memcpy(wav_header.fmt, "fmt ", 4);
@@ -550,23 +550,23 @@ static HAL_StatusTypeDef DMIC_UpdateWAVHeader(void)
     wav_header.block_align = DMIC_CHANNELS * (DMIC_BITS_PER_SAMPLE / 8);
     wav_header.byte_rate = DMIC_SAMPLE_RATE * wav_header.block_align;
 
-    /* ÉèÖÃÕıÈ·µÄ´óĞ¡ */
+    /* è®¾ç½®æ­£ç¡®çš„å¤§å° */
     wav_header.data_size = s_record_data_size;
     wav_header.riff_size = 36 + s_record_data_size;
 
-    /* ÒÆ¶¯µ½ÎÄ¼ş¿ªÍ· */
+    /* ç§»åŠ¨åˆ°æ–‡ä»¶å¼€å¤´ */
     fresult = f_lseek(&s_record_file, 0);
     if (fresult != FR_OK)
     {
-        DEBUG_ERROR("DMIC_UpdateWAVHeader: ÎÄ¼şÖ¸ÕëÒÆ¶¯Ê§°Ü");
+        DEBUG_ERROR("DMIC_UpdateWAVHeader: æ–‡ä»¶æŒ‡é’ˆç§»åŠ¨å¤±è´¥");
         return HAL_ERROR;
     }
 
-    /* ÖØĞÂĞ´ÈëÎÄ¼şÍ· */
+    /* é‡æ–°å†™å…¥æ–‡ä»¶å¤´ */
     fresult = f_write(&s_record_file, &wav_header, sizeof(wav_header), &bytes_written);
     if (fresult != FR_OK || bytes_written != sizeof(wav_header))
     {
-        DEBUG_ERROR("DMIC_UpdateWAVHeader: ¸üĞÂWAVÍ·Ê§°Ü");
+        DEBUG_ERROR("DMIC_UpdateWAVHeader: æ›´æ–°WAVå¤´å¤±è´¥");
         return HAL_ERROR;
     }
 
@@ -574,9 +574,9 @@ static HAL_StatusTypeDef DMIC_UpdateWAVHeader(void)
 }
 
 /**
- * @brief  Éú³É»ùÓÚÊ±¼ä´ÁµÄÎÄ¼şÃû
- * @param  filename: ÎÄ¼şÃû»º³åÇø
- * @param  len: »º³åÇø´óĞ¡
+ * @brief  ç”ŸæˆåŸºäºæ—¶é—´æˆ³çš„æ–‡ä»¶å
+ * @param  filename: æ–‡ä»¶åç¼“å†²åŒº
+ * @param  len: ç¼“å†²åŒºå¤§å°
  */
 static void DMIC_GenerateTimestampFilename(char *filename, size_t len)
 {
@@ -585,10 +585,10 @@ static void DMIC_GenerateTimestampFilename(char *filename, size_t len)
 }
 
 /**
- * @brief  ²éÕÒ¿ÉÓÃµÄÎÄ¼şÃû£¨´¦ÀíÍ¬Ãû³åÍ»£©
- * @param  filename: ÊäÈëÊä³öÎÄ¼şÃû»º³åÇø
- * @param  max_len: »º³åÇø×î´ó´óĞ¡
- * @retval HAL_OK=³É¹¦ÕÒµ½¿ÉÓÃÃû, HAL_ERROR=Ê§°Ü
+ * @brief  æŸ¥æ‰¾å¯ç”¨çš„æ–‡ä»¶åï¼ˆå¤„ç†åŒåå†²çªï¼‰
+ * @param  filename: è¾“å…¥è¾“å‡ºæ–‡ä»¶åç¼“å†²åŒº
+ * @param  max_len: ç¼“å†²åŒºæœ€å¤§å¤§å°
+ * @retval HAL_OK=æˆåŠŸæ‰¾åˆ°å¯ç”¨å, HAL_ERROR=å¤±è´¥
  */
 static HAL_StatusTypeDef DMIC_FindAvailableFilename(char *filename, size_t max_len)
 {
@@ -598,14 +598,14 @@ static HAL_StatusTypeDef DMIC_FindAvailableFilename(char *filename, size_t max_l
     char name_ext[20];
     uint32_t index = 1;
 
-    /* ·ÖÀëÎÄ¼şÃûºÍÀ©Õ¹Ãû */
+    /* åˆ†ç¦»æ–‡ä»¶åå’Œæ‰©å±•å */
     strncpy(test_filename, filename, sizeof(test_filename) - 1);
     test_filename[sizeof(test_filename) - 1] = '\0';
 
     p_dot = strrchr(test_filename, '.');
     if (p_dot == NULL)
     {
-        /* ÎŞÀ©Õ¹Ãû */
+        /* æ— æ‰©å±•å */
         strncpy(name_base, test_filename, sizeof(name_base) - 1);
         name_base[sizeof(name_base) - 1] = '\0';
         strcpy(name_ext, "");
@@ -619,20 +619,20 @@ static HAL_StatusTypeDef DMIC_FindAvailableFilename(char *filename, size_t max_l
         name_ext[sizeof(name_ext) - 1] = '\0';
     }
 
-    /* Ê×ÏÈ¼ì²éÔ­Ê¼ÎÄ¼şÃûÊÇ·ñ´æÔÚ */
+    /* é¦–å…ˆæ£€æŸ¥åŸå§‹æ–‡ä»¶åæ˜¯å¦å­˜åœ¨ */
     if (FatFs_FileExists(filename) == 0)
     {
-        return HAL_OK; /* ÎÄ¼ş²»´æÔÚ£¬Ê¹ÓÃÔ­Ê¼Ãû */
+        return HAL_OK; /* æ–‡ä»¶ä¸å­˜åœ¨ï¼Œä½¿ç”¨åŸå§‹å */
     }
 
-    /* ³¢ÊÔÌí¼ÓÊı×Öºó×º */
+    /* å°è¯•æ·»åŠ æ•°å­—åç¼€ */
     while (index <= 9999)
     {
         snprintf(test_filename, sizeof(test_filename), "%s_%u%s", name_base, index, name_ext);
 
         if (FatFs_FileExists(test_filename) == 0)
         {
-            /* ÕÒµ½¿ÉÓÃµÄÃû×Ö */
+            /* æ‰¾åˆ°å¯ç”¨çš„åå­— */
             strncpy(filename, test_filename, max_len - 1);
             filename[max_len - 1] = '\0';
             return HAL_OK;
@@ -641,16 +641,16 @@ static HAL_StatusTypeDef DMIC_FindAvailableFilename(char *filename, size_t max_l
         index++;
     }
 
-    return HAL_ERROR; /* ÎŞ·¨ÕÒµ½¿ÉÓÃµÄÎÄ¼şÃû */
+    return HAL_ERROR; /* æ— æ³•æ‰¾åˆ°å¯ç”¨çš„æ–‡ä»¶å */
 }
 
 /*******************************************************************************
- *                              HAL »Øµ÷º¯ÊıÖØ¶¨Òå
+ *                              HAL å›è°ƒå‡½æ•°é‡å®šä¹‰
  ******************************************************************************/
 
 /**
- * @brief  I2S DMA ½ÓÊÕ°ë´«ÊäÍê³É»Øµ÷£¨ÖØ¶¨ÒåHALÈõº¯Êı£©
- * @note   ÓÉ HAL ¿âÔÚ DMA ÖĞ¶ÏÖĞ×Ô¶¯µ÷ÓÃ
+ * @brief  I2S DMA æ¥æ”¶åŠä¼ è¾“å®Œæˆå›è°ƒï¼ˆé‡å®šä¹‰HALå¼±å‡½æ•°ï¼‰
+ * @note   ç”± HAL åº“åœ¨ DMA ä¸­æ–­ä¸­è‡ªåŠ¨è°ƒç”¨
  */
 void HAL_I2S_RxHalfCpltCallback(I2S_HandleTypeDef *hi2s)
 {
@@ -661,8 +661,8 @@ void HAL_I2S_RxHalfCpltCallback(I2S_HandleTypeDef *hi2s)
 }
 
 /**
- * @brief  I2S DMA ½ÓÊÕÍê³É»Øµ÷£¨ÖØ¶¨ÒåHALÈõº¯Êı£©
- * @note   ÓÉ HAL ¿âÔÚ DMA ÖĞ¶ÏÖĞ×Ô¶¯µ÷ÓÃ
+ * @brief  I2S DMA æ¥æ”¶å®Œæˆå›è°ƒï¼ˆé‡å®šä¹‰HALå¼±å‡½æ•°ï¼‰
+ * @note   ç”± HAL åº“åœ¨ DMA ä¸­æ–­ä¸­è‡ªåŠ¨è°ƒç”¨
  */
 void HAL_I2S_RxCpltCallback(I2S_HandleTypeDef *hi2s)
 {
@@ -673,13 +673,13 @@ void HAL_I2S_RxCpltCallback(I2S_HandleTypeDef *hi2s)
 }
 
 /**
- * @brief  I2S ´íÎó»Øµ÷£¨ÖØ¶¨ÒåHALÈõº¯Êı£©
+ * @brief  I2S é”™è¯¯å›è°ƒï¼ˆé‡å®šä¹‰HALå¼±å‡½æ•°ï¼‰
  */
 void HAL_I2S_ErrorCallback(I2S_HandleTypeDef *hi2s)
 {
     if (hi2s->Instance == DMIC_I2S_INSTANCE)
     {
-        DEBUG_ERROR("DMIC: I2S DMA ´íÎó");
+        DEBUG_ERROR("DMIC: I2S DMA é”™è¯¯");
         s_state = DMIC_STATE_ERROR;
     }
 }

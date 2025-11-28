@@ -1,15 +1,15 @@
 /**
  ******************************************************************************
  * @file    key.c
- * @author  ²Ë²Ëwhy£¨BÕ¾£º²Ë²Ëwhyy£©
- * @brief   °´¼üÇı¶¯ÊµÏÖÎÄ¼ş
+ * @author  èœèœwhyï¼ˆBç«™ï¼šèœèœwhyyï¼‰
+ * @brief   æŒ‰é”®é©±åŠ¨å®ç°æ–‡ä»¶
  ******************************************************************************
  * @attention
  *
- * ±¾ÎÄ¼şÊµÏÖ£º
- * - Èí¼şÏû¶¶£¨¿ÉÅäÖÃÏû¶¶Ê±¼ä£©
- * - ÊÂ¼ş¼ì²â£º°´ÏÂ/ÊÍ·Å/µ¥»÷/Ë«»÷/³¤°´
- * - Èõ·ûºÅÊÂ¼ş´¦Àíº¯Êı£¬Ö§³ÖHAL·ç¸ñ»Øµ÷
+ * æœ¬æ–‡ä»¶å®ç°ï¼š
+ * - è½¯ä»¶æ¶ˆæŠ–ï¼ˆå¯é…ç½®æ¶ˆæŠ–æ—¶é—´ï¼‰
+ * - äº‹ä»¶æ£€æµ‹ï¼šæŒ‰ä¸‹/é‡Šæ”¾/å•å‡»/åŒå‡»/é•¿æŒ‰
+ * - å¼±ç¬¦å·äº‹ä»¶å¤„ç†å‡½æ•°ï¼Œæ”¯æŒHALé£æ ¼å›è°ƒ
  ******************************************************************************
  */
 
@@ -18,46 +18,46 @@
 #ifdef KEY_ENABLE
 
 /*******************************************************************************
- *                              Ë½ÓĞÅäÖÃ²ÎÊı
+ *                              ç§æœ‰é…ç½®å‚æ•°
  ******************************************************************************/
 /**
- * @brief ¿É¸ù¾İÊµ¼ÊÓ²¼şÌØĞÔµ÷ÕûÒÔÏÂ²ÎÊı
+ * @brief å¯æ ¹æ®å®é™…ç¡¬ä»¶ç‰¹æ€§è°ƒæ•´ä»¥ä¸‹å‚æ•°
  */
-#define KEY_DEBOUNCE_MS 20 /*!< Ïû¶¶Ê±¼ä£¨ºÁÃë£©£¬µäĞÍ10~50ms */
-#define KEY_LONG_MS 600    /*!< ³¤°´´¥·¢Ê±¼ä£¨ºÁÃë£© */
-#define KEY_DBL_MS 200     /*!< Ë«»÷×î´ó¼ä¸ôÊ±¼ä£¨ºÁÃë£© */
+#define KEY_DEBOUNCE_MS 20 /*!< æ¶ˆæŠ–æ—¶é—´ï¼ˆæ¯«ç§’ï¼‰ï¼Œå…¸å‹10~50ms */
+#define KEY_LONG_MS 600    /*!< é•¿æŒ‰è§¦å‘æ—¶é—´ï¼ˆæ¯«ç§’ï¼‰ */
+#define KEY_DBL_MS 200     /*!< åŒå‡»æœ€å¤§é—´éš”æ—¶é—´ï¼ˆæ¯«ç§’ï¼‰ */
 
 /*******************************************************************************
- *                              Ë½ÓĞ×´Ì¬Êı×é
+ *                              ç§æœ‰çŠ¶æ€æ•°ç»„
  ******************************************************************************/
 
 /**
- * @brief  °´¼üÊı×é(¸ù¾İKEY_LIST×Ô¶¯Éú³É)
+ * @brief  æŒ‰é”®æ•°ç»„(æ ¹æ®KEY_LISTè‡ªåŠ¨ç”Ÿæˆ)
  */
 #define X(name, port, pin) {port, pin, 0},
 KEY keys[] = {
     KEY_LIST};
 #undef X
 
-static uint8_t stable_state[KEY_COUNT];    /*!< È¥¶¶ºóµÄÎÈ¶¨×´Ì¬£¨0/1£© */
-static uint8_t last_raw[KEY_COUNT];        /*!< ÉÏÒ»´ÎÔ­Ê¼µçÆ½£¨ÓÃÓÚ¼ì²â±ä»¯£© */
-static uint32_t last_change_ts[KEY_COUNT]; /*!< ÉÏÒ»´ÎµçÆ½±ä»¯Ê±¼ä´Á */
-static uint32_t press_ts[KEY_COUNT];       /*!< °´ÏÂÊ±¼ä´Á */
-static uint32_t release_ts[KEY_COUNT];     /*!< ÊÍ·ÅÊ±¼ä´Á */
-static uint8_t click_pending[KEY_COUNT];   /*!< µ¥»÷´ı´¦Àí±êÖ¾£¨µÈ´ıË«»÷´°¿Ú£© */
-static uint8_t long_reported[KEY_COUNT];   /*!< ³¤°´ÒÑ±¨¸æ±êÖ¾ */
+static uint8_t stable_state[KEY_COUNT];    /*!< å»æŠ–åçš„ç¨³å®šçŠ¶æ€ï¼ˆ0/1ï¼‰ */
+static uint8_t last_raw[KEY_COUNT];        /*!< ä¸Šä¸€æ¬¡åŸå§‹ç”µå¹³ï¼ˆç”¨äºæ£€æµ‹å˜åŒ–ï¼‰ */
+static uint32_t last_change_ts[KEY_COUNT]; /*!< ä¸Šä¸€æ¬¡ç”µå¹³å˜åŒ–æ—¶é—´æˆ³ */
+static uint32_t press_ts[KEY_COUNT];       /*!< æŒ‰ä¸‹æ—¶é—´æˆ³ */
+static uint32_t release_ts[KEY_COUNT];     /*!< é‡Šæ”¾æ—¶é—´æˆ³ */
+static uint8_t click_pending[KEY_COUNT];   /*!< å•å‡»å¾…å¤„ç†æ ‡å¿—ï¼ˆç­‰å¾…åŒå‡»çª—å£ï¼‰ */
+static uint8_t long_reported[KEY_COUNT];   /*!< é•¿æŒ‰å·²æŠ¥å‘Šæ ‡å¿— */
 
-static KEY_Callback callbacks[KEY_COUNT] = {0}; /*!< »Øµ÷º¯ÊıÊı×é */
+static KEY_Callback callbacks[KEY_COUNT] = {0}; /*!< å›è°ƒå‡½æ•°æ•°ç»„ */
 
 /*******************************************************************************
- *                              Ë½ÓĞº¯ÊıÉùÃ÷
+ *                              ç§æœ‰å‡½æ•°å£°æ˜
  ******************************************************************************/
 static void emit_event(KEY_ID id, KEY_Event ev);
 
 /**
- * @brief  ¶ÁÈ¡°´¼üÔ­Ê¼GPIOµçÆ½
- * @param  key: °´¼üÖ¸Õë
- * @retval GPIO_PIN_RESET(0) »ò GPIO_PIN_SET(1)
+ * @brief  è¯»å–æŒ‰é”®åŸå§‹GPIOç”µå¹³
+ * @param  key: æŒ‰é”®æŒ‡é’ˆ
+ * @retval GPIO_PIN_RESET(0) æˆ– GPIO_PIN_SET(1)
  */
 uint8_t KEY_ReadRaw(KEY *key)
 {
@@ -65,23 +65,23 @@ uint8_t KEY_ReadRaw(KEY *key)
 }
 
 /**
- * @brief  ÅĞ¶Ï°´¼üÊÇ·ñ´¦ÓÚ°´ÏÂ×´Ì¬£¨¿¼ÂÇ¼«ĞÔ£©
- * @param  key: °´¼üÖ¸Õë
- * @retval 0=Î´°´ÏÂ£¬1=°´ÏÂ
+ * @brief  åˆ¤æ–­æŒ‰é”®æ˜¯å¦å¤„äºæŒ‰ä¸‹çŠ¶æ€ï¼ˆè€ƒè™‘ææ€§ï¼‰
+ * @param  key: æŒ‰é”®æŒ‡é’ˆ
+ * @retval 0=æœªæŒ‰ä¸‹ï¼Œ1=æŒ‰ä¸‹
  */
 uint8_t KEY_IsPressed(KEY *key)
 {
     uint8_t raw = KEY_ReadRaw(key);
-    /* °´ÏÂÊ±µçÆ½Óë¿ÕÏĞµçÆ½Ïà·´ */
+    /* æŒ‰ä¸‹æ—¶ç”µå¹³ä¸ç©ºé—²ç”µå¹³ç›¸å */
     return (raw != key->idle_level) ? 1 : 0;
 }
 
 /**
- * @brief  Èõ·ûºÅÊÂ¼ş´¦Àíº¯Êı£¨Ä¬ÈÏ¿ÕÊµÏÖ£©
- * @param  id: °´¼üID
- * @param  ev: ÊÂ¼şÀàĞÍ
- * @note   ÓÃ»§ÔÚÈÎÒâCÎÄ¼şÖĞÖØĞÂÊµÏÖ´Ëº¯ÊıÒÔ½Ó¹Ü°´¼üÊÂ¼ş
- * @note   ²»Í¬±àÒëÆ÷µÄÈõ·ûºÅÓï·¨ÂÔÓĞ²îÒì£¬´Ë´¦×ö¼æÈİ´¦Àí
+ * @brief  å¼±ç¬¦å·äº‹ä»¶å¤„ç†å‡½æ•°ï¼ˆé»˜è®¤ç©ºå®ç°ï¼‰
+ * @param  id: æŒ‰é”®ID
+ * @param  ev: äº‹ä»¶ç±»å‹
+ * @note   ç”¨æˆ·åœ¨ä»»æ„Cæ–‡ä»¶ä¸­é‡æ–°å®ç°æ­¤å‡½æ•°ä»¥æ¥ç®¡æŒ‰é”®äº‹ä»¶
+ * @note   ä¸åŒç¼–è¯‘å™¨çš„å¼±ç¬¦å·è¯­æ³•ç•¥æœ‰å·®å¼‚ï¼Œæ­¤å¤„åšå…¼å®¹å¤„ç†
  */
 #if defined(__GNUC__) || defined(__clang__)
 __attribute__((weak)) void KEY_EventHandler(KEY_ID id, KEY_Event ev)
@@ -90,7 +90,7 @@ __attribute__((weak)) void KEY_EventHandler(KEY_ID id, KEY_Event ev)
     (void)ev;
 }
 #elif defined(__ICCARM__)
-/* IAR²»Ö§³ÖÍ¬ÃûÈõ·ûºÅ¸²¸Ç£¬ÓÃ»§¿ÉÊ¹ÓÃ»Øµ÷×¢²á»òÁ´½Ó½Å±¾ */
+/* IARä¸æ”¯æŒåŒåå¼±ç¬¦å·è¦†ç›–ï¼Œç”¨æˆ·å¯ä½¿ç”¨å›è°ƒæ³¨å†Œæˆ–é“¾æ¥è„šæœ¬ */
 void KEY_EventHandler(KEY_ID id, KEY_Event ev)
 {
     (void)id;
@@ -105,10 +105,10 @@ __weak void KEY_EventHandler(KEY_ID id, KEY_Event ev)
 #endif
 
 /**
- * @brief  ÊÂ¼ş·Ö·¢ÄÚ²¿º¯Êı
- * @param  id: °´¼üID
- * @param  ev: ÊÂ¼şÀàĞÍ
- * @note   ÓÅÏÈµ÷ÓÃÒÑ×¢²á»Øµ÷£¬·ñÔòµ÷ÓÃÈõ´¦Àíº¯Êı
+ * @brief  äº‹ä»¶åˆ†å‘å†…éƒ¨å‡½æ•°
+ * @param  id: æŒ‰é”®ID
+ * @param  ev: äº‹ä»¶ç±»å‹
+ * @note   ä¼˜å…ˆè°ƒç”¨å·²æ³¨å†Œå›è°ƒï¼Œå¦åˆ™è°ƒç”¨å¼±å¤„ç†å‡½æ•°
  */
 static void emit_event(KEY_ID id, KEY_Event ev)
 {
@@ -116,14 +116,14 @@ static void emit_event(KEY_ID id, KEY_Event ev)
         return;
 
     if (callbacks[id])
-        callbacks[id](id, ev); /* µ÷ÓÃ×¢²áµÄ»Øµ÷ */
+        callbacks[id](id, ev); /* è°ƒç”¨æ³¨å†Œçš„å›è°ƒ */
     else
-        KEY_EventHandler(id, ev); /* µ÷ÓÃÈõ´¦Àíº¯Êı£¨ÓÃ»§¿ÉÖØ¶¨Òå£© */
+        KEY_EventHandler(id, ev); /* è°ƒç”¨å¼±å¤„ç†å‡½æ•°ï¼ˆç”¨æˆ·å¯é‡å®šä¹‰ï¼‰ */
 }
 
 /**
- * @brief  ³õÊ¼»¯ËùÓĞ°´¼ü
- * @note   Çå¿Õ×´Ì¬Êı×é²¢¶ÁÈ¡³õÊ¼µçÆ½
+ * @brief  åˆå§‹åŒ–æ‰€æœ‰æŒ‰é”®
+ * @note   æ¸…ç©ºçŠ¶æ€æ•°ç»„å¹¶è¯»å–åˆå§‹ç”µå¹³
  * @retval None
  */
 void KEY_Init(void)
@@ -131,11 +131,11 @@ void KEY_Init(void)
     uint32_t now = GetTick();
     for (int i = 0; i < KEY_COUNT; ++i)
     {
-        /* ¶ÁÈ¡³õÊ¼µçÆ½×÷Îª¿ÕÏĞµçÆ½(¼ÙÉè°´¼üÎ´°´ÏÂ) */
+        /* è¯»å–åˆå§‹ç”µå¹³ä½œä¸ºç©ºé—²ç”µå¹³(å‡è®¾æŒ‰é”®æœªæŒ‰ä¸‹) */
         keys[i].idle_level = KEY_ReadRaw(&keys[i]);
 
         last_raw[i] = keys[i].idle_level;
-        stable_state[i] = 0; /* ³õÊ¼»¯ÎªÎ´°´ÏÂ */
+        stable_state[i] = 0; /* åˆå§‹åŒ–ä¸ºæœªæŒ‰ä¸‹ */
         last_change_ts[i] = now;
         press_ts[i] = 0;
         release_ts[i] = 0;
@@ -146,17 +146,17 @@ void KEY_Init(void)
 }
 
 /**
- * @brief  ×¢²á°´¼ü»Øµ÷º¯Êı
- * @param  id: °´¼üID
- * @param  cb: »Øµ÷º¯ÊıÖ¸Õë
- * @note   ×¢²áºó¸Ã°´¼üµÄÊÂ¼ş½«µ÷ÓÃ»Øµ÷¶ø·ÇKEY_EventHandler
+ * @brief  æ³¨å†ŒæŒ‰é”®å›è°ƒå‡½æ•°
+ * @param  id: æŒ‰é”®ID
+ * @param  cb: å›è°ƒå‡½æ•°æŒ‡é’ˆ
+ * @note   æ³¨å†Œåè¯¥æŒ‰é”®çš„äº‹ä»¶å°†è°ƒç”¨å›è°ƒè€ŒéKEY_EventHandler
  * @retval None
  */
 void KEY_RegisterCallback(KEY_ID id, KEY_Callback cb)
 {
     if (id >= KEY_COUNT)
     {
-        DEBUG_ERROR("KEY_RegisterCallback: ÎŞĞ§µÄ°´¼üID");
+        DEBUG_ERROR("KEY_RegisterCallback: æ— æ•ˆçš„æŒ‰é”®ID");
         return;
     }
     callbacks[id] = cb;
@@ -164,33 +164,33 @@ void KEY_RegisterCallback(KEY_ID id, KEY_Callback cb)
 }
 
 /**
- * @brief  È¡Ïû°´¼ü»Øµ÷×¢²á
- * @param  id: °´¼üID
- * @note   È¡Ïûºó¸Ã°´¼üµÄÊÂ¼ş½«»Øµ½µ÷ÓÃKEY_EventHandler
+ * @brief  å–æ¶ˆæŒ‰é”®å›è°ƒæ³¨å†Œ
+ * @param  id: æŒ‰é”®ID
+ * @note   å–æ¶ˆåè¯¥æŒ‰é”®çš„äº‹ä»¶å°†å›åˆ°è°ƒç”¨KEY_EventHandler
  * @retval None
  */
 void KEY_UnregisterCallback(KEY_ID id)
 {
     if (id >= KEY_COUNT)
     {
-        DEBUG_ERROR("KEY_UnregisterCallback: ÎŞĞ§µÄ°´¼üID");
+        DEBUG_ERROR("KEY_UnregisterCallback: æ— æ•ˆçš„æŒ‰é”®ID");
         return;
     }
     callbacks[id] = NULL;
 }
 
 /**
- * @brief  °´¼üÉ¨ÃèÈÎÎñ£¨·Ç×èÈû£¬ĞèÖÜÆÚµ÷ÓÃ£©
- * @note   ½¨ÒéÔÚÖ÷Ñ­»·»ò¶¨Ê±Æ÷ÖĞÃ¿5~20msµ÷ÓÃÒ»´Î
- * @note   ÄÚ²¿´¦Àí£ºÏû¶¶ -> ±ßÑØ¼ì²â -> ÊÂ¼şÊ¶±ğ -> »Øµ÷´¥·¢
+ * @brief  æŒ‰é”®æ‰«æä»»åŠ¡ï¼ˆéé˜»å¡ï¼Œéœ€å‘¨æœŸè°ƒç”¨ï¼‰
+ * @note   å»ºè®®åœ¨ä¸»å¾ªç¯æˆ–å®šæ—¶å™¨ä¸­æ¯5~20msè°ƒç”¨ä¸€æ¬¡
+ * @note   å†…éƒ¨å¤„ç†ï¼šæ¶ˆæŠ– -> è¾¹æ²¿æ£€æµ‹ -> äº‹ä»¶è¯†åˆ« -> å›è°ƒè§¦å‘
  * @retval None
  *
- * @par    ×´Ì¬»úÂß¼­£º
- *         1. ¼ì²âÔ­Ê¼µçÆ½±ä»¯ -> ÖØÖÃÏû¶¶¼ÆÊ±Æ÷
- *         2. Ô­Ê¼µçÆ½ÎÈ¶¨³¬¹ıÏû¶¶Ê±¼ä -> È·ÈÏÎªÓĞĞ§µçÆ½
- *         3. ÓĞĞ§µçÆ½ÓëÉÏ´ÎÎÈ¶¨×´Ì¬²»Í¬ -> ´¥·¢±ßÑØÊÂ¼ş£¨°´ÏÂ/ÊÍ·Å£©
- *         4. °´ÏÂºó³ÖĞøÊ±¼ä¼ì²â -> ´¥·¢³¤°´ÊÂ¼ş
- *         5. ÊÍ·Åºó¼ì²â³ÖĞøÊ±¼ä -> ÅĞ¶Ïµ¥»÷/Ë«»÷
+ * @par    çŠ¶æ€æœºé€»è¾‘ï¼š
+ *         1. æ£€æµ‹åŸå§‹ç”µå¹³å˜åŒ– -> é‡ç½®æ¶ˆæŠ–è®¡æ—¶å™¨
+ *         2. åŸå§‹ç”µå¹³ç¨³å®šè¶…è¿‡æ¶ˆæŠ–æ—¶é—´ -> ç¡®è®¤ä¸ºæœ‰æ•ˆç”µå¹³
+ *         3. æœ‰æ•ˆç”µå¹³ä¸ä¸Šæ¬¡ç¨³å®šçŠ¶æ€ä¸åŒ -> è§¦å‘è¾¹æ²¿äº‹ä»¶ï¼ˆæŒ‰ä¸‹/é‡Šæ”¾ï¼‰
+ *         4. æŒ‰ä¸‹åæŒç»­æ—¶é—´æ£€æµ‹ -> è§¦å‘é•¿æŒ‰äº‹ä»¶
+ *         5. é‡Šæ”¾åæ£€æµ‹æŒç»­æ—¶é—´ -> åˆ¤æ–­å•å‡»/åŒå‡»
  */
 void KEY_Task(void)
 {
@@ -201,32 +201,32 @@ void KEY_Task(void)
         uint8_t raw = KEY_ReadRaw(&keys[i]);
         uint8_t pressed = (raw != keys[i].idle_level) ? 1 : 0;
 
-        /* ½×¶Î1: ¼ì²âÔ­Ê¼µçÆ½±ä»¯ */
+        /* é˜¶æ®µ1: æ£€æµ‹åŸå§‹ç”µå¹³å˜åŒ– */
         if (raw != last_raw[i])
         {
-            last_change_ts[i] = now; /* ÖØÖÃÏû¶¶¼ÆÊ±Æ÷ */
+            last_change_ts[i] = now; /* é‡ç½®æ¶ˆæŠ–è®¡æ—¶å™¨ */
             last_raw[i] = raw;
         }
         else
         {
-            /* ½×¶Î2: Ô­Ê¼µçÆ½ÎÈ¶¨,¼ì²éÊÇ·ñ³¬¹ıÏû¶¶Ê±¼ä */
+            /* é˜¶æ®µ2: åŸå§‹ç”µå¹³ç¨³å®š,æ£€æŸ¥æ˜¯å¦è¶…è¿‡æ¶ˆæŠ–æ—¶é—´ */
             if (((int32_t)(now - last_change_ts[i])) >= KEY_DEBOUNCE_MS)
             {
-                /* ½×¶Î3: ±È½ÏÈ¥¶¶ºó×´Ì¬,¼ì²â±ßÑØ */
+                /* é˜¶æ®µ3: æ¯”è¾ƒå»æŠ–åçŠ¶æ€,æ£€æµ‹è¾¹æ²¿ */
                 if (pressed != stable_state[i])
                 {
                     stable_state[i] = pressed;
 
                     if (pressed)
                     {
-                        /* °´ÏÂ±ßÑØ */
+                        /* æŒ‰ä¸‹è¾¹æ²¿ */
                         press_ts[i] = now;
                         long_reported[i] = 0;
                         emit_event((KEY_ID)i, KEY_EV_PRESS);
                     }
                     else
                     {
-                        /* ÊÍ·Å±ßÑØ */
+                        /* é‡Šæ”¾è¾¹æ²¿ */
                         release_ts[i] = now;
                         emit_event((KEY_ID)i, KEY_EV_RELEASE);
 
@@ -234,32 +234,32 @@ void KEY_Task(void)
 
                         if (held < KEY_LONG_MS)
                         {
-                            /* ¶Ì°´: ¼ì²âµ¥»÷/Ë«»÷ */
+                            /* çŸ­æŒ‰: æ£€æµ‹å•å‡»/åŒå‡» */
                             if (click_pending[i] && ((now - release_ts[i]) <= KEY_DBL_MS))
                             {
-                                /* Ë«»÷´°¿ÚÄÚµÄµÚ¶ş´ÎÊÍ·Å -> Ë«»÷ */
+                                /* åŒå‡»çª—å£å†…çš„ç¬¬äºŒæ¬¡é‡Šæ”¾ -> åŒå‡» */
                                 click_pending[i] = 0;
                                 emit_event((KEY_ID)i, KEY_EV_DOUBLE_CLICK);
                             }
                             else
                             {
-                                /* ±ê¼Çµ¥»÷´ı´¦Àí£¬µÈ´ıË«»÷´°¿Ú½áÊø */
+                                /* æ ‡è®°å•å‡»å¾…å¤„ç†ï¼Œç­‰å¾…åŒå‡»çª—å£ç»“æŸ */
                                 click_pending[i] = 1;
                             }
                         }
                         else
                         {
-                            /* ³¤°´ºóÊÍ·Å,²»µ±×÷µã»÷ */
+                            /* é•¿æŒ‰åé‡Šæ”¾,ä¸å½“ä½œç‚¹å‡» */
                             click_pending[i] = 0;
                         }
                     }
                 }
                 else
                 {
-                    /* ½×¶Î4: ×´Ì¬ÎÈ¶¨,¼ì²â³¤°´ºÍË«»÷³¬Ê± */
+                    /* é˜¶æ®µ4: çŠ¶æ€ç¨³å®š,æ£€æµ‹é•¿æŒ‰å’ŒåŒå‡»è¶…æ—¶ */
                     if (stable_state[i])
                     {
-                        /* ³ÖĞø°´ÏÂ: ¼ì²â³¤°´ */
+                        /* æŒç»­æŒ‰ä¸‹: æ£€æµ‹é•¿æŒ‰ */
                         if (!long_reported[i] && press_ts[i] &&
                             ((now - press_ts[i]) >= KEY_LONG_MS))
                         {
@@ -269,7 +269,7 @@ void KEY_Task(void)
                     }
                     else
                     {
-                        /* ³ÖĞøÊÍ·Å: ¼ì²âµ¥»÷³¬Ê± */
+                        /* æŒç»­é‡Šæ”¾: æ£€æµ‹å•å‡»è¶…æ—¶ */
                         if (click_pending[i] && ((now - release_ts[i]) > KEY_DBL_MS))
                         {
                             click_pending[i] = 0;
