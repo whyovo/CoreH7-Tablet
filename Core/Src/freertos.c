@@ -19,10 +19,9 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "FreeRTOS.h"
-#include "cmsis_os.h"
-#include "main.h"
 #include "task.h"
-
+#include "main.h"
+#include "cmsis_os.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -61,9 +60,9 @@ SemaphoreHandle_t lvglMutex;
 /* Definitions for defaultTask */
 osThreadId_t defaultTaskHandle;
 const osThreadAttr_t defaultTask_attributes = {
-    .name = "defaultTask",
-    .stack_size = 128 * 4,
-    .priority = (osPriority_t)osPriorityNormal,
+  .name = "defaultTask",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
 };
 
 /* Private function prototypes -----------------------------------------------*/
@@ -91,10 +90,10 @@ void vApplicationTickHook(void) {
 /* USER CODE END 3 */
 
 /**
- * @brief  FreeRTOS initialization
- * @param  None
- * @retval None
- */
+  * @brief  FreeRTOS initialization
+  * @param  None
+  * @retval None
+  */
 void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
 
@@ -120,8 +119,7 @@ void MX_FREERTOS_Init(void) {
 
   /* Create the thread(s) */
   /* creation of defaultTask */
-  defaultTaskHandle =
-      osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
+  defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -133,6 +131,7 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN RTOS_EVENTS */
   /* add events, ... */
   /* USER CODE END RTOS_EVENTS */
+
 }
 
 /* USER CODE BEGIN Header_StartDefaultTask */
@@ -142,7 +141,8 @@ void MX_FREERTOS_Init(void) {
  * @retval None
  */
 /* USER CODE END Header_StartDefaultTask */
-void StartDefaultTask(void *argument) {
+void StartDefaultTask(void *argument)
+{
   /* USER CODE BEGIN StartDefaultTask */
   /* Infinite loop */
   for (;;) {
@@ -183,44 +183,78 @@ void StartTouchTask(void *argument) {
   /* ===== 启用显示更新 ===== */
   disp_enable_update();
   DEBUG_INFO("lvgl ready");
-  // 获取24号字体
-  lv_font_t *font_24 = lv_font_qspi_get_by_size(24);
-  if (font_24 == NULL) {
-    LV_LOG_ERROR("获取字体失败");
-    return;
-  }
+ 
 
-  // 获取默认屏幕
+  /* ===== 创建中文输入界面 - 屏幕高度 480px ===== */
   lv_obj_t *scr = lv_scr_act();
-
-  // 清屏背景色
   lv_obj_set_style_bg_color(scr, lv_color_white(), LV_PART_MAIN);
 
-  // ===== 示例1: 显示纯汉字 =====
-  lv_obj_t *label1 = lv_label_create(scr);
-  lv_label_set_text(label1, "你好世界");
-  lv_obj_set_style_text_font(label1, font_24, LV_PART_MAIN);
-  lv_obj_set_style_text_color(label1, lv_color_black(), LV_PART_MAIN);
-  lv_obj_set_pos(label1, 10, 10);
+  // 获取字体
+  lv_font_t *font_24 = lv_font_qspi_get_by_size(24);
+  lv_font_t *font_16 = lv_font_qspi_get_by_size(16);
 
-  // ===== 示例2: 显示汉字+数字混合 =====
-  lv_obj_t *label2 = lv_label_create(scr);
-  lv_label_set_text(label2, "temp温度: 25℃");
-  lv_obj_set_style_text_font(label2, font_24, LV_PART_MAIN);
-  lv_obj_set_style_text_color(label2, lv_color_hex(0xFF0000), LV_PART_MAIN);
-  lv_obj_set_pos(label2, 10, 50);
+  /* ===== 顶部区域：标题 ===== */
+  lv_obj_t *title = lv_label_create(scr);
+  lv_label_set_text(title, "中文输入演示");
+  lv_obj_set_style_text_font(title, font_24, LV_PART_MAIN);
+  lv_obj_set_style_text_color(title, lv_color_hex(0x0066CC), LV_PART_MAIN);
+  lv_obj_set_pos(title, 20, 8);
 
-  // ===== 示例3: 创建按钮带汉字标签 =====
-  lv_obj_t *btn = lv_btn_create(scr);
-  lv_obj_set_pos(btn, 10, 180);
-  lv_obj_set_size(btn, 200, 50);
-  lv_obj_set_style_bg_color(btn, lv_color_hex(0x007BFF), LV_PART_MAIN);
+  /* ===== 输入框区域：文本框 ===== */
+  lv_obj_t *textarea = lv_textarea_create(scr);
+  lv_obj_set_size(textarea, 760, 70);
+  lv_obj_set_pos(textarea, 20, 40);
+  lv_obj_set_style_text_font(textarea, font_24, LV_PART_MAIN);
+  lv_obj_set_style_bg_color(textarea, lv_color_hex(0xF5F5F5), LV_PART_MAIN);
+  lv_obj_set_style_border_color(textarea, lv_color_hex(0xCCCCCC), LV_PART_MAIN);
+  lv_obj_set_style_border_width(textarea, 2, LV_PART_MAIN);
+  lv_textarea_set_placeholder_text(textarea, "点击输入文字");
+  lv_textarea_set_one_line(textarea, false);
 
-  lv_obj_t *btn_label = lv_label_create(btn);
-  lv_label_set_text(btn_label, "开始游戏");
-  lv_obj_set_style_text_font(btn_label, font_24, LV_PART_MAIN);
-  lv_obj_set_style_text_color(btn_label, lv_color_white(), LV_PART_MAIN);
-  lv_obj_center(btn_label);
+  /* ===== 中间区域：候选字显示 ===== */
+  lv_obj_t *candidate_label = lv_label_create(scr);
+  lv_label_set_text(candidate_label, "候选字: 字库支持中文");
+  lv_obj_set_style_text_font(candidate_label, font_16, LV_PART_MAIN);
+  lv_obj_set_style_text_color(candidate_label, lv_color_hex(0xFF6600),
+                              LV_PART_MAIN);
+  lv_obj_set_pos(candidate_label, 20, 115);
+
+  /* ===== 创建拼音输入法 ===== */
+  lv_obj_t *ime_pinyin = lv_ime_pinyin_create(scr);
+  /*设置候选字组件的字体，否则显示为空白方格 */
+  lv_obj_set_style_text_font(ime_pinyin, font_24, LV_PART_MAIN);
+  /* 设置候选字栏的位置和样式 */
+  lv_obj_set_pos(ime_pinyin, 20, 135);
+  lv_obj_set_size(ime_pinyin, 760, 40);
+  lv_obj_set_style_border_width(ime_pinyin, 0,
+                                LV_PART_MAIN); // 去除边框让它看起来更自然
+  lv_obj_set_style_bg_color(ime_pinyin, lv_color_hex(0xF0F0F0),
+                            LV_PART_MAIN); // 浅灰背景区分
+  /* 创建标准键盘 */
+  lv_obj_t *keyboard = lv_keyboard_create(scr);
+  lv_obj_set_size(keyboard, 760, 300);
+  lv_obj_set_pos(keyboard, 0, 0); // 改为正确的Y坐标
+
+  /* 绑定拼音输入法到键盘 */
+  lv_ime_pinyin_set_keyboard(ime_pinyin, keyboard);
+
+  /* 绑定文本框到键盘 (这是正确的方式) */
+  lv_keyboard_set_textarea(keyboard, textarea);
+
+  /* 键盘样式 */
+  lv_obj_set_style_bg_color(keyboard, lv_color_hex(0xE8E8E8), LV_PART_MAIN);
+  lv_obj_set_style_border_color(keyboard, lv_color_hex(0x999999), LV_PART_MAIN);
+  lv_obj_set_style_border_width(keyboard, 1, LV_PART_MAIN);
+
+  /* 按钮样式 */
+  lv_obj_set_style_bg_color(keyboard, lv_color_hex(0xFFFFFF), LV_PART_ITEMS);
+  lv_obj_set_style_border_width(keyboard, 1, LV_PART_ITEMS);
+  lv_obj_set_style_border_color(keyboard, lv_color_hex(0xCCCCCC),
+                                LV_PART_ITEMS);
+  lv_obj_set_style_text_font(keyboard, font_16, LV_PART_ITEMS);
+  lv_obj_set_style_pad_all(keyboard, 4, LV_PART_ITEMS);
+
+  disp_enable_update();
   /* 主循环 */
   for (;;) {
     /* 获取互斥量 - 等待无限期 */
@@ -238,3 +272,4 @@ void StartTouchTask(void *argument) {
 
 // void vApplicationTickHook(void) {  }
 /* USER CODE END Application */
+

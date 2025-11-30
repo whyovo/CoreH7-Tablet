@@ -176,6 +176,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/lvgl-8.3.11/src/extra/others/msg/lv_msg.c
     ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/lvgl-8.3.11/src/extra/others/snapshot/lv_snapshot.c
     ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/lvgl-8.3.11/src/extra/lv_extra.c
+    ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/lvgl-8.3.11/src/extra/others/ime/lv_ime_pinyin.c 
 
     # LVGL Source Files - Font
     ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/lvgl-8.3.11/src/font/lv_font.c

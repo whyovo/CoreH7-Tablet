@@ -10,7 +10,7 @@ make.exe all --print-data-base --no-builtin-variables --no-builtin-rules --quest
 make.exe: *** No rule to make target `all'.  Stop.
 
 
-# Make data base, printed on Fri Nov 28 21:27:20 2025
+# Make data base, printed on Sun Nov 30 22:46:41 2025
 
 # Variables
 
@@ -53,17 +53,13 @@ HDC_SERVER_PORT = 65037
 # environment
 MOSQUITTO_DIR = E:\office2\mosquitto
 # environment
-VSCODE_PID = 27460
+VSCODE_PID = 13504
 # environment
 CMSIS_PACK_ROOT = C:\Users\lenovo\AppData\Local\stm32cube\packs
-# environment
-EFC_12776_2283032206 = 1
 # environment
 PATHEXT = .COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC
 # makefile
 MAKEFILE_LIST := 
-# environment
-FPS_BROWSER_USER_PROFILE_STRING = Default
 # environment
 TMP = /tmp
 # environment
@@ -71,7 +67,7 @@ PROGRAMW6432 = C:\Program Files
 # environment
 PROGRAMDATA = C:\ProgramData
 # environment
-VSCODE_CWD = C:\WINDOWS\system32
+VSCODE_CWD = C:\Users\lenovo\AppData\Local\Programs\Microsoft VS Code
 # environment
 DOTNET_MULTILEVEL_LOOKUP = undefined
 # environment
@@ -102,8 +98,6 @@ EIDE_BINARIES_VER = 12.1.1
 NUMBER_OF_PROCESSORS = 20
 # environment
 ELECTRON_RUN_AS_NODE = 1
-# environment
-EFC_12776_3789132940 = 1
 # default
 .FEATURES := target-specific order-only second-expansion else-if archives jobserver check-symlink
 # automatic
@@ -111,15 +105,13 @@ EFC_12776_3789132940 = 1
 # environment
 DOTNET_ROLL_FORWARD = Major
 # environment
-CHROME_CRASHPAD_PIPE_NAME = \\.\pipe\crashpad_27460_OIMNYWKGGBGMPVCM
-# environment
-EFC_12776_1592913036 = 1
+CHROME_CRASHPAD_PIPE_NAME = \\.\pipe\crashpad_13504_UCSNGNDOATWLCVMQ
 # environment
 IGCCSVC_DB = AQAAANCMnd8BFdERjHoAwE/Cl+sBAAAAZ3uwyUs90EyKZ3PyQ9F9RQQAAAACAAAAAAAQZgAAAAEAACAAAABs20pEtx/13vN3AEMnqRvyd8VwkWB/eoPy/fvGgvMcBAAAAAAOgAAAAAIAACAAAAB7a9uYXkmrBajXk/dy3c/n1gdE4uJoXZ0Ki/uOMN/uOGAAAAAtISq+tMzDIdPS20ruai1hmv1B3ryN+mnFcFWlNO4yVSajyfDBiVe9+ZhkW0wDI3Ttqxemm6yHqVquhV0YQ29zyheUNfxzhjADcpIZ8DQ7bAlM7ko5xBSoF8b7cbjYASJAAAAAm1mE0p9yciIxEp8XpfFcoW8bSzStMj45BRYFtLAB64tjtVLd0XFlIEZF/FKLGSo3PPNTjhkwFl9kkjvAv7Cz2g==
 # environment
 COMPUTERNAME = DESKTOP-8U2OHEH
 # environment
-COMMONPROPERTYBAGPATH = C:\Users\lenovo\AppData\Local\Temp\csdevkit\312d8694.json
+COMMONPROPERTYBAGPATH = C:\Users\lenovo\AppData\Local\Temp\csdevkit\086b1750.json
 # environment
 PROGRAMFILES = C:\Program Files (x86)
 # environment
@@ -137,12 +129,13 @@ HOME = /c/Users/lenovo
 # environment
 CHOCOLATEYTOOLSLOCATION = C:\tools
 # environment
- 
 VSCODE_CODE_CACHE_PATH = C:\Users\lenovo\AppData\Roaming\Code\CachedData\bf9252a2fb45be6893dd8870c0bf37e2e1766d61
 # environment
 APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL = true
 # environment
-COMMONPROPERTYBAGWITHCONFIGPATH = C:\Users\lenovo\AppData\Local\Temp\csdevkit\ff456336084d1764336222916.json
+EFC_12004_2283032206 = 1
+# environment
+COMMONPROPERTYBAGWITHCONFIGPATH = C:\Users\lenovo\AppData\Local\Temp\csdevkit\8300ed09c5e91764513222170.json
 # environment
 COMMONPROGRAMFILES = C:\Program Files (x86)\Common Files
 # environment
@@ -160,8 +153,6 @@ MAKE = $(MAKE_COMMAND)
 # environment
 EIDE_PY3_CMD = C:\Users\lenovo\.eide\bin\python36\python3.exe
 # environment
-PROCESSOR_IDENTIFIER = Intel64 Family 6 Model 154 Stepping 3, GenuineIntel
-# environment
 VSCODE_ESM_ENTRYPOINT = vs/workbench/api/node/extensionHostProcess
 # default
 MAKE_VERSION := 3.81
@@ -174,6 +165,8 @@ APPLICATION_INSIGHTS_NO_STATSBEAT = true
 # default
 MAKECMDGOALS := all
 # environment
+EFC_12004_3789132940 = 1
+# environment
 PROGRAMFILES(X86) = C:\Program Files (x86)
 # environment
 EIDE_MSYS = C:\Users\lenovo\.eide\bin\builder\msys\bin
@@ -184,19 +177,19 @@ DOTNET_CLI_UI_LANGUAGE = en-US
 # environment
 LOCALAPPDATA = C:\Users\lenovo\AppData\Local
 # environment
-EFC_12776_2775293581 = 1
-# environment
 PSMODULEPATH = C:\Program Files\WindowsPowerShell\Modules;C:\WINDOWS\system32\WindowsPowerShell\v1.0\Modules
 # default
 MAKE_COMMAND := make.exe
 # environment
 PROCESSOR_ARCHITEW6432 = AMD64
+# environment
+EFC_12004_1592913036 = 1
 # default
 .VARIABLES := 
 # automatic
 *F = $(notdir $*)
 # environment
-EFC_12776_1262719628 = 1
+PROCESSOR_IDENTIFIER = Intel64 Family 6 Model 154 Stepping 3, GenuineIntel
 # environment
 OS = Windows_NT
 # environment
@@ -240,6 +233,7 @@ CLANG_GCC_CMSIS_COMPILER = E:\office2\stm32cubecli\software\st-arm-clang
 # environment
 CUBE_BUNDLE_PATH = C:\Users\lenovo\AppData\Local\stm32cube\bundles
 # environment
+ 
 LC_ALL = C
 # automatic
 ^F = $(notdir $^)
@@ -258,15 +252,17 @@ PROCESSOR_REVISION = 9a03
 # environment
 MAKELEVEL := 0
 # environment
+EFC_12004_2775293581 = 1
+# environment
 LANG = C
 # environment
 PROCESSOR_LEVEL = 6
 # environment
 TERM = cygwin
 # environment
-FPS_BROWSER_APP_PROFILE_STRING = Internet Explorer
-# environment
 APPLICATIONINSIGHTS_CONFIGURATION_CONTENT = {}
+# environment
+EFC_12004_1262719628 = 1
 # environment
 EIDE_TOOL_ST_CUBE_PROGRAMER = C:\Users\lenovo\.eide\tools\st_cube_programer\bin
 # environment
@@ -274,7 +270,7 @@ DOTNET_CLI_TELEMETRY_OPTOUT = 1
 # environment
 USERDOMAIN_ROAMINGPROFILE = DESKTOP-8U2OHEH
 # variable set hash-table stats:
-# Load=129/1024=13%, Rehash=0, Collisions=16/151=11%
+# Load=127/1024=12%, Rehash=0, Collisions=14/149=9%
 
 # Pattern-specific Variable Values
 
@@ -355,8 +351,7 @@ GNUmakefile:
 # # of strcache buffers: 0
 # strcache size: total = 0 / max = 0 / min = 4096 / avg = 0
 # strcache free: total = 0 / max = 0 / min = 4096 / avg = 0
- 
 
-# Finished Make data base on Fri Nov 28 21:27:20 2025
+# Finished Make data base on Sun Nov 30 22:46:41 2025
 
  
