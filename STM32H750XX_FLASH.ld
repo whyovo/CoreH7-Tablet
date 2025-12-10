@@ -107,7 +107,14 @@ SECTIONS
   } >FLASH
 
 
-
+ /* RAM_D2 section for FreeRTOS heap and other D2 data */
+  .ram_d2_data :
+  {
+    . = ALIGN(4);
+    *(.ram_d2_data)
+    *(.ram_d2_data*)
+    . = ALIGN(4);
+  } >RAM_D2
   
 
 

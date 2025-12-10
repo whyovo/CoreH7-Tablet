@@ -17,7 +17,7 @@
 **/
 /* Includes ------------------------------------------------------------------*/
 #include "ff_gen_drv.h"
-
+#ifdef FATFS_ENABLE
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
@@ -119,4 +119,4 @@ uint8_t FATFS_GetAttachedDriversNbr(void)
 }
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
-
+#endif

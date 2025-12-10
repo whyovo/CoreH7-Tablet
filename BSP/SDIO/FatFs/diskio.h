@@ -13,8 +13,8 @@ extern "C" {
 #define _USE_IOCTL	1	/* 1: Enable disk_ioctl function */
 
 #include "integer.h"
-
-
+#include "config.h"
+#ifdef FATFS_ENABLE
 /* Status of Disk Functions */
 typedef BYTE	DSTATUS;
 
@@ -72,6 +72,8 @@ DWORD get_fattime (void);
 #define ATA_GET_REV			20	/* Get F/W revision */
 #define ATA_GET_MODEL		21	/* Get model name */
 #define ATA_GET_SN			22	/* Get serial number */
+
+#endif
 
 #ifdef __cplusplus
 }

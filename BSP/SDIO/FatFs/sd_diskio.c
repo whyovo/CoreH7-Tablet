@@ -21,7 +21,7 @@
 #include "ff_gen_drv.h"
 #include "sd_diskio.h"
 
-
+#ifdef FATFS_ENABLE
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 /* use the default SD timeout as defined in the platform BSP driver*/
@@ -219,4 +219,4 @@ DRESULT SD_ioctl(BYTE lun, BYTE cmd, void *buff)
 #endif /* _USE_IOCTL == 1 */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
-
+#endif

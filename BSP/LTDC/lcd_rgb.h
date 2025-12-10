@@ -34,12 +34,13 @@
 #ifndef __LCD_RGB_H
 #define __LCD_RGB_H
 
-#include "init.h"
+#include "config.h"
 #include "lcd_fonts.h"
 #include "lcd_image.h"
 #include "sdram.h"
 #include <stdio.h>
 
+#ifdef LCD_RGB_ENABLE
 typedef struct _pFont pFONT; // 前向声明
 /*******************************************************************************
  *                             配置是否用外部字库
@@ -191,7 +192,7 @@ typedef struct _pFont pFONT; // 前向声明
 #define RGB_BytesPerPixel_1 4 /*!< 32位色模式每像素4字节 */
 #endif
 
-#define RGB_LCD_MemoryAdd_OFFSET                                                \
+#define RGB_LCD_MemoryAdd_OFFSET                                                   \
   RGB_LCD_Width *RGB_LCD_Height *RGB_BytesPerPixel_0 /*!< Layer1显存偏移地址 \
                                                       */
 
@@ -329,7 +330,7 @@ void RGB_LCD_SetTextFont(uint8_t font_size);
  * @param  x 起始水平坐标 (0~799)
  * @param  y 起始垂直坐标 (0~479)
  * @param  pText 汉字字符串（单个汉字）
- * @note   示例：RGB_LCD_DisplayChinese(10, 10, "反")
+ * @note   示例：RGB_LCD_DisplayChinese(10, 10, "你")
  * @note   中文字库为小字库，需提前取模
  * @retval None
  */
@@ -340,7 +341,7 @@ void RGB_LCD_DisplayChinese(uint16_t x, uint16_t y, char *pText);
  * @param  x 起始水平坐标 (0~799)
  * @param  y 起始垂直坐标 (0~479)
  * @param  pText 字符串首地址
- * @note   示例：RGB_LCD_DisplayText(10, 10, "反客科技STM32")
+ * @note   示例：RGB_LCD_DisplayText(10, 10, "你好STM32")
  * @note   自动识别中英文字符
  * @retval None
  */
@@ -501,5 +502,6 @@ void RGB_LCD_DrawImage(uint16_t x, uint16_t y, uint16_t width, uint16_t height,
  *         5. 区域填充
  */
 void lcd_test(void);
+#endif
 
 #endif //__LCD_RGB_H

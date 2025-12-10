@@ -7,10 +7,11 @@
 
 #ifdef _WIN32	/* FatFs development platform */
 
-#include <windows.h>
-#include <tchar.h>
-typedef unsigned __int64 QWORD;
 
+#include <tchar.h>
+#include <windows.h>
+
+typedef unsigned __int64 QWORD;
 
 #else			/* Embedded platform */
 

@@ -14,6 +14,7 @@ set(MX_Include_Dirs
     ${CMAKE_SOURCE_DIR}/Core/Inc
     ${CMAKE_SOURCE_DIR}/Drivers/STM32H7xx_HAL_Driver/Inc
     ${CMAKE_SOURCE_DIR}/Drivers/STM32H7xx_HAL_Driver/Inc/Legacy
+    ${CMAKE_SOURCE_DIR}/Utilities/JPEG
     ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/FreeRTOS/Source/include
     ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2
     ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F
@@ -30,11 +31,13 @@ set(MX_Application_Src
     ${CMAKE_SOURCE_DIR}/Core/Src/dma2d.c
     ${CMAKE_SOURCE_DIR}/Core/Src/fmc.c
     ${CMAKE_SOURCE_DIR}/Core/Src/i2s.c
+    ${CMAKE_SOURCE_DIR}/Core/Src/jpeg.c
     ${CMAKE_SOURCE_DIR}/Core/Src/ltdc.c
+    ${CMAKE_SOURCE_DIR}/Core/Src/mdma.c
     ${CMAKE_SOURCE_DIR}/Core/Src/memorymap.c
     ${CMAKE_SOURCE_DIR}/Core/Src/sdmmc.c
     ${CMAKE_SOURCE_DIR}/Core/Src/spi.c
-    ${CMAKE_SOURCE_DIR}/Core/Src/usart.c
+    ${CMAKE_SOURCE_DIR}/Core/Src/usb_otg.c
     ${CMAKE_SOURCE_DIR}/Core/Src/stm32h7xx_it.c
     ${CMAKE_SOURCE_DIR}/Core/Src/stm32h7xx_hal_msp.c
     ${CMAKE_SOURCE_DIR}/Core/Src/stm32h7xx_hal_timebase_tim.c
@@ -72,6 +75,7 @@ set(STM32_Drivers_Src
     ${CMAKE_SOURCE_DIR}/Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_sdram.c
     ${CMAKE_SOURCE_DIR}/Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_i2s.c
     ${CMAKE_SOURCE_DIR}/Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_i2s_ex.c
+    ${CMAKE_SOURCE_DIR}/Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_jpeg.c
     ${CMAKE_SOURCE_DIR}/Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_ltdc.c
     ${CMAKE_SOURCE_DIR}/Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_ltdc_ex.c
     ${CMAKE_SOURCE_DIR}/Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_ll_sdmmc.c
@@ -82,13 +86,16 @@ set(STM32_Drivers_Src
     ${CMAKE_SOURCE_DIR}/Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_mmc_ex.c
     ${CMAKE_SOURCE_DIR}/Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_spi.c
     ${CMAKE_SOURCE_DIR}/Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_spi_ex.c
-    ${CMAKE_SOURCE_DIR}/Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_uart.c
-    ${CMAKE_SOURCE_DIR}/Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_uart_ex.c
+    ${CMAKE_SOURCE_DIR}/Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_hcd.c
+    ${CMAKE_SOURCE_DIR}/Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_ll_usb.c
 )
 
 # Drivers Midllewares
 
 
+set(Utilities_Src
+    ${CMAKE_SOURCE_DIR}/Utilities/JPEG/jpeg_utils.c
+)
 set(FreeRTOS_Src
     ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/FreeRTOS/Source/croutine.c
     ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/FreeRTOS/Source/event_groups.c
@@ -109,7 +116,7 @@ set(MX_LINK_DIRS
 # Project static libraries
 set(MX_LINK_LIBS 
     STM32_Drivers
-    FreeRTOS	
+    Utilities	FreeRTOS	
 )
 # Interface library for includes and symbols
 add_library(stm32cubemx INTERFACE)
@@ -121,6 +128,11 @@ add_library(STM32_Drivers OBJECT)
 target_sources(STM32_Drivers PRIVATE ${STM32_Drivers_Src})
 target_link_libraries(STM32_Drivers PUBLIC stm32cubemx)
 
+
+# Create Utilities static library
+add_library(Utilities OBJECT)
+target_sources(Utilities PRIVATE ${Utilities_Src})
+target_link_libraries(Utilities PUBLIC stm32cubemx)
 
 # Create FreeRTOS static library
 add_library(FreeRTOS OBJECT)

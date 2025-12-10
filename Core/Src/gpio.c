@@ -37,6 +37,8 @@
      PC15-OSC32_OUT (OSC32_OUT)   ------> RCC_OSC32_OUT
      PC14-OSC32_IN (OSC32_IN)   ------> RCC_OSC32_IN
      PA13 (JTMS/SWDIO)   ------> DEBUG_JTMS-SWDIO
+     PA10   ------> USART1_RX
+     PA9   ------> USART1_TX
      PH1-OSC_OUT (PH1)   ------> RCC_OSC_OUT
      PH0-OSC_IN (PH0)   ------> RCC_OSC_IN
 */
@@ -52,9 +54,10 @@ void MX_GPIO_Init(void)
   __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOE_CLK_ENABLE();
+  __HAL_RCC_GPIOB_CLK_ENABLE();
   __HAL_RCC_GPIOJ_CLK_ENABLE();
-  __HAL_RCC_GPIOH_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
+  __HAL_RCC_GPIOH_CLK_ENABLE();
   __HAL_RCC_GPIOF_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
@@ -62,6 +65,14 @@ void MX_GPIO_Init(void)
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOH, GPIO_PIN_6, GPIO_PIN_SET);
+
+  /*Configure GPIO pins : PA10 PA9 */
+  GPIO_InitStruct.Pin = GPIO_PIN_10|GPIO_PIN_9;
+  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+  GPIO_InitStruct.Alternate = GPIO_AF7_USART1;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PC13 */
   GPIO_InitStruct.Pin = GPIO_PIN_13;

@@ -30,7 +30,11 @@
 
 #include "lcd_fonts.h"
 
+
+
 #if defined(LCD_SPI_ENABLE) || defined(LCD_RGB_ENABLE)
+
+#if !defined(USE_FLASH_FONT) && !defined(USE_FLASH_FONT_RGB)
 // #if defined(LCD_SPI_ENABLE)
 /*******************************************************************************
  *                              中文字模数据
@@ -902,11 +906,28 @@ const uint8_t ASCII_1206_Table [] =
 
 	0x02,0x25,0x18,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,/*"~",94*/	
 };
-
+#endif
 /*******************************************************************************
  *                              字体参数定义
  ******************************************************************************/
 
+#if defined(USE_FLASH_FONT) || defined(USE_FLASH_FONT_RGB)
+pFONT ASCII_Font32 = {NULL, 16, 32, 64, 0};
+pFONT ASCII_Font24 = {NULL, 12, 24, 48, 0};
+pFONT ASCII_Font20 = {NULL, 10, 20, 40, 0};
+pFONT ASCII_Font16 = {NULL, 8, 16, 16, 0};
+pFONT ASCII_Font12 = {NULL, 6, 12, 12, 0};
+pFONT CH_Font12 = {NULL, 12, 12, 24,
+                   0};
+pFONT CH_Font16 = {NULL, 16, 16, 32,
+                   0};
+pFONT CH_Font20 = {NULL, 20, 20, 60,
+                   0};
+pFONT CH_Font24 = {NULL, 24, 24, 72,
+                   0};
+pFONT CH_Font32 = {NULL, 32, 32, 128,
+                   0};
+#else
 /** @brief 中文字体参数结构 */
 
 pFONT CH_Font12 = {Chinese_1212[0], 12, 12, 24, sizeof(Chinese_1212) / sizeof(Chinese_1212[0])};
@@ -955,5 +976,7 @@ pFONT ASCII_Font12 = {
 	12,                  //	单个字符的字模数据个数
 	0                    // 该参数只有汉字字模用到，表示二维数组的行大小
 };
+#endif
+	
 
 #endif

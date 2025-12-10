@@ -14,16 +14,9 @@
  *
  * 字库烧录地址分配:
  * ┌──────────────────┬──────────────┬──────────────────┐
- * │ 文件名           │ 烧录地址      │ 说明             │
+ * │ 文件名           │ 烧录地址      │ 说明              │
  * ├──────────────────┼──────────────┼──────────────────┤
- * │ font_12x12_*.bin │ 0x91D00000   │ 12x12字库        │
- * │ font_16x16_*.bin │ 0x91D2BBE0   │ 16x16字库        │
- * │ font_20x20_*.bin │ 0x91D66100   │ 20x20字库        │
- * │ font_24x24_*.bin │ 0x91DD3680   │ 24x24字库        │
- * │ font_32x32_*.bin │ 0x91E569E0   │ 32x32字库        │
- * │ gb2312_table.bin │ 0x91F3FE00   │ GB2312对照表     │
- * │ utf8_table.bin   │ 0x91F472D0   │ UTF8  对照表     │
- * │ flag.bin         │ 0x91F572F0   │ 标志位           │
+ * │ merged_fonts.bin │ 0x91D00000   │ 汉字、英文与数字 全家桶 │
  * └──────────────────┴──────────────┴──────────────────┘
  */
 
@@ -31,13 +24,12 @@
 #define FLASH_FONT_H
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
-#include "init.h"
+#include "config.h"
 #include <stdint.h>
-
+#ifdef FLASH_FONT_ENABLE
 /*******************************************************************************
  *                          内存映射基地址定义
  ******************************************************************************/
@@ -49,15 +41,17 @@ extern "C"
 /**
  * @brief QSPI Flash字库存储区域定义(相对于Flash起始地址的偏移)
  */
-#define FONT_12x12_ADDR 0x1D00000 /*!< 12x12字体区域起始地址  */
-#define FONT_16x16_ADDR 0x1D2BBE0 /*!< 16x16字体区域起始地址  */
-#define FONT_20x20_ADDR 0x1D66100 /*!< 20x20字体区域起始地址  */
-#define FONT_24x24_ADDR 0x1DD3680 /*!< 24x24字体区域起始地址 */
-#define FONT_32x32_ADDR 0x1E569E0 /*!< 32x32字体区域起始地址 */
+#define BASE_ADDR 0x1D00000
+#define FONT_12x12_ADDR BASE_ADDR + 0x0 /*!< 12x12字体区域起始地址  */
+#define FONT_16x16_ADDR BASE_ADDR + 0x2BBE0 /*!< 16x16字体区域起始地址  */
+#define FONT_20x20_ADDR BASE_ADDR + 0x66100 /*!< 20x20字体区域起始地址  */
+#define FONT_24x24_ADDR BASE_ADDR + 0xD3680 /*!< 24x24字体区域起始地址 */
+#define FONT_32x32_ADDR BASE_ADDR + 0x1569E0 /*!< 32x32字体区域起始地址 */
 
-#define GB2312_TABLE_ADDR 0x1F3FE00 /*!< GB2312对照表地址 */
-#define UTF8_TABLE_ADDR 0x1F472D0 /*!< utf8对照表地址 */
-#define FONT_FLAG_ADDR 0x1F572F0    /*!< 字库标志存储地址 */
+#define GB2312_TABLE_ADDR BASE_ADDR + 0x23FE00 /*!< GB2312对照表地址 */
+#define UTF8_TABLE_ADDR BASE_ADDR + 0x2472D0   /*!< utf8对照表地址 */
+#define FONT_FLAG_ADDR BASE_ADDR + 0x2572F0    /*!< 字库标志存储地址 */
+#define ASCII_FONTS_ADDR BASE_ADDR + 0x267310  /*!< ASCII字库地址 */
 /*******************************************************************************
  *                          字库标志结构定义
  ******************************************************************************/
@@ -73,86 +67,111 @@ typedef struct {
   uint8_t font_24_ok; /*!< 24x24字库写入完成标志: 0=未写入, 1=已写入 */
   uint8_t font_32_ok; /*!< 32x32字库写入完成标志: 0=未写入, 1=已写入 */
   uint8_t reserved[3]; /*!< 保留字节(4字节对齐) */
-    } FontWriteFlag_t;
+} FontWriteFlag_t;
 
-    /*******************************************************************************
-     *                          对照表结构定义
-     ******************************************************************************/
+/*******************************************************************************
+ *                          结构定义
+ ******************************************************************************/
 
-    /**
-     * @brief  GB2312对照表数据项(每条4字节)
-     * @note   格式: uint16_t gbk_code + uint16_t index
-     */
-    typedef struct
-    {
-        uint16_t gbk_code; /*!< GBK编码(2字节) */
-        uint16_t index;    /*!< 字库索引(2字节) */
-    } GB2312_TableEntry_t;
+/**
+ * @brief  GB2312对照表数据项(每条4字节)
+ * @note   格式: uint16_t gbk_code + uint16_t index
+ */
+typedef struct {
+  uint16_t gbk_code; /*!< GBK编码(2字节) */
+  uint16_t index;    /*!< 字库索引(2字节) */
+} GB2312_TableEntry_t;
 
-    /**
-     * @brief  UTF8对照表数据项(每条8字节)
-     * @note   格式: uint8_t utf8_len + uint8_t utf8[4] + uint16_t index
-     */
-    typedef struct __attribute__((packed)) {
-      uint8_t utf8_len; /*!< UTF8字节长度(1-4) */
-      uint8_t utf8[4];  /*!< UTF8编码(最多4字节,不足补0) */
-      uint16_t index;   /*!< 字库索引(2字节) */
-      uint8_t reserved; /*!< 保留字节，必须存在以匹配生成脚本的8字节对齐 */
-    } UTF8_TableEntry_t;
+/**
+ * @brief  UTF8对照表数据项(每条8字节)
+ * @note   格式: uint8_t utf8_len + uint8_t utf8[4] + uint16_t index
+ */
+typedef struct __attribute__((packed)) {
+  uint8_t utf8_len; /*!< UTF8字节长度(1-4) */
+  uint8_t utf8[4];  /*!< UTF8编码(最多4字节,不足补0) */
+  uint16_t index;   /*!< 字库索引(2字节) */
+  uint8_t reserved; /*!< 保留字节，必须存在以匹配生成脚本的8字节对齐 */
+} UTF8_TableEntry_t;
 
-    /*******************************************************************************
-     *                          导出函数声明
-     ******************************************************************************/
+/**
+ * @brief  ASCII字库信息结构体 (对应二进制文件头)
+ * @note   每项16字节
+ */
+typedef struct __attribute__((packed)) {
+  uint32_t offset;     /*!< 数据相对于文件头的偏移 */
+  uint32_t size;       /*!< 该字体数据总大小 */
+  uint16_t width;      /*!< 字符宽度 */
+  uint16_t height;     /*!< 字符高度 */
+  uint8_t reserved[4]; /*!< 保留字节(补齐16字节) */
+} ASCII_FontInfo_t;
 
-    /**
-     * @brief  初始化Flash字库驱动
-     * @note   前提：QSPI已开启内存映射模式，字库已预烧录
-     * @retval 0-成功, <0-失败
-     */
-    int8_t FlashFont_Init(void);
+/**
+ * @brief  ASCII字库文件头结构体
+ */
+typedef struct __attribute__((packed)) {
+  uint32_t magic;            /*!< 魔数 "ASCI" */
+  uint32_t num_fonts;        /*!< 包含的字体数量 */
+  ASCII_FontInfo_t fonts[5]; /*!< 字体信息数组 */
+} ASCII_FontHeader_t;
+/*******************************************************************************
+ *                          导出函数声明
+ ******************************************************************************/
 
-    /**
-     * @brief  获取指定字体每字符占用的字节数
-     * @param  font_size: 字体大小(12/16/20/24/32)
-     * @retval >=0: 每字符字节数, <0: 无效字体大小
-     */
-    int16_t FlashFont_BytesPerChar(uint8_t font_size);
+/**
+ * @brief  初始化Flash字库驱动
+ * @note   前提：QSPI已开启内存映射模式，字库已预烧录
+ * @retval 0-成功, <0-失败
+ */
+int8_t FlashFont_Init(void);
 
-    /**
-     * @brief  从Flash查找汉字对应的字库索引
-     * @param  text: 汉字字符串(GBK编码，2字节)
-     * @retval 字库索引(0-7463), 未找到返回-1
-     * @note   使用线性查找，适合少量查询
-     */
-    int16_t GB2312_FindIndex_Flash(const char *text);
+/**
+ * @brief  获取指定字体每字符占用的字节数
+ * @param  font_size: 字体大小(12/16/20/24/32)
+ * @retval >=0: 每字符字节数, <0: 无效字体大小
+ */
+int16_t FlashFont_BytesPerChar(uint8_t font_size);
 
-    /**
-     * @brief  从Flash查找汉字并返回字模数据指针
-     * @param  text: 汉字字符串(GBK编码，2字节)
-     * @param  font_size: 字体大小(12/16/20/24/32)
-     * @retval 字模数据指针，查找失败返回NULL
-     */
-    const uint8_t *GB2312_FindFont_Flash(const char *text, uint8_t font_size);
+/**
+ * @brief  从Flash查找汉字对应的字库索引
+ * @param  text: 汉字字符串(GBK编码，2字节)
+ * @retval 字库索引(0-7463), 未找到返回-1
+ * @note   使用线性查找，适合少量查询
+ */
+int16_t GB2312_FindIndex_Flash(const char *text);
 
-    /**
-     * @brief  从Flash查找UTF8字符对应的字库索引
-     * @param  utf8_text: UTF8字符字符串(1-4字节)
-     * @param  utf8_len: UTF8字符的字节长度(1-4)
-     * @retval 字库索引, 未找到返回-1
-     * @note   使用线性查找，适合少量查询
-     */
-    int16_t UTF8_FindIndex_Flash(const uint8_t *utf8_text, uint8_t utf8_len);
+/**
+ * @brief  从Flash查找汉字并返回字模数据指针
+ * @param  text: 汉字字符串(GBK编码，2字节)
+ * @param  font_size: 字体大小(12/16/20/24/32)
+ * @retval 字模数据指针，查找失败返回NULL
+ */
+const uint8_t *GB2312_FindFont_Flash(const char *text, uint8_t font_size);
 
-    /**
-     * @brief  从Flash查找UTF8字符并返回字模数据指针
-     * @param  utf8_text: UTF8字符字符串(1-4字节)
-     * @param  font_size: 字体大小(12/16/20/24/32)
-     * @retval 字模数据指针，查找失败返回NULL
-     * @note   自动识别UTF-8字符长度，无需手动指定
-     */
-    const uint8_t *UTF8_FindFont_Flash(const uint8_t *utf8_text,
-                                       uint8_t font_size);
-    
+/**
+ * @brief  从Flash查找UTF8字符对应的字库索引
+ * @param  utf8_text: UTF8字符字符串(1-4字节)
+ * @param  utf8_len: UTF8字符的字节长度(1-4)
+ * @retval 字库索引, 未找到返回-1
+ * @note   使用线性查找，适合少量查询
+ */
+int16_t UTF8_FindIndex_Flash(const uint8_t *utf8_text, uint8_t utf8_len);
+
+/**
+ * @brief  从Flash查找UTF8字符并返回字模数据指针
+ * @param  utf8_text: UTF8字符字符串(1-4字节)
+ * @param  font_size: 字体大小(12/16/20/24/32)
+ * @retval 字模数据指针，查找失败返回NULL
+ * @note   自动识别UTF-8字符长度，无需手动指定
+ */
+const uint8_t *UTF8_FindFont_Flash(const uint8_t *utf8_text, uint8_t font_size);
+/**
+ * @brief  从Flash查找ASCII字符并返回字模数据指针
+ * @param  c: ASCII字符 (0x20-0x7E)
+ * @param  font_size: 字体大小(12/16/20/24/32)
+ * @retval 字模数据指针，查找失败返回NULL
+ */
+const uint8_t *ASCII_FindFont_Flash(char c, uint8_t font_size);
+#endif
 #ifdef __cplusplus
 }
 #endif

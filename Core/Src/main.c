@@ -22,11 +22,13 @@
 #include "dma.h"
 #include "dma2d.h"
 #include "i2s.h"
+#include "jpeg.h"
 #include "ltdc.h"
+#include "mdma.h"
 #include "memorymap.h"
 #include "sdmmc.h"
 #include "spi.h"
-#include "usart.h"
+#include "usb_otg.h"
 #include "gpio.h"
 #include "fmc.h"
 
@@ -110,13 +112,16 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_DMA_Init();
+  MX_MDMA_Init();
   MX_SPI6_Init();
-  MX_USART1_UART_Init();
   MX_I2S1_Init();
   MX_SDMMC1_SD_Init();
   MX_FMC_Init();
   MX_DMA2D_Init();
+  MX_JPEG_Init();
   MX_LTDC_Init();
+  MX_I2S2_Init();
+  MX_USB_OTG_HS_HCD_Init();
   /* USER CODE BEGIN 2 */
   init_all();
   /* USER CODE END 2 */
@@ -165,8 +170,9 @@ void SystemClock_Config(void)
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI48|RCC_OSCILLATORTYPE_HSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
+  RCC_OscInitStruct.HSI48State = RCC_HSI48_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
   RCC_OscInitStruct.PLL.PLLM = 5;
@@ -227,6 +233,14 @@ void MPU_Config(void)
   MPU_InitStruct.IsShareable = MPU_ACCESS_NOT_SHAREABLE;
   MPU_InitStruct.IsCacheable = MPU_ACCESS_CACHEABLE;
   MPU_InitStruct.IsBufferable = MPU_ACCESS_NOT_BUFFERABLE;
+
+  HAL_MPU_ConfigRegion(&MPU_InitStruct);
+
+  /** Initializes and configures the Region and the memory to be protected
+  */
+  MPU_InitStruct.Number = MPU_REGION_NUMBER1;
+  MPU_InitStruct.BaseAddress = 0x90000000;
+  MPU_InitStruct.Size = MPU_REGION_SIZE_32MB;
 
   HAL_MPU_ConfigRegion(&MPU_InitStruct);
   /* Enables the MPU */

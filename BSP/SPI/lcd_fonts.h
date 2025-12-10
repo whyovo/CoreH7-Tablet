@@ -26,48 +26,47 @@
 #define __FONTS_H
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
+#include "config.h"
 #include <stdint.h>
-#include "init.h"
-	/*******************************************************************************
-	 *                              字体结构定义
-	 ******************************************************************************/
+#if defined(LCD_SPI_ENABLE) || defined(LCD_RGB_ENABLE)
+/*******************************************************************************
+ *                              字体结构定义
+ ******************************************************************************/
 
-	/**
-	 * @brief 字体数据结构
-	 */
-	typedef struct _pFont
-	{
-		const uint8_t *pTable; /*!< 字模数组地址 */
-		uint16_t Width;		   /*!< 单字符宽度（像素） */
-		uint16_t Height;	   /*!< 单字符高度（像素） */
-		uint16_t Sizes;		   /*!< 单字符字模数据字节数 */
-		uint16_t Table_Rows;   /*!< 中文字模二维数组行数 */
-	} pFONT;
+/**
+ * @brief 字体数据结构
+ */
+typedef struct _pFont {
+  const uint8_t *pTable; /*!< 字模数组地址 */
+  uint16_t Width;        /*!< 单字符宽度（像素） */
+  uint16_t Height;       /*!< 单字符高度（像素） */
+  uint16_t Sizes;        /*!< 单字符字模数据字节数 */
+  uint16_t Table_Rows;   /*!< 中文字模二维数组行数 */
+} pFONT;
 
-	/*******************************************************************************
-	 *                              中文字体
-	 ******************************************************************************/
+/*******************************************************************************
+ *                              中文字体
+ ******************************************************************************/
 
-	extern pFONT CH_Font12; /*!< 1212中文字体 */
-	extern pFONT CH_Font16; /*!< 1616中文字体 */
-	extern pFONT CH_Font20; /*!< 2020中文字体 */
-	extern pFONT CH_Font24; /*!< 2424中文字体 */
-	extern pFONT CH_Font32; /*!< 3232中文字体 */
+extern pFONT CH_Font12; /*!< 1212中文字体 */
+extern pFONT CH_Font16; /*!< 1616中文字体 */
+extern pFONT CH_Font20; /*!< 2020中文字体 */
+extern pFONT CH_Font24; /*!< 2424中文字体 */
+extern pFONT CH_Font32; /*!< 3232中文字体 */
 
-	/*******************************************************************************
-	 *                              ASCII字体
-	 ******************************************************************************/
+/*******************************************************************************
+ *                              ASCII字体
+ ******************************************************************************/
 
-	extern pFONT ASCII_Font32; /*!< 3216 ASCII字体 */
-	extern pFONT ASCII_Font24; /*!< 2412 ASCII字体 */
-	extern pFONT ASCII_Font20; /*!< 2010 ASCII字体 */
-	extern pFONT ASCII_Font16; /*!< 1608 ASCII字体 */
-	extern pFONT ASCII_Font12; /*!< 1206 ASCII字体 */
-
+extern pFONT ASCII_Font32; /*!< 3216 ASCII字体 */
+extern pFONT ASCII_Font24; /*!< 2412 ASCII字体 */
+extern pFONT ASCII_Font20; /*!< 2010 ASCII字体 */
+extern pFONT ASCII_Font16; /*!< 1608 ASCII字体 */
+extern pFONT ASCII_Font12; /*!< 1206 ASCII字体 */
+#endif
 #ifdef __cplusplus
 }
 #endif

@@ -33,8 +33,7 @@
  * @brief  LED数组（根据LED_LIST自动生成）
  */
 #define X(name, port, pin, direct) {port, pin, direct},
-LED leds[] = {
-    LED_LIST};
+LED leds[] = {LED_LIST};
 #undef X
 
 /**
@@ -45,12 +44,10 @@ LED leds[] = {
  * @brief  初始化所有LED（关闭状态）
  * @retval None
  */
-void LED_Init(void)
-{
-    for (int i = 0; i < LED_COUNT; ++i)
-    {
-        LED_Off(&leds[i]);
-    }
+void LED_Init(void) {
+  for (int i = 0; i < LED_COUNT; ++i) {
+    LED_Off(&leds[i]);
+  }
 }
 
 /**
@@ -58,17 +55,15 @@ void LED_Init(void)
  * @param  led: LED指针
  * @retval None
  */
-void LED_On(LED *led)
-{
-    if (led == NULL)
-    {
-        DEBUG_ERROR("LED_On: LED指针为空");
-        return;
-    }
-    if (led->direct == 1)
-        GPIO_WritePin(led->port, led->pin, GPIO_PIN_SET);
-    else
-        GPIO_WritePin(led->port, led->pin, GPIO_PIN_RESET);
+void LED_On(LED *led) {
+  if (led == NULL) {
+    DEBUG_ERROR("LED_On: LED指针为空");
+    return;
+  }
+  if (led->direct == 1)
+    HAL_GPIO_WritePin(led->port, led->pin, GPIO_PIN_SET);
+  else
+    HAL_GPIO_WritePin(led->port, led->pin, GPIO_PIN_RESET);
 }
 
 /**
@@ -76,17 +71,15 @@ void LED_On(LED *led)
  * @param  led: LED指针
  * @retval None
  */
-void LED_Off(LED *led)
-{
-    if (led == NULL)
-    {
-        DEBUG_ERROR("LED_Off: LED指针为空");
-        return;
-    }
-    if (led->direct == 1)
-        GPIO_WritePin(led->port, led->pin, GPIO_PIN_RESET);
-    else
-        GPIO_WritePin(led->port, led->pin, GPIO_PIN_SET);
+void LED_Off(LED *led) {
+  if (led == NULL) {
+    DEBUG_ERROR("LED_Off: LED指针为空");
+    return;
+  }
+  if (led->direct == 1)
+    HAL_GPIO_WritePin(led->port, led->pin, GPIO_PIN_RESET);
+  else
+    HAL_GPIO_WritePin(led->port, led->pin, GPIO_PIN_SET);
 }
 
 /**
@@ -94,50 +87,42 @@ void LED_Off(LED *led)
  * @param  led: LED指针
  * @retval None
  */
-void LED_Toggle(LED *led)
-{
-    if (led == NULL)
-    {
-        DEBUG_ERROR("LED_Toggle: LED指针为空");
-        return;
-    }
-    GPIO_TogglePin(led->port, led->pin);
+void LED_Toggle(LED *led) {
+  if (led == NULL) {
+    DEBUG_ERROR("LED_Toggle: LED指针为空");
+    return;
+  }
+  HAL_GPIO_TogglePin(led->port, led->pin);
 }
 
 /**
  * @brief  点亮所有LED
  * @retval None
  */
-void LED_On_All(void)
-{
-    for (int i = 0; i < LED_COUNT; ++i)
-    {
-        LED_On(&leds[i]);
-    }
+void LED_On_All(void) {
+  for (int i = 0; i < LED_COUNT; ++i) {
+    LED_On(&leds[i]);
+  }
 }
 
 /**
  * @brief  熄灭所有LED
  * @retval None
  */
-void LED_Off_All(void)
-{
-    for (int i = 0; i < LED_COUNT; ++i)
-    {
-        LED_Off(&leds[i]);
-    }
+void LED_Off_All(void) {
+  for (int i = 0; i < LED_COUNT; ++i) {
+    LED_Off(&leds[i]);
+  }
 }
 
 /**
  * @brief  切换所有LED状态
  * @retval None
  */
-void LED_Toggle_All(void)
-{
-    for (int i = 0; i < LED_COUNT; ++i)
-    {
-        LED_Toggle(&leds[i]);
-    }
+void LED_Toggle_All(void) {
+  for (int i = 0; i < LED_COUNT; ++i) {
+    LED_Toggle(&leds[i]);
+  }
 }
 
 /* Animation functions (blocking) --------------------------------------------*/
@@ -149,22 +134,19 @@ void LED_Toggle_All(void)
  * @note   内部切换两次（on->off），总耗时=period_ms
  * @retval None
  */
-void LED_Blink(LED *led, uint32_t period_ms)
-{
-    if (led == NULL)
-    {
-        DEBUG_ERROR("LED_Blink: LED指针为空");
-        return;
-    }
-    if (period_ms == 0)
-    {
-        DEBUG_ERROR("LED_Blink: 周期为0");
-        return;
-    }
-    LED_Toggle(led);
-    Delay_ms(period_ms / 2);
-    LED_Toggle(led);
-    Delay_ms(period_ms / 2);
+void LED_Blink(LED *led, uint32_t period_ms) {
+  if (led == NULL) {
+    DEBUG_ERROR("LED_Blink: LED指针为空");
+    return;
+  }
+  if (period_ms == 0) {
+    DEBUG_ERROR("LED_Blink: 周期为0");
+    return;
+  }
+  LED_Toggle(led);
+  HAL_Delay(period_ms / 2);
+  LED_Toggle(led);
+  HAL_Delay(period_ms / 2);
 }
 
 /**
@@ -172,17 +154,15 @@ void LED_Blink(LED *led, uint32_t period_ms)
  * @param  period_ms: 闪烁周期（毫秒）
  * @retval None
  */
-void LED_Blink_All(uint32_t period_ms)
-{
-    if (period_ms == 0)
-    {
-        DEBUG_ERROR("LED_Blink_All: 周期为0");
-        return;
-    }
-    LED_Toggle_All();
-    Delay_ms(period_ms / 2);
-    LED_Toggle_All();
-    Delay_ms(period_ms / 2);
+void LED_Blink_All(uint32_t period_ms) {
+  if (period_ms == 0) {
+    DEBUG_ERROR("LED_Blink_All: 周期为0");
+    return;
+  }
+  LED_Toggle_All();
+  HAL_Delay(period_ms / 2);
+  LED_Toggle_All();
+  HAL_Delay(period_ms / 2);
 }
 
 /**
@@ -192,61 +172,52 @@ void LED_Blink_All(uint32_t period_ms)
  * @note   使用软件PWM，分100步渐变，总耗时≈period_ms
  * @retval None
  */
-void LED_Breathe(LED *led, uint32_t period_ms)
-{
-    if (led == NULL)
-    {
-        DEBUG_ERROR("LED_Breathe: LED指针为空");
-        return;
+void LED_Breathe(LED *led, uint32_t period_ms) {
+  if (led == NULL) {
+    DEBUG_ERROR("LED_Breathe: LED指针为空");
+    return;
+  }
+  if (period_ms < 2) {
+    DEBUG_ERROR("LED_Breathe: 周期过短");
+    return;
+  }
+
+  uint32_t N = (BREATHE_STEPS < 2) ? 2 : BREATHE_STEPS;
+  uint32_t step_ms = period_ms / (2 * N);
+  if (step_ms == 0)
+    step_ms = 1;
+
+  /* 上坡 0 -> max (N 步) */
+  for (uint32_t i = 0; i < N; ++i) {
+    float duty = (float)i / (float)(N - 1);
+    uint32_t on_time = (uint32_t)(duty * step_ms);
+    uint32_t off_time = step_ms - on_time;
+
+    if (on_time) {
+      LED_On(led);
+      HAL_Delay(on_time);
     }
-    if (period_ms < 2)
-    {
-        DEBUG_ERROR("LED_Breathe: 周期过短");
-        return;
+    if (off_time) {
+      LED_Off(led);
+      HAL_Delay(off_time);
     }
+  }
 
-    uint32_t N = (BREATHE_STEPS < 2) ? 2 : BREATHE_STEPS;
-    uint32_t step_ms = period_ms / (2 * N);
-    if (step_ms == 0)
-        step_ms = 1;
+  /* 下坡 max -> 0 (N 步) */
+  for (int32_t i = (int32_t)N - 1; i >= 0; --i) {
+    float duty = (float)i / (float)(N - 1);
+    uint32_t on_time = (uint32_t)(duty * step_ms);
+    uint32_t off_time = step_ms - on_time;
 
-    /* 上坡 0 -> max (N 步) */
-    for (uint32_t i = 0; i < N; ++i)
-    {
-        float duty = (float)i / (float)(N - 1);
-        uint32_t on_time = (uint32_t)(duty * step_ms);
-        uint32_t off_time = step_ms - on_time;
-
-        if (on_time)
-        {
-            LED_On(led);
-            Delay_ms(on_time);
-        }
-        if (off_time)
-        {
-            LED_Off(led);
-            Delay_ms(off_time);
-        }
+    if (on_time) {
+      LED_On(led);
+      HAL_Delay(on_time);
     }
-
-    /* 下坡 max -> 0 (N 步) */
-    for (int32_t i = (int32_t)N - 1; i >= 0; --i)
-    {
-        float duty = (float)i / (float)(N - 1);
-        uint32_t on_time = (uint32_t)(duty * step_ms);
-        uint32_t off_time = step_ms - on_time;
-
-        if (on_time)
-        {
-            LED_On(led);
-            Delay_ms(on_time);
-        }
-        if (off_time)
-        {
-            LED_Off(led);
-            Delay_ms(off_time);
-        }
+    if (off_time) {
+      LED_Off(led);
+      HAL_Delay(off_time);
     }
+  }
 }
 
 /**
@@ -254,56 +225,48 @@ void LED_Breathe(LED *led, uint32_t period_ms)
  * @param  period_ms: 呼吸总周期（毫秒）
  * @retval None
  */
-void LED_Breathe_All(uint32_t period_ms)
-{
-    if (period_ms < 2)
-    {
-        DEBUG_ERROR("LED_Breathe_All: 周期过短");
-        return;
+void LED_Breathe_All(uint32_t period_ms) {
+  if (period_ms < 2) {
+    DEBUG_ERROR("LED_Breathe_All: 周期过短");
+    return;
+  }
+
+  uint32_t N = (BREATHE_STEPS < 2) ? 2 : BREATHE_STEPS;
+  uint32_t step_ms = period_ms / (2 * N);
+  if (step_ms == 0)
+    step_ms = 1;
+
+  /* 上坡 */
+  for (uint32_t i = 0; i < N; ++i) {
+    float duty = (float)i / (float)(N - 1);
+    uint32_t on_time = (uint32_t)(duty * step_ms);
+    uint32_t off_time = step_ms - on_time;
+
+    if (on_time) {
+      LED_On_All();
+      HAL_Delay(on_time);
     }
-
-    uint32_t N = (BREATHE_STEPS < 2) ? 2 : BREATHE_STEPS;
-    uint32_t step_ms = period_ms / (2 * N);
-    if (step_ms == 0)
-        step_ms = 1;
-
-    /* 上坡 */
-    for (uint32_t i = 0; i < N; ++i)
-    {
-        float duty = (float)i / (float)(N - 1);
-        uint32_t on_time = (uint32_t)(duty * step_ms);
-        uint32_t off_time = step_ms - on_time;
-
-        if (on_time)
-        {
-            LED_On_All();
-            Delay_ms(on_time);
-        }
-        if (off_time)
-        {
-            LED_Off_All();
-            Delay_ms(off_time);
-        }
+    if (off_time) {
+      LED_Off_All();
+      HAL_Delay(off_time);
     }
+  }
 
-    /* 下坡 */
-    for (int32_t i = (int32_t)N - 1; i >= 0; --i)
-    {
-        float duty = (float)i / (float)(N - 1);
-        uint32_t on_time = (uint32_t)(duty * step_ms);
-        uint32_t off_time = step_ms - on_time;
+  /* 下坡 */
+  for (int32_t i = (int32_t)N - 1; i >= 0; --i) {
+    float duty = (float)i / (float)(N - 1);
+    uint32_t on_time = (uint32_t)(duty * step_ms);
+    uint32_t off_time = step_ms - on_time;
 
-        if (on_time)
-        {
-            LED_On_All();
-            Delay_ms(on_time);
-        }
-        if (off_time)
-        {
-            LED_Off_All();
-            Delay_ms(off_time);
-        }
+    if (on_time) {
+      LED_On_All();
+      HAL_Delay(on_time);
     }
+    if (off_time) {
+      LED_Off_All();
+      HAL_Delay(off_time);
+    }
+  }
 }
 
 /**
@@ -312,25 +275,21 @@ void LED_Breathe_All(uint32_t period_ms)
  * @note   依次点亮leds[]中的每个LED，完成一次遍历
  * @retval None
  */
-void LED_ChaseStart(uint32_t step_ms)
-{
-    if (LED_COUNT <= 0)
-    {
-        DEBUG_ERROR("LED_ChaseStart: LED数量为0");
-        return;
-    }
-    if (step_ms == 0)
-    {
-        DEBUG_ERROR("LED_ChaseStart: 步进时间为0");
-        return;
-    }
+void LED_ChaseStart(uint32_t step_ms) {
+  if (LED_COUNT <= 0) {
+    DEBUG_ERROR("LED_ChaseStart: LED数量为0");
+    return;
+  }
+  if (step_ms == 0) {
+    DEBUG_ERROR("LED_ChaseStart: 步进时间为0");
+    return;
+  }
 
-    for (int i = 0; i < LED_COUNT; i++)
-    {
-        LED_On(&leds[i]);
-        Delay_ms(step_ms);
-        LED_Off(&leds[i]);
-    }
+  for (int i = 0; i < LED_COUNT; i++) {
+    LED_On(&leds[i]);
+    HAL_Delay(step_ms);
+    LED_Off(&leds[i]);
+  }
 }
 
 #endif // LED_ENABLE

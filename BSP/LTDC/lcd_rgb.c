@@ -16,6 +16,8 @@
 
 #include "lcd_rgb.h"
 
+#ifdef LCD_RGB_ENABLE
+
 extern DMA2D_HandleTypeDef hdma2d; // DMA2D句柄
 extern LTDC_HandleTypeDef hltdc;   // LTDC句柄
 
@@ -424,46 +426,7 @@ uint32_t RGB_LCD_ReadPoint(uint16_t x, uint16_t y) {
   return color;
 }
 
-/****************************************************************************************************************************************
- * @name   RGB_LCD_DisplayChar
- * @brief  RGB LCD显示单个ASCII字符
- * @param  x - 起始水平坐标 (0~799)
- * @param  y - 起始垂直坐标 (0~479)
- * @param  c - ASCII字符
- * @retval None
- * @note   根据字模数据逐点绘制字符
- ****************************************************************************************************************************************/
-void RGB_LCD_DisplayChar(uint16_t x, uint16_t y, uint8_t c) {
-  uint16_t index = 0, counter = 0; // 计数变量
-  uint8_t disChar;                 // 存储字符的地址
-  uint16_t Xaddress = x;           // 水平坐标
 
-  c = c - 32; // 计算ASCII字符的偏移
-
-  for (index = 0; index < LCD_RGB_Fonts->Sizes; index++) {
-    disChar = LCD_RGB_Fonts
-                  ->pTable[c * LCD_RGB_Fonts->Sizes + index]; // 获取字符的模值
-    for (counter = 0; counter < 8; counter++) {
-      if (disChar & 0x01) {
-        RGB_LCD_DrawPoint(Xaddress, y,
-                          LCD_RGB.Color); // 当前模值不为0时，使用画笔色绘点
-      } else {
-        RGB_LCD_DrawPoint(Xaddress, y,
-                          LCD_RGB.BackColor); // 否则使用背景色绘制点
-      }
-      disChar >>= 1;
-      Xaddress++; // 水平坐标自加
-
-      if ((Xaddress - x) ==
-          LCD_RGB_Fonts->Width) // 如果水平坐标达到了字符宽度，则退出当前循环
-      {                         // 进入下一行的绘制
-        Xaddress = x;
-        y++;
-        break;
-      }
-    }
-  }
-}
 
 /****************************************************************************************************************************************
  * @name   RGB_LCD_DisplayString
@@ -535,11 +498,12 @@ uint8_t RGB_LCD_GetChineseFontSize(void) {
  * @brief  绘制字模到RGB LCD(支持12/16/20/24/32)
  * @note   内部函数,用于Flash字库模式
  */
-static void RGB_DrawFont_Bitmap(uint16_t x, uint16_t y, uint8_t font_size,
-                                const uint8_t *pData) {
+static void RGB_DrawFont_Bitmap(uint16_t x, uint16_t y, uint16_t width,
+                                uint16_t height, const uint8_t *pData) {
   uint16_t i = 0;
-  uint16_t bytes_per_row = (font_size + 7) / 8; // 每行字节数
-  uint16_t total_bytes = bytes_per_row * font_size;
+  // 计算每行占用的字节数。例如宽度12，(12+7)/8 = 2字节
+  uint16_t bytes_per_row = (width + 7) / 8;
+  uint16_t total_bytes = bytes_per_row * height;
 
   // 逐字节解析字模数据
   for (uint16_t byte_idx = 0; byte_idx < total_bytes; byte_idx++) {
@@ -547,20 +511,19 @@ static void RGB_DrawFont_Bitmap(uint16_t x, uint16_t y, uint8_t font_size,
 
     // 每个字节代表8个像素点
     for (uint8_t bit = 0; bit < 8; bit++) {
+      uint16_t px = x + (i % width);
+      uint16_t py = y + (i / width);
+
       if (byte_data & (0x01 << bit)) {
-        // 前景色，绘制像素点
-        RGB_LCD_DrawPoint(x + (i % font_size), y + (i / font_size),
-                          LCD_RGB.Color);
+        RGB_LCD_DrawPoint(px, py, LCD_RGB.Color); // 前景色
       } else {
-        // 背景色
-        RGB_LCD_DrawPoint(x + (i % font_size), y + (i / font_size),
-                          LCD_RGB.BackColor);
+        RGB_LCD_DrawPoint(px, py, LCD_RGB.BackColor); // 背景色
       }
       i++;
 
-      // 如果超出字体宽度，跳过多余的位
-      if (i % font_size == 0) {
-        break;
+      // 如果当前像素点计数能够整除宽度，说明这一行画完了
+      if (i % width == 0) {
+        break; // 跳出内层循环，进入下一行
       }
     }
   }
@@ -589,7 +552,7 @@ void RGB_LCD_DisplayChinese(uint16_t x, uint16_t y, char *pText) {
 #endif
 
   // 渲染到屏幕
-  RGB_DrawFont_Bitmap(x, y, font_size, pFontData);
+  RGB_DrawFont_Bitmap(x, y, font_size, font_size, pFontData);
 #else
   uint16_t i = 0, index = 0, counter = 0; // 计数变量
   uint16_t addr = 0;                      // 字模地址
@@ -634,7 +597,58 @@ void RGB_LCD_DisplayChinese(uint16_t x, uint16_t y, char *pText) {
   }
 #endif
 }
+/****************************************************************************************************************************************
+ * @name   RGB_LCD_DisplayChar
+ * @brief  RGB LCD显示单个ASCII字符
+ * @param  x - 起始水平坐标 (0~799)
+ * @param  y - 起始垂直坐标 (0~479)
+ * @param  c - ASCII字符
+ * @retval None
+ * @note   根据字模数据逐点绘制字符
+ ****************************************************************************************************************************************/
+void RGB_LCD_DisplayChar(uint16_t x, uint16_t y, uint8_t c) {
+#ifdef USE_FLASH_FONT_RGB
+  uint8_t font_size = RGB_LCD_GetChineseFontSize();
+  uint8_t ascii_width = font_size / 2; // ASCII字符宽度通常是高度的一半
 
+  const uint8_t *pFontData = ASCII_FindFont_Flash(c, font_size);
+
+  if (pFontData != NULL) {
+    RGB_DrawFont_Bitmap(x, y, ascii_width, font_size, pFontData);
+    return;
+  }
+#else
+  uint16_t index = 0, counter = 0; // 计数变量
+  uint8_t disChar;                 // 存储字符的地址
+  uint16_t Xaddress = x;           // 水平坐标
+
+  c = c - 32; // 计算ASCII字符的偏移
+
+  for (index = 0; index < LCD_RGB_Fonts->Sizes; index++) {
+    disChar = LCD_RGB_Fonts
+                  ->pTable[c * LCD_RGB_Fonts->Sizes + index]; // 获取字符的模值
+    for (counter = 0; counter < 8; counter++) {
+      if (disChar & 0x01) {
+        RGB_LCD_DrawPoint(Xaddress, y,
+                          LCD_RGB.Color); // 当前模值不为0时，使用画笔色绘点
+      } else {
+        RGB_LCD_DrawPoint(Xaddress, y,
+                          LCD_RGB.BackColor); // 否则使用背景色绘制点
+      }
+      disChar >>= 1;
+      Xaddress++; // 水平坐标自加
+
+      if ((Xaddress - x) ==
+          LCD_RGB_Fonts->Width) // 如果水平坐标达到了字符宽度，则退出当前循环
+      {                         // 进入下一行的绘制
+        Xaddress = x;
+        y++;
+        break;
+      }
+    }
+  }
+  #endif
+}
 /****************************************************************************************************************************************
  * @name   RGB_LCD_DisplayText
  * @brief  RGB LCD显示中英文混合字符串
@@ -1279,3 +1293,4 @@ void lcd_test(void) {
   RGB_LCD_SetColor(RGB_LCD_WHITE);
   RGB_LCD_Clear();
 }
+#endif

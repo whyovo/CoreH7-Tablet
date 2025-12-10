@@ -73,7 +73,7 @@ int8_t QSPI_W25Qxx_Init(void) {
   if (Device_ID == W25Qxx_FLASH_ID) {
     return QSPI_W25Qxx_OK;
   } else {
-    DEBUG_ERROR("QSPI Flash ID匹配失败");
+    DEBUG_ERROR("QSPI Flash ID error");
     return W25Qxx_ERROR_INIT;
   }
 }
@@ -126,6 +126,12 @@ int8_t QSPI_W25Qxx_AutoPollingMemReady(void) {
  * @retval W25Qxx_ERROR_AUTOPOLLING - 轮询超时
  */
 int8_t QSPI_W25Qxx_Reset(void) {
+  HAL_QSPI_Abort(&hqspi);
+
+  if (hqspi.State == HAL_QSPI_STATE_BUSY_MEM_MAPPED)
+  {
+    hqspi.State = HAL_QSPI_STATE_READY;
+  }
   QSPI_CommandTypeDef s_command; // QSPI传输配置
 
   s_command.InstructionMode = QSPI_INSTRUCTION_1_LINE;     // 1线指令模式

@@ -24,6 +24,7 @@
 
 
 #include "ff.h"
+#ifdef FATFS_ENABLE
 
 #if FF_USE_LFN
 
@@ -15564,3 +15565,6 @@ WCHAR ff_wtoupper (	/* Returns up-converted character */
 
 
 #endif /* #if _USE_LFN */
+
+
+#endif

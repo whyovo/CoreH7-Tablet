@@ -53,7 +53,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "diskio.h"
 #include "ff_gen_drv.h"
-
+#ifdef FATFS_ENABLE
 #if defined ( __GNUC__ )
 #ifndef __weak
 #define __weak __attribute__((weak))
@@ -176,6 +176,6 @@ __weak DWORD get_fattime (void)
 {
   return 0;
 }
-
+#endif
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
 

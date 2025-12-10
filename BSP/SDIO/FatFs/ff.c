@@ -21,7 +21,7 @@
 
 #include "ff.h"			/* Declarations of FatFs API */
 #include "diskio.h"		/* Declarations of device I/O functions */
-
+#ifdef FATFS_ENABLE
 
 /*--------------------------------------------------------------------------
 
@@ -6201,4 +6201,4 @@ FRESULT f_setcp (
 }
 #endif	/* FF_CODE_PAGE == 0 */
 
-
+#endif

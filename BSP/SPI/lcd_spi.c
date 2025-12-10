@@ -463,55 +463,7 @@ void LCD_DrawPoint(uint16_t x, uint16_t y, uint32_t color)
 	LCD_WriteData_16bit(color);
 }
 
-/****************************************************************************************************************************************
- *	函 数 名:	LCD_DisplayChar
- *
- *	入口参数:	x - 起始水平坐标
- *					y - 起始垂直坐标
- *					c  - ASCII字符
- *
- *	函数功能:	在指定坐标显示指定的字符
- *
- *	说    明:	1. 可设置要显示的字体
- *					2.	可设置要显示的颜色，例如使用 LCD_SetColor(0xff0000FF) 设置为蓝色
- *					3. 可设置对应的背景色，例如使用 LCD_SetBackColor(0x000000) 设置为黑色的背景色
- *					4. 使用示例 LCD_DisplayChar( 10, 10, 'a') ，在坐标(10,10)显示字符 'a'
- *
- *****************************************************************************************************************************************/
 
-void LCD_DisplayChar(uint16_t x, uint16_t y, uint8_t c)
-{
-	uint16_t index = 0, counter = 0, i = 0, w = 0; // 计数变量
-	uint8_t disChar;							   // 存储字符的地址
-
-	c = c - 32; // 计算ASCII字符的偏移
-
-	for (index = 0; index < LCD_AsciiFonts->Sizes; index++)
-	{
-		disChar = LCD_AsciiFonts->pTable[c * LCD_AsciiFonts->Sizes + index]; // 获取字符的模值
-		for (counter = 0; counter < 8; counter++)
-		{
-			if (disChar & 0x01)
-			{
-				LCD_Buff[i] = LCD.Color; // 当前模值不为0时，使用画笔色绘点
-			}
-			else
-			{
-				LCD_Buff[i] = LCD.BackColor; // 否则使用背景色绘制点
-			}
-			disChar >>= 1;
-			i++;
-			w++;
-			if (w == LCD_AsciiFonts->Width) // 如果写入的数据达到了字符宽度，则退出当前循环
-			{								// 进入下一字符的写入的绘制
-				w = 0;
-				break;
-			}
-		}
-	}
-	LCD_SetAddress(x, y, x + LCD_AsciiFonts->Width - 1, y + LCD_AsciiFonts->Height - 1); // 设置坐标
-	LCD_WriteBuff(LCD_Buff, LCD_AsciiFonts->Width * LCD_AsciiFonts->Height);			 // 写入显存
-}
 
 /****************************************************************************************************************************************
  *	函 数 名:	LCD_DisplayString
@@ -600,43 +552,40 @@ uint8_t LCD_GetChineseFontSize(void)
  * @brief  绘制字模到LCD(支持12/16/20/24/32)
  * @note   内部函数,用于Flash字库模式
  */
-static void DrawFont_Bitmap(uint16_t x, uint16_t y, uint8_t font_size, const uint8_t *pData)
-{
-	uint16_t i = 0;
-	uint16_t bytes_per_row = (font_size + 7) / 8; // 每行字节数
-	uint16_t total_bytes = bytes_per_row * font_size;
+static void DrawFont_Bitmap(uint16_t x, uint16_t y, uint16_t width,
+                            uint16_t height, const uint8_t *pData) {
+  uint16_t i = 0;
+  // 计算每行占用的字节数。例如宽度12，(12+7)/8 = 2字节
+  uint16_t bytes_per_row = (width + 7) / 8;
+  uint16_t total_bytes = bytes_per_row * height;
 
-	// 设置显示区域
-	LCD_SetAddress(x, y, x + font_size - 1, y + font_size - 1);
+  // 设置显示区域 (根据实际宽高)
+  LCD_SetAddress(x, y, x + width - 1, y + height - 1);
 
-	// 逐字节解析字模数据
-	for (uint16_t byte_idx = 0; byte_idx < total_bytes; byte_idx++)
-	{
-		uint8_t byte_data = pData[byte_idx];
+  // 逐字节解析字模数据
+  for (uint16_t byte_idx = 0; byte_idx < total_bytes; byte_idx++) {
+    uint8_t byte_data = pData[byte_idx];
 
-		// 每个字节代表8个像素点
-		for (uint8_t bit = 0; bit < 8; bit++)
-		{
-			if (byte_data & (0x01 << bit))
-			{
-				LCD_Buff[i] = LCD.Color; // 前景色
-			}
-			else
-			{
-				LCD_Buff[i] = LCD.BackColor; // 背景色
-			}
-			i++;
+    // 每个字节代表8个像素点
+    for (uint8_t bit = 0; bit < 8; bit++) {
+      if (byte_data & (0x01 << bit)) {
+        LCD_Buff[i] = LCD.Color; // 前景色
+      } else {
+        LCD_Buff[i] = LCD.BackColor; // 背景色
+      }
+      i++;
 
-			// 如果超出字体宽度，跳过多余的位
-			if (i % font_size == 0)
-			{
-				break;
-			}
-		}
-	}
+      // 如果当前像素点计数 能够整除 宽度，说明这一行画完了
+      // 注意：这里必须处理非8倍数宽度的对齐问题
+      // 例如宽度12，画完12个点后，i=12，此时虽然字节里还有位没读完，但应该跳到下一行
+      if (i % width == 0) {
+        break; // 跳出内层循环，进入下一个字节（或下一行的起始字节）
+      }
+    }
+  }
 
-	// 批量写入显存
-	LCD_WriteBuff(LCD_Buff, font_size * font_size);
+  // 批量写入显存
+  LCD_WriteBuff(LCD_Buff, width * height);
 }
 #endif
 /******************************************************************************************************************************************
@@ -669,7 +618,7 @@ void LCD_DisplayChinese(uint16_t x, uint16_t y, char *pText)
         const uint8_t *pFontData =
             UTF8_FindFont_Flash((const uint8_t *)pText, font_size);
 #endif
-	DrawFont_Bitmap(x, y, font_size, pFontData);
+        DrawFont_Bitmap(x, y, font_size, font_size, pFontData);
 
 #else
 	uint16_t i = 0, index = 0, counter = 0; // 计数变量
@@ -720,7 +669,68 @@ void LCD_DisplayChinese(uint16_t x, uint16_t y, char *pText)
 	LCD_WriteBuff(LCD_Buff, LCD_CHFonts->Width * LCD_CHFonts->Height);			   // 写入显存
 #endif
 }
+/****************************************************************************************************************************************
+ *	函 数 名:	LCD_DisplayChar
+ *
+ *	入口参数:	x - 起始水平坐标
+ *					y - 起始垂直坐标
+ *					c  - ASCII字符
+ *
+ *	函数功能:	在指定坐标显示指定的字符
+ *
+ *	说    明:	1. 可设置要显示的字体
+ *					2.	可设置要显示的颜色，例如使用
+ *LCD_SetColor(0xff0000FF) 设置为蓝色
+ *					3. 可设置对应的背景色，例如使用
+ *LCD_SetBackColor(0x000000) 设置为黑色的背景色
+ *					4. 使用示例 LCD_DisplayChar( 10, 10,
+ *'a') ，在坐标(10,10)显示字符 'a'
+ *
+ *****************************************************************************************************************************************/
 
+void LCD_DisplayChar(uint16_t x, uint16_t y, uint8_t c) {
+#ifdef USE_FLASH_FONT
+  uint8_t font_size = LCD_GetChineseFontSize();
+  const uint8_t *pFontData = ASCII_FindFont_Flash(c, font_size);
+
+  if (pFontData != NULL) {
+    uint8_t width = font_size / 2;
+    DrawFont_Bitmap(x, y, width, font_size, pFontData);
+    return;
+  }
+#else
+
+  uint16_t index = 0, counter = 0, i = 0, w = 0; // 计数变量
+  uint8_t disChar;                               // 存储字符的地址
+
+  c = c - 32; // 计算ASCII字符的偏移
+
+  for (index = 0; index < LCD_AsciiFonts->Sizes; index++) {
+    disChar = LCD_AsciiFonts
+                  ->pTable[c * LCD_AsciiFonts->Sizes + index]; // 获取字符的模值
+    for (counter = 0; counter < 8; counter++) {
+      if (disChar & 0x01) {
+        LCD_Buff[i] = LCD.Color; // 当前模值不为0时，使用画笔色绘点
+      } else {
+        LCD_Buff[i] = LCD.BackColor; // 否则使用背景色绘制点
+      }
+      disChar >>= 1;
+      i++;
+      w++;
+      if (w ==
+          LCD_AsciiFonts->Width) // 如果写入的数据达到了字符宽度，则退出当前循环
+      {                          // 进入下一字符的写入的绘制
+        w = 0;
+        break;
+      }
+    }
+  }
+  LCD_SetAddress(x, y, x + LCD_AsciiFonts->Width - 1,
+                 y + LCD_AsciiFonts->Height - 1); // 设置坐标
+  LCD_WriteBuff(LCD_Buff,
+                LCD_AsciiFonts->Width * LCD_AsciiFonts->Height); // 写入显存
+#endif
+}
 /*****************************************************************************************************************************************
  *	函 数 名:	LCD_DisplayText
  *

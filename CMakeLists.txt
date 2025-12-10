@@ -48,11 +48,10 @@ target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
 # Add sources to executable
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user sources here
-        ${CMAKE_SOURCE_DIR}/BSP/init.c
+    ${CMAKE_SOURCE_DIR}/BSP/init.c
     ${CMAKE_SOURCE_DIR}/BSP/user_hal_callbacks.c
 
     ${CMAKE_SOURCE_DIR}/BSP/DEBUG/debug.c
-    ${CMAKE_SOURCE_DIR}/BSP/DEBUG/redirect.c
 
     ${CMAKE_SOURCE_DIR}/BSP/FMC/sdram.c
 
@@ -61,6 +60,11 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
 
     ${CMAKE_SOURCE_DIR}/BSP/I2S/dmic.c
     ${CMAKE_SOURCE_DIR}/BSP/I2S/dspeaker.c
+    ${CMAKE_SOURCE_DIR}/BSP/I2S/audio_player.c
+
+    ${CMAKE_SOURCE_DIR}/BSP/JPEG/jpeg_app.c
+    ${CMAKE_SOURCE_DIR}/BSP/JPEG/jpeg_code.c
+    ${CMAKE_SOURCE_DIR}/BSP/JPEG/my_jpeg_utils.c
 
     ${CMAKE_SOURCE_DIR}/BSP/LTDC/lcd_rgb.c
     ${CMAKE_SOURCE_DIR}/BSP/LTDC/lcd_touch.c
@@ -81,6 +85,46 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     ${CMAKE_SOURCE_DIR}/BSP/SPI/lcd_image.c
     ${CMAKE_SOURCE_DIR}/BSP/SPI/lcd_spi.c
 
+    # USB Device Stack
+    ${CMAKE_SOURCE_DIR}/BSP/USB/usb_device.c
+    ${CMAKE_SOURCE_DIR}/BSP/USB/usbd_conf.c
+    ${CMAKE_SOURCE_DIR}/BSP/USB/usbd_desc.c
+    ${CMAKE_SOURCE_DIR}/BSP/USB/usbd_cdc_if.c
+    ${CMAKE_SOURCE_DIR}/BSP/USB/usbd_dfu_if.c
+    ${CMAKE_SOURCE_DIR}/BSP/USB/usbd_storage_if.c
+
+    # USB Host Stack
+    ${CMAKE_SOURCE_DIR}/BSP/USB/usb_host.c
+    ${CMAKE_SOURCE_DIR}/BSP/USB/usbh_conf.c
+
+    # STM32 USB Device Library - Core
+    ${CMAKE_SOURCE_DIR}/BSP/USB/STM32_USB_Device_Library/Core/Src/usbd_core.c
+    ${CMAKE_SOURCE_DIR}/BSP/USB/STM32_USB_Device_Library/Core/Src/usbd_ctlreq.c
+    ${CMAKE_SOURCE_DIR}/BSP/USB/STM32_USB_Device_Library/Core/Src/usbd_ioreq.c
+
+    # STM32 USB Device Library - CDC Class
+    ${CMAKE_SOURCE_DIR}/BSP/USB/STM32_USB_Device_Library/Class/CDC/Src/usbd_cdc.c
+
+    # STM32 USB Device Library - DFU Class
+    ${CMAKE_SOURCE_DIR}/BSP/USB/STM32_USB_Device_Library/Class/DFU/Src/usbd_dfu.c
+
+    # STM32 USB Device Library - MSC Class
+    ${CMAKE_SOURCE_DIR}/BSP/USB/STM32_USB_Device_Library/Class/MSC/Src/usbd_msc.c
+    ${CMAKE_SOURCE_DIR}/BSP/USB/STM32_USB_Device_Library/Class/MSC/Src/usbd_msc_bot.c
+    ${CMAKE_SOURCE_DIR}/BSP/USB/STM32_USB_Device_Library/Class/MSC/Src/usbd_msc_data.c
+    ${CMAKE_SOURCE_DIR}/BSP/USB/STM32_USB_Device_Library/Class/MSC/Src/usbd_msc_scsi.c
+
+    # STM32 USB Host Library - Core
+    ${CMAKE_SOURCE_DIR}/BSP/USB/STM32_USB_Host_Library/Core/Src/usbh_core.c
+    ${CMAKE_SOURCE_DIR}/BSP/USB/STM32_USB_Host_Library/Core/Src/usbh_ctlreq.c
+    ${CMAKE_SOURCE_DIR}/BSP/USB/STM32_USB_Host_Library/Core/Src/usbh_ioreq.c
+    ${CMAKE_SOURCE_DIR}/BSP/USB/STM32_USB_Host_Library/Core/Src/usbh_pipes.c
+
+    # STM32 USB Host Library - HID Class
+    ${CMAKE_SOURCE_DIR}/BSP/USB/STM32_USB_Host_Library/Class/HID/Src/usbh_hid.c
+    ${CMAKE_SOURCE_DIR}/BSP/USB/STM32_USB_Host_Library/Class/HID/Src/usbh_hid_keybd.c
+    ${CMAKE_SOURCE_DIR}/BSP/USB/STM32_USB_Host_Library/Class/HID/Src/usbh_hid_mouse.c
+    ${CMAKE_SOURCE_DIR}/BSP/USB/STM32_USB_Host_Library/Class/HID/Src/usbh_hid_parser.c
 
     # LVGL Source Files - Core
     ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/lvgl-8.3.11/src/core/lv_disp.c
@@ -233,6 +277,8 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/lvgl-8.3.11/porting/lv_port_disp.c
     ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/lvgl-8.3.11/porting/lv_port_indev.c
     ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/lvgl-8.3.11/porting/lv_font_qspi.c
+    ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/lvgl-8.3.11/porting/lv_port_fs.c
+    ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/lvgl-8.3.11/porting/lv_port_jpeg.c
 
     # LVGL Demos
     ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/lvgl-8.3.11/demos/benchmark/lv_demo_benchmark.c
@@ -327,15 +373,22 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     ${CMAKE_SOURCE_DIR}/BSP/FMC
     ${CMAKE_SOURCE_DIR}/BSP/GPIO
     ${CMAKE_SOURCE_DIR}/BSP/I2S
+    ${CMAKE_SOURCE_DIR}/BSP/JPEG
     ${CMAKE_SOURCE_DIR}/BSP/LTDC
     ${CMAKE_SOURCE_DIR}/BSP/QSPI
     ${CMAKE_SOURCE_DIR}/BSP/QSPI/FontBin
     ${CMAKE_SOURCE_DIR}/BSP/SDIO
     ${CMAKE_SOURCE_DIR}/BSP/SDIO/FatFs
     ${CMAKE_SOURCE_DIR}/BSP/SPI
+    ${CMAKE_SOURCE_DIR}/BSP/USB
+    ${CMAKE_SOURCE_DIR}/BSP/USB/STM32_USB_Device_Library/Core/Inc
+    ${CMAKE_SOURCE_DIR}/BSP/USB/STM32_USB_Device_Library/Class/CDC/Inc
+    ${CMAKE_SOURCE_DIR}/BSP/USB/STM32_USB_Device_Library/Class/DFU/Inc
+    ${CMAKE_SOURCE_DIR}/BSP/USB/STM32_USB_Device_Library/Class/MSC/Inc
+    ${CMAKE_SOURCE_DIR}/BSP/USB/STM32_USB_Host_Library/Core/Inc
+    ${CMAKE_SOURCE_DIR}/BSP/USB/STM32_USB_Host_Library/Class/HID/Inc
 
-
-        # LVGL Include Paths
+    # LVGL Include Paths
     ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/lvgl-8.3.11
     ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/lvgl-8.3.11/src
     ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/lvgl-8.3.11/src/core

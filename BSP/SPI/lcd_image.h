@@ -41,21 +41,21 @@
 #define __LCD_IMAGE_H
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
+#include "config.h"
 #include <stdint.h>
-#include "init.h"
-    /*******************************************************************************
-     *                              图片数据声明
-     ******************************************************************************/
+#if defined(LCD_SPI_ENABLE) || defined(LCD_RGB_ENABLE)
+/*******************************************************************************
+ *                              图片数据声明
+ ******************************************************************************/
 
-    /**
-     * @brief 图片数据数组声明
-     * @note  实际数据定义在 lcd_image.c 中
-     */
-    extern const unsigned char gImage_1[];
-
+/**
+ * @brief 图片数据数组声明
+ * @note  实际数据定义在 lcd_image.c 中
+ */
+// extern const unsigned char gImage_1[];
+#endif
 #ifdef __cplusplus
 }
 #endif

@@ -22,11 +22,15 @@
 #define __SD_DISKIO_H
 
 /* Includes ------------------------------------------------------------------*/
+
 #include "../sdmmc_sd.h"
+#include "config.h"
+#ifdef FATFS_ENABLE
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
 /* Exported functions ------------------------------------------------------- */
 extern const Diskio_drvTypeDef  SD_Driver;
+#endif
 
 #endif /* __SD_DISKIO_H */
 

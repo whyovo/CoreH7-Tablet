@@ -73,21 +73,9 @@ HAL_StatusTypeDef DSPEAKER_Init(void)
     s_buffer_read_pos = 0;
     s_volume = 50;
 
-    /* 配置SHDN引脚为GPIO输出 */
-    GPIO_InitTypeDef GPIO_InitStruct = {0};
-    GPIO_InitStruct.Pin = DSPEAKER_SHDN_PIN;
-    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-    HAL_GPIO_Init(DSPEAKER_SHDN_PORT, &GPIO_InitStruct);
-
-    /* 初始关闭扬声器 */
-    DSPEAKER_SetEnable(0);
-
     /* 设置为就绪状态 */
     s_state = DSPEAKER_STATE_READY;
 
-    DEBUG_INFO("DSPEAKER 初始化完成");
     return HAL_OK;
 }
 
@@ -110,8 +98,6 @@ HAL_StatusTypeDef DSPEAKER_Start(void)
         return HAL_ERROR;
     }
 
-    /* 启用扬声器（SHDN引脚拉高） */
-    DSPEAKER_SetEnable(1);
     HAL_Delay(10); /* 等待芯片稳定 */
 
     /* 清空缓冲区并预填充数据 */
@@ -124,7 +110,6 @@ HAL_StatusTypeDef DSPEAKER_Start(void)
     if (status != HAL_OK)
     {
         DEBUG_ERROR("DSPEAKER_Start: I2S DMA 启动失败");
-        DSPEAKER_SetEnable(0);
         s_state = DSPEAKER_STATE_ERROR;
         return status;
     }
@@ -156,9 +141,6 @@ HAL_StatusTypeDef DSPEAKER_Stop(void)
         return status;
     }
 
-    /* 禁用扬声器（SHDN引脚拉低） */
-    DSPEAKER_SetEnable(0);
-
     /* 清空缓冲区 */
     DSPEAKER_ClearBuffer();
 
@@ -175,22 +157,7 @@ DSPEAKER_State DSPEAKER_GetState(void)
     return s_state;
 }
 
-/**
- * @brief  启用或禁用扬声器
- */
-void DSPEAKER_SetEnable(uint8_t enable)
-{
-    if (enable)
-    {
-        HAL_GPIO_WritePin(DSPEAKER_SHDN_PORT, DSPEAKER_SHDN_PIN, GPIO_PIN_SET);
-        DEBUG_INFO("扬声器已启用");
-    }
-    else
-    {
-        HAL_GPIO_WritePin(DSPEAKER_SHDN_PORT, DSPEAKER_SHDN_PIN, GPIO_PIN_RESET);
-        DEBUG_INFO("扬声器已禁用");
-    }
-}
+
 
 /**
  * @brief  设置音量（0-100）
@@ -377,21 +344,26 @@ static void fill_buffer(uint8_t isFirstHalf)
         /* 无数据时填充0（静音） */
         memset(&s_dma_buffer[offset], 0, size * sizeof(int16_t));
     }
+    /* === 新增：STM32H7 D-Cache 一致性维护 === */
+    /* 将更新后的数据从 Cache 刷入物理内存，确保 DMA 能读到正确的数据 */
+    /* SCB_CleanDCache_by_Addr((uint32_t*)地址, 长度字节数) */
+    SCB_CleanDCache_by_Addr((uint32_t *)&s_dma_buffer[offset],
+                            size * sizeof(int16_t));
 }
 
 /**
  * @brief  更新缓冲区读指针位置
  * @note   根据DMA当前传输位置推断读指针
  */
-static void update_buffer_pos(void)
-{
-    uint32_t dma_pos = DSPEAKER_BUFFER_SIZE - __HAL_DMA_GET_COUNTER(&DSPEAKER_I2S_HANDLE.hdmatx);
+static void update_buffer_pos(void) {
+  uint32_t dma_pos =
+      DSPEAKER_BUFFER_SIZE - __HAL_DMA_GET_COUNTER(DSPEAKER_I2S_HANDLE.hdmatx);
 
-    /* 确保在有效范围内 */
-    if (dma_pos >= DSPEAKER_BUFFER_SIZE)
-        dma_pos = 0;
+  /* 确保在有效范围内 */
+  if (dma_pos >= DSPEAKER_BUFFER_SIZE)
+    dma_pos = 0;
 
-    s_buffer_read_pos = dma_pos;
+  s_buffer_read_pos = dma_pos;
 }
 
 /*******************************************************************************
@@ -431,7 +403,6 @@ void HAL_I2S_ErrorCallback(I2S_HandleTypeDef *hi2s)
     {
         DEBUG_ERROR("DSPEAKER: I2S DMA 错误");
         s_state = DSPEAKER_STATE_ERROR;
-        DSPEAKER_SetEnable(0);
     }
 }
 

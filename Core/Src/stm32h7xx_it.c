@@ -56,8 +56,13 @@
 
 /* External variables --------------------------------------------------------*/
 extern DMA_HandleTypeDef hdma_spi1_rx;
+extern DMA_HandleTypeDef hdma_spi2_tx;
+extern MDMA_HandleTypeDef hmdma_jpeg_infifo_th;
+extern MDMA_HandleTypeDef hmdma_jpeg_outfifo_th;
+extern JPEG_HandleTypeDef hjpeg;
 extern LTDC_HandleTypeDef hltdc;
 extern SD_HandleTypeDef hsd1;
+extern HCD_HandleTypeDef hhcd_USB_OTG_HS;
 extern TIM_HandleTypeDef htim17;
 
 /* USER CODE BEGIN EV */
@@ -177,6 +182,20 @@ void DMA1_Stream0_IRQHandler(void)
 }
 
 /**
+  * @brief This function handles DMA1 stream1 global interrupt.
+  */
+void DMA1_Stream1_IRQHandler(void)
+{
+  /* USER CODE BEGIN DMA1_Stream1_IRQn 0 */
+
+  /* USER CODE END DMA1_Stream1_IRQn 0 */
+  HAL_DMA_IRQHandler(&hdma_spi2_tx);
+  /* USER CODE BEGIN DMA1_Stream1_IRQn 1 */
+
+  /* USER CODE END DMA1_Stream1_IRQn 1 */
+}
+
+/**
   * @brief This function handles SDMMC1 global interrupt.
   */
 void SDMMC1_IRQHandler(void)
@@ -188,6 +207,48 @@ void SDMMC1_IRQHandler(void)
   /* USER CODE BEGIN SDMMC1_IRQn 1 */
 
   /* USER CODE END SDMMC1_IRQn 1 */
+}
+
+/**
+  * @brief This function handles USB On The Go HS End Point 1 Out global interrupt.
+  */
+void OTG_HS_EP1_OUT_IRQHandler(void)
+{
+  /* USER CODE BEGIN OTG_HS_EP1_OUT_IRQn 0 */
+
+  /* USER CODE END OTG_HS_EP1_OUT_IRQn 0 */
+  HAL_HCD_IRQHandler(&hhcd_USB_OTG_HS);
+  /* USER CODE BEGIN OTG_HS_EP1_OUT_IRQn 1 */
+
+  /* USER CODE END OTG_HS_EP1_OUT_IRQn 1 */
+}
+
+/**
+  * @brief This function handles USB On The Go HS End Point 1 In global interrupt.
+  */
+void OTG_HS_EP1_IN_IRQHandler(void)
+{
+  /* USER CODE BEGIN OTG_HS_EP1_IN_IRQn 0 */
+
+  /* USER CODE END OTG_HS_EP1_IN_IRQn 0 */
+  HAL_HCD_IRQHandler(&hhcd_USB_OTG_HS);
+  /* USER CODE BEGIN OTG_HS_EP1_IN_IRQn 1 */
+
+  /* USER CODE END OTG_HS_EP1_IN_IRQn 1 */
+}
+
+/**
+  * @brief This function handles USB On The Go HS global interrupt.
+  */
+void OTG_HS_IRQHandler(void)
+{
+  /* USER CODE BEGIN OTG_HS_IRQn 0 */
+
+  /* USER CODE END OTG_HS_IRQn 0 */
+  HAL_HCD_IRQHandler(&hhcd_USB_OTG_HS);
+  /* USER CODE BEGIN OTG_HS_IRQn 1 */
+
+  /* USER CODE END OTG_HS_IRQn 1 */
 }
 
 /**
@@ -230,6 +291,35 @@ void TIM17_IRQHandler(void)
   /* USER CODE BEGIN TIM17_IRQn 1 */
 
   /* USER CODE END TIM17_IRQn 1 */
+}
+
+/**
+  * @brief This function handles JPEG global interrupt.
+  */
+void JPEG_IRQHandler(void)
+{
+  /* USER CODE BEGIN JPEG_IRQn 0 */
+
+  /* USER CODE END JPEG_IRQn 0 */
+  HAL_JPEG_IRQHandler(&hjpeg);
+  /* USER CODE BEGIN JPEG_IRQn 1 */
+
+  /* USER CODE END JPEG_IRQn 1 */
+}
+
+/**
+  * @brief This function handles MDMA global interrupt.
+  */
+void MDMA_IRQHandler(void)
+{
+  /* USER CODE BEGIN MDMA_IRQn 0 */
+
+  /* USER CODE END MDMA_IRQn 0 */
+  HAL_MDMA_IRQHandler(&hmdma_jpeg_outfifo_th);
+  HAL_MDMA_IRQHandler(&hmdma_jpeg_infifo_th);
+  /* USER CODE BEGIN MDMA_IRQn 1 */
+
+  /* USER CODE END MDMA_IRQn 1 */
 }
 
 /* USER CODE BEGIN 1 */

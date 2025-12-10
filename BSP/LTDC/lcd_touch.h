@@ -50,18 +50,18 @@
 #define __LCD_TOUCH_H
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
-#include "init.h"
+#include "config.h"
 #include "touch_iic.h"
 
+#ifdef LCD_RGB_TOUCH_ENABLE
 /*******************************************************************************
  *                              返回状态码
  *******************************************************************************/
 #define SUCCESS 0x01 /*!< 操作成功 */
-#define ERROR 0x00	 /*!< 操作失败 */
+#define ERROR 0x00   /*!< 操作失败 */
 
 /*******************************************************************************
  *                              显示屏参数配置
@@ -84,8 +84,10 @@ extern "C"
  * 坐标转换系数（自动计算）
  * 用于将触摸芯片的坐标转换到显示屏坐标系统
  */
-#define TOUCH_X_SCALE ((float)SCREEN_WIDTH / TOUCH_CHIP_WIDTH)	 /*!< X轴缩放系数 */
-#define TOUCH_Y_SCALE ((float)SCREEN_HEIGHT / TOUCH_CHIP_HEIGHT) /*!< Y轴缩放系数 */
+#define TOUCH_X_SCALE                                                          \
+  ((float)SCREEN_WIDTH / TOUCH_CHIP_WIDTH) /*!< X轴缩放系数 */
+#define TOUCH_Y_SCALE                                                          \
+  ((float)SCREEN_HEIGHT / TOUCH_CHIP_HEIGHT) /*!< Y轴缩放系数 */
 
 /*******************************************************************************
  *                              触摸相关定义
@@ -97,20 +99,19 @@ extern "C"
  */
 #define TOUCH_MAX 5 /*!< 最大触摸点数 */
 
-	/**
-	 * @brief 触摸信息结构体
-	 * @note 存储当前触摸事件的详细信息
-	 */
-	typedef struct
-	{
-		uint8_t flag;		   /*!< 触摸标志位，1=有触摸事件，0=无触摸 */
-		uint8_t num;		   /*!< 当前触摸点数（1-5） */
-		uint16_t x[TOUCH_MAX]; /*!< X坐标数组（触摸芯片坐标） */
-		uint16_t y[TOUCH_MAX]; /*!< Y坐标数组（触摸芯片坐标） */
-	} TouchStructure;
+/**
+ * @brief 触摸信息结构体
+ * @note 存储当前触摸事件的详细信息
+ */
+typedef struct {
+  uint8_t flag; /*!< 触摸标志位，1=有触摸事件，0=无触摸 */
+  uint8_t num;  /*!< 当前触摸点数（1-5） */
+  uint16_t x[TOUCH_MAX]; /*!< X坐标数组（触摸芯片坐标） */
+  uint16_t y[TOUCH_MAX]; /*!< Y坐标数组（触摸芯片坐标） */
+} TouchStructure;
 
-	extern volatile TouchStructure touchInfo; /*!< 全局触摸信息结构体 */
-        
+extern volatile TouchStructure touchInfo; /*!< 全局触摸信息结构体 */
+
 /*******************************************************************************
  *                              GT911寄存器定义
  *******************************************************************************/
@@ -129,105 +130,105 @@ extern "C"
 #define GT9XX_CFG_ADDR 0x8047  /*!< 固件配置版本寄存器地址 */
 #define GT9XX_READ_ADDR 0x814E /*!< 触摸数据寄存器地址 */
 
-	/*******************************************************************************
-	 *                              基本功能函数
-	 *******************************************************************************/
+/*******************************************************************************
+ *                              基本功能函数
+ *******************************************************************************/
 
-	/**
-	 * @brief  初始化触摸屏
-	 * @retval SUCCESS - 初始化成功
-	 * @retval ERROR - 初始化失败（未检测到GT911芯片）
-	 * @note   - 识别硬件版本
-	 *         - 初始化IIC接口
-	 *         - 复位GT911芯片
-	 *         - 读取芯片ID和配置版本
-	 *         - 打印初始化信息到串口
-	 */
-	uint8_t Touch_Init(void);
+/**
+ * @brief  初始化触摸屏
+ * @retval SUCCESS - 初始化成功
+ * @retval ERROR - 初始化失败（未检测到GT911芯片）
+ * @note   - 识别硬件版本
+ *         - 初始化IIC接口
+ *         - 复位GT911芯片
+ *         - 读取芯片ID和配置版本
+ *         - 打印初始化信息到串口
+ */
+uint8_t Touch_Init(void);
 
-	/**
-	 * @brief  触摸屏扫描
-	 * @retval 无
-	 * @note   - 应该周期性调用（建议10-20ms调用一次）
-	 *         - 读取触摸数据并解析
-	 *         - 更新全局touchInfo结构体
-	 *         - 自动处理坐标映射和分辨率转换
-	 */
-	void Touch_Scan(void);
+/**
+ * @brief  触摸屏扫描
+ * @retval 无
+ * @note   - 应该周期性调用（建议10-20ms调用一次）
+ *         - 读取触摸数据并解析
+ *         - 更新全局touchInfo结构体
+ *         - 自动处理坐标映射和分辨率转换
+ */
+void Touch_Scan(void);
 
-	/*******************************************************************************
-	 *                              GT911芯片操作函数
-	 *******************************************************************************/
+/*******************************************************************************
+ *                              GT911芯片操作函数
+ *******************************************************************************/
 
-	/**
-	 * @brief  复位GT911芯片
-	 * @retval 无
-	 * @note   - RST复位时序：
-	 *         - INT拉低（保持低电平设置IIC地址为0xBA/0xBB）
-	 *         - RST先拉高后拉低再拉高
-	 *         - 延时等待芯片复位完成
-	 */
-	void GT9XX_Reset(void);
+/**
+ * @brief  复位GT911芯片
+ * @retval 无
+ * @note   - RST复位时序：
+ *         - INT拉低（保持低电平设置IIC地址为0xBA/0xBB）
+ *         - RST先拉高后拉低再拉高
+ *         - 延时等待芯片复位完成
+ */
+void GT9XX_Reset(void);
 
-	/**
-	 * @brief  发送GT911配置参数
-	 * @retval 无
-	 * @note   可选函数，用于修改GT911的工作参数
-	 */
-	void GT9XX_SendCfg(void);
+/**
+ * @brief  发送GT911配置参数
+ * @retval 无
+ * @note   可选函数，用于修改GT911的工作参数
+ */
+void GT9XX_SendCfg(void);
 
-	/**
-	 * @brief  读取GT911配置参数
-	 * @retval 无
-	 * @note   可选函数，用于读取并显示当前GT911配置
-	 */
-	void GT9XX_ReadCfg(void);
+/**
+ * @brief  读取GT911配置参数
+ * @retval 无
+ * @note   可选函数，用于读取并显示当前GT911配置
+ */
+void GT9XX_ReadCfg(void);
 
-	/*******************************************************************************
-	 *                              内部使用函数（可选导出）
-	 *******************************************************************************/
+/*******************************************************************************
+ *                              内部使用函数（可选导出）
+ *******************************************************************************/
 
-	/**
-	 * @brief  GT911寄存器写操作
-	 * @param  addr: 要写入的寄存器地址（16位）
-	 * @retval SUCCESS - 写入成功
-	 * @retval ERROR - 写入失败
-	 * @note   内部函数，通常不需要直接调用
-	 */
-	uint8_t GT9XX_WriteHandle(uint16_t addr);
+/**
+ * @brief  GT911寄存器写操作
+ * @param  addr: 要写入的寄存器地址（16位）
+ * @retval SUCCESS - 写入成功
+ * @retval ERROR - 写入失败
+ * @note   内部函数，通常不需要直接调用
+ */
+uint8_t GT9XX_WriteHandle(uint16_t addr);
 
-	/**
-	 * @brief  写一字节数据到GT911
-	 * @param  addr: 要写入的寄存器地址
-	 * @param  value: 要写入的数据
-	 * @retval SUCCESS - 写入成功
-	 * @retval ERROR - 写入失败
-	 * @note   内部函数
-	 */
-	uint8_t GT9XX_WriteData(uint16_t addr, uint8_t value);
+/**
+ * @brief  写一字节数据到GT911
+ * @param  addr: 要写入的寄存器地址
+ * @param  value: 要写入的数据
+ * @retval SUCCESS - 写入成功
+ * @retval ERROR - 写入失败
+ * @note   内部函数
+ */
+uint8_t GT9XX_WriteData(uint16_t addr, uint8_t value);
 
-	/**
-	 * @brief  写多字节数据到GT911
-	 * @param  addr: 要写入的寄存器地址
-	 * @param  cnt: 要写入的字节数
-	 * @param  value: 数据缓冲区指针
-	 * @retval SUCCESS - 写入成功
-	 * @retval ERROR - 写入失败
-	 * @note   内部函数
-	 */
-	uint8_t GT9XX_WriteReg(uint16_t addr, uint8_t cnt, uint8_t *value);
+/**
+ * @brief  写多字节数据到GT911
+ * @param  addr: 要写入的寄存器地址
+ * @param  cnt: 要写入的字节数
+ * @param  value: 数据缓冲区指针
+ * @retval SUCCESS - 写入成功
+ * @retval ERROR - 写入失败
+ * @note   内部函数
+ */
+uint8_t GT9XX_WriteReg(uint16_t addr, uint8_t cnt, uint8_t *value);
 
-	/**
-	 * @brief  从GT911读多字节数据
-	 * @param  addr: 要读取的寄存器地址
-	 * @param  cnt: 要读取的字节数
-	 * @param  value: 数据缓冲区指针
-	 * @retval SUCCESS - 读取成功
-	 * @retval ERROR - 读取失败
-	 * @note   内部函数
-	 */
-	uint8_t GT9XX_ReadReg(uint16_t addr, uint8_t cnt, uint8_t *value);
-
+/**
+ * @brief  从GT911读多字节数据
+ * @param  addr: 要读取的寄存器地址
+ * @param  cnt: 要读取的字节数
+ * @param  value: 数据缓冲区指针
+ * @retval SUCCESS - 读取成功
+ * @retval ERROR - 读取失败
+ * @note   内部函数
+ */
+uint8_t GT9XX_ReadReg(uint16_t addr, uint8_t cnt, uint8_t *value);
+#endif
 #ifdef __cplusplus
 }
 #endif

@@ -7,9 +7,12 @@
  ******************************************************************************
  */
 #include "fatfs.h"
-#include <string.h>
+#include "FatFs/sd_diskio.h"
 #include <stdio.h>
+#include <string.h>
 
+
+#ifdef FATFS_ENABLE
 /* 全局变量定义 */
 FATFS SD_FatFs;     /* 文件系统对象 */
 FRESULT MyFile_Res; /* 操作结果 */
@@ -553,3 +556,5 @@ FRESULT FatFs_ListDir(const char *dirname, uint32_t max_items)
     DEBUG_INFO(buf);
     return FR_OK;
 }
+
+#endif

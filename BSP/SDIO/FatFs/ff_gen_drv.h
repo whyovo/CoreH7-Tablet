@@ -25,27 +25,35 @@
 #endif
 
 /* Includes ------------------------------------------------------------------*/
+
 #include "diskio.h"
 #include "ff.h"
 #include "stdint.h"
+#include "config.h"
 
+#ifdef FATFS_ENABLE
+ /* Exported types
+  * ------------------------------------------------------------*/
 
-/* Exported types ------------------------------------------------------------*/
-
-/**
+ /**
   * @brief  Disk IO Driver structure definition
   */
-typedef struct
-{
-  DSTATUS (*disk_initialize) (BYTE);                     /*!< Initialize Disk Drive                     */
-  DSTATUS (*disk_status)     (BYTE);                     /*!< Get Disk Status                           */
-  DRESULT (*disk_read)       (BYTE, BYTE*, DWORD, UINT);       /*!< Read Sector(s)                            */
+ typedef struct {
+   DSTATUS (*disk_initialize)
+   (BYTE); /*!< Initialize Disk Drive                     */
+   DSTATUS (*disk_status)
+   (BYTE); /*!< Get Disk Status                           */
+   DRESULT (*disk_read)
+   (BYTE, BYTE *, DWORD, UINT); /*!< Read Sector(s) */
 #if _USE_WRITE == 1
-  DRESULT (*disk_write)      (BYTE, const BYTE*, DWORD, UINT); /*!< Write Sector(s) when _USE_WRITE = 0       */
-#endif /* _USE_WRITE == 1 */
+   DRESULT (*disk_write)
+   (BYTE, const BYTE *, DWORD,
+    UINT); /*!< Write Sector(s) when _USE_WRITE = 0       */
+#endif    /* _USE_WRITE == 1 */
 #if _USE_IOCTL == 1
-  DRESULT (*disk_ioctl)      (BYTE, BYTE, void*);              /*!< I/O control operation when _USE_IOCTL = 1 */
-#endif /* _USE_IOCTL == 1 */
+   DRESULT (*disk_ioctl)
+   (BYTE, BYTE, void *); /*!< I/O control operation when _USE_IOCTL = 1 */
+#endif                  /* _USE_IOCTL == 1 */
 
 }Diskio_drvTypeDef;
 
@@ -69,6 +77,8 @@ uint8_t FATFS_UnLinkDriver(char *path);
 uint8_t FATFS_LinkDriverEx(const Diskio_drvTypeDef *drv, char *path, BYTE lun);
 uint8_t FATFS_UnLinkDriverEx(char *path, BYTE lun);
 uint8_t FATFS_GetAttachedDriversNbr(void);
+
+#endif
 
 #ifdef __cplusplus
 }

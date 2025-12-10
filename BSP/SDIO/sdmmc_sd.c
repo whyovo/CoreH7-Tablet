@@ -61,6 +61,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "sdmmc_sd.h"
 
+#ifdef SDMMC_ENABLE
 /********************************************** 变量定义 *******************************************/
 
 #define NumOf_Blocks 64
@@ -1065,3 +1066,6 @@ static void SD_EXTI_Callback(void)
  * @}
  */
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE***  */
+
+
+#endif

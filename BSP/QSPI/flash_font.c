@@ -16,6 +16,7 @@
  ******************************************************************************/
 #define FLAG_MAGIC 0x464C4147 /*!< 标志位魔数 "FLAG" */
 #define FONT_MAGIC 0x47423332 /*!< 字库魔数 "GB23" (GB2312) */
+#define ASCII_MAGIC 0x49435341 /*!< ASCII魔数 "ASCI" */
 #define FLASHFONT_OK 0        /*!< 操作成功 */
 
 /*******************************************************************************
@@ -262,4 +263,74 @@ const uint8_t *UTF8_FindFont_Flash(const uint8_t *utf8_text,
   return (const uint8_t *)(W25Qxx_Mem_Addr + font_offset + 18 +
                            index * bytes_per_char);
 }
+
+/**
+ * @brief  从Flash查找ASCII字符并返回字模数据指针
+ * @param  c: ASCII字符 (0x20-0x7E)
+ * @param  font_size: 字体大小(12/16/20/24/32)
+ * @retval 字模数据指针，查找失败返回NULL
+ */
+const uint8_t *ASCII_FindFont_Flash(char c, uint8_t font_size) {
+  int8_t font_index = -1;
+  const ASCII_FontHeader_t *header;
+  const ASCII_FontInfo_t *info;
+  uint32_t bytes_per_char;
+  uint32_t char_offset;
+
+  if (!g_font_initialized) {
+    DEBUG_ERROR("ASCII_FindFont_Flash: 字库未初始化");
+    return NULL;
+  }
+
+  // 范围检查 (仅支持可见字符 0x20 ' ' 到 0x7E '~')
+  if (c < 0x20 || c > 0x7E) {
+    return NULL;
+  }
+
+  // 根据字体大小映射到文件中的索引
+  // 映射关系参考 ascii_fonts_info.txt
+  switch (font_size) {
+  case 32:
+    font_index = 0;
+    break; // 32x16
+  case 24:
+    font_index = 1;
+    break; // 24x12
+  case 20:
+    font_index = 2;
+    break; // 20x10
+  case 16:
+    font_index = 3;
+    break; // 16x8
+  case 12:
+    font_index = 4;
+    break; // 12x6
+  default:
+    DEBUG_ERROR("ASCII_FindFont_Flash: 不支持的字体大小");
+    return NULL;
+  }
+
+  // 获取文件头指针 (内存映射)
+  header = (const ASCII_FontHeader_t *)(W25Qxx_Mem_Addr + ASCII_FONTS_ADDR);
+
+  // 验证魔数
+  if (header->magic != ASCII_MAGIC) {
+    DEBUG_ERROR("ASCII_FindFont_Flash: ASCII字库文件损坏");
+    return NULL;
+  }
+
+  // 获取对应字体的元数据
+  info = &header->fonts[font_index];
+
+  // 计算单字符字节数 (总大小 / 字符数95)
+  bytes_per_char = info->size / 95;
+
+  // 计算字符在数据块中的偏移
+  char_offset = (c - 0x20) * bytes_per_char;
+
+  // 返回绝对地址: 基地址 + 文件基址 + 字体数据偏移 + 字符偏移
+  return (const uint8_t *)(W25Qxx_Mem_Addr + ASCII_FONTS_ADDR + info->offset +
+                           char_offset);
+}
+
 #endif // FLASH_FONT_ENABLE

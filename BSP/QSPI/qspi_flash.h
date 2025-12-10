@@ -41,8 +41,8 @@ extern "C"
 {
 #endif
 
-#include "init.h"
-
+#include "config.h"
+#ifdef QSPI_FLASH_ENABLE
 /*******************************************************************************
  *                              QSPI状态码
  *******************************************************************************/
@@ -96,6 +96,7 @@ extern "C"
      */
     int8_t QSPI_W25Qxx_Init(void);
 
+
     /**
      * @brief  复位Flash器件
      * @retval QSPI_W25Qxx_OK - 复位成功
@@ -147,6 +148,7 @@ extern "C"
      */
     int8_t QSPI_W25Qxx_BlockErase_64K(uint32_t SectorAddress);
 
+
     /**
      * @brief  整片擦除
      * @note   典型耗时：80s，最大：400s
@@ -170,7 +172,8 @@ extern "C"
      * @retval QSPI_W25Qxx_OK - 写入成功
      * @retval W25Qxx_ERROR_* - 写入失败
      */
-    int8_t QSPI_W25Qxx_WritePage(uint8_t *pBuffer, uint32_t WriteAddr, uint16_t NumByteToWrite);
+    int8_t QSPI_W25Qxx_WritePage(uint8_t *pBuffer, uint32_t WriteAddr,
+                                 uint16_t NumByteToWrite);
 
     /**
      * @brief  缓冲区写入（任意长度）
@@ -182,7 +185,8 @@ extern "C"
      * @retval QSPI_W25Qxx_OK - 写入成功
      * @retval W25Qxx_ERROR_* - 写入失败
      */
-    int8_t QSPI_W25Qxx_WriteBuffer(uint8_t *pData, uint32_t WriteAddr, uint32_t Size);
+    int8_t QSPI_W25Qxx_WriteBuffer(uint8_t *pData, uint32_t WriteAddr,
+                                   uint32_t Size);
 
     /**
      * @brief  缓冲区读取（任意长度）
@@ -194,8 +198,9 @@ extern "C"
      * @retval QSPI_W25Qxx_OK - 读取成功
      * @retval W25Qxx_ERROR_* - 读取失败
      */
-    int8_t QSPI_W25Qxx_ReadBuffer(uint8_t *pBuffer, uint32_t ReadAddr, uint32_t NumByteToRead);
-
+    int8_t QSPI_W25Qxx_ReadBuffer(uint8_t *pBuffer, uint32_t ReadAddr,
+                                  uint32_t NumByteToRead);
+#endif
 #ifdef __cplusplus
 }
 #endif

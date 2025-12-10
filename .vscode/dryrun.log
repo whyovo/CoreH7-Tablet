@@ -1,6 +1,7 @@
 make.exe --dry-run --always-make --keep-going --print-directory
-make.exe: *** No targets specified and no makefile found.  Stop.
+      0 [main] us 0 init_cheap: VirtualAlloc pointer is null, Win32 error 487
 
-make.exe: Entering directory `/e/CODE_b/stm32ai/4k_music_game'
-make.exe: Leaving directory `/e/CODE_b/stm32ai/4k_music_game'
- 
+AllocationBase 0x0, BaseAddress 0x60E90000, RegionSize 0x10000, State 0x10000
+
+C:\Users\lenovo\.eide\bin\builder\msys\bin\make.exe: *** Couldn't reserve space for cygwin's heap, Win32 error 0
+

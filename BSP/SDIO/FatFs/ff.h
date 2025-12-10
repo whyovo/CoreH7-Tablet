@@ -26,8 +26,12 @@
 extern "C" {
 #endif
 
-#include "integer.h"	/* Basic integer types */
-#include "ffconf.h"		/* FatFs configuration options */
+
+#include "ffconf.h"  /* FatFs configuration options */
+#include "integer.h" /* Basic integer types */
+#include "config.h"
+
+#ifdef FATFS_ENABLE
 
 #if FF_DEFINED != FFCONF_DEF
 #error Wrong configuration file (ffconf.h).
@@ -356,6 +360,7 @@ int ff_del_syncobj (FF_SYNC_t sobj);	/* Delete a sync object */
 #define AM_DIR	0x10	/* Directory */
 #define AM_ARC	0x20	/* Archive */
 
+#endif
 
 #ifdef __cplusplus
 }
