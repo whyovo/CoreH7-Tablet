@@ -116,7 +116,14 @@ SECTIONS
     . = ALIGN(4);
   } >RAM_D2
   
-
+ /* RAM_D2 section for FreeRTOS heap and other D2 data */
+  .ram_d3_data :
+  {
+    . = ALIGN(4);
+    *(.ram_d3_data)
+    *(.ram_d3_data*)
+    . = ALIGN(4);
+  } >RAM_D3
 
   /* ITCM section code */
   .dtcm_text :

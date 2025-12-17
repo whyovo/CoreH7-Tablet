@@ -253,6 +253,21 @@ static void disp_flush(lv_disp_drv_t *disp_drv, const lv_area_t *area,
   /* 注意：这里不再调用 lv_disp_flush_ready(disp_drv); */
   /* 它被移动到了 HAL_LTDC_LineEvenCallback 中 */
 }
+
+void my_clean_dcache_cb(lv_disp_drv_t *disp_drv)
+{
+  /* 1. 获取当前绘制缓冲区的地址 */
+  /* 注意：LVGL 双缓冲时，buf_act 指向当前正在绘制的那个 buffer */
+  uint32_t buffer_addr = (uint32_t)disp_drv->draw_buf->buf_act;
+
+  /* 2. 获取缓冲区大小 (字节) */
+  /* 注意：size 是像素数，要乘以每个像素的字节数 (RGB565 = 2 bytes) */
+  uint32_t buffer_size = disp_drv->draw_buf->size * 2;
+
+  /* 3. 精确清洗这一块内存 */
+  /* 只把这块显存的数据从 Cache 刷入 RAM，不影响其他变量 */
+  SCB_CleanDCache_by_Addr((uint32_t *)buffer_addr, buffer_size);
+}
 /*OPTIONAL: GPU INTERFACE*/
 
 /*If your MCU has hardware accelerator (GPU) then you can use it to fill a memory with a color*/

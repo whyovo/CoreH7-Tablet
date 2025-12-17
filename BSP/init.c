@@ -145,8 +145,8 @@ void init_all(void) {
   // RGB_LCD_DisplayText(42, 120, "屏幕分辨率：800*480");
 
   // 显示1.jpg
-JPEG_App_DisplayFile("1.jpg", 0, 0);
-JPEG_App_DisplayFile("2.jpg", 300, 0);
+// JPEG_App_DisplayFile("1.jpg", 0, 0);
+// JPEG_App_DisplayFile("2.jpg", 300, 0);
 /* 下面是用于验证 printf 风格的 DEBUG_INFO 示例 */
 
 // 创建纯红色的800x480图片并保存为3.jpg

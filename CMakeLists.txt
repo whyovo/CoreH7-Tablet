@@ -206,6 +206,26 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/lvgl-8.3.11/src/extra/widgets/tileview/lv_tileview.c
     ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/lvgl-8.3.11/src/extra/widgets/win/lv_win.c
 
+    # LVGL Source Files - Extra Libs
+    ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/lvgl-8.3.11/src/extra/libs/bmp/lv_bmp.c
+    ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/lvgl-8.3.11/src/extra/libs/png/lv_png.c
+    ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/lvgl-8.3.11/src/extra/libs/png/lodepng.c
+    ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/lvgl-8.3.11/src/extra/libs/gif/lv_gif.c
+    ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/lvgl-8.3.11/src/extra/libs/gif/gifdec.c
+    ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/lvgl-8.3.11/src/extra/libs/qrcode/lv_qrcode.c
+    ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/lvgl-8.3.11/src/extra/libs/qrcode/qrcodegen.c
+    ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/lvgl-8.3.11/src/extra/libs/sjpg/lv_sjpg.c
+    ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/lvgl-8.3.11/src/extra/libs/sjpg/tjpgd.c
+    ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/lvgl-8.3.11/src/extra/libs/fsdrv/lv_fs_fatfs.c
+    ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/lvgl-8.3.11/src/extra/libs/fsdrv/lv_fs_littlefs.c
+    ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/lvgl-8.3.11/src/extra/libs/fsdrv/lv_fs_posix.c
+    ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/lvgl-8.3.11/src/extra/libs/fsdrv/lv_fs_stdio.c
+    ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/lvgl-8.3.11/src/extra/libs/fsdrv/lv_fs_win32.c
+    ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/lvgl-8.3.11/src/extra/libs/freetype/lv_freetype.c
+    ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/lvgl-8.3.11/src/extra/libs/ffmpeg/lv_ffmpeg.c
+    ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/lvgl-8.3.11/src/extra/libs/rlottie/lv_rlottie.c
+    ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/lvgl-8.3.11/src/extra/libs/tiny_ttf/lv_tiny_ttf.c
+
     # LVGL Source Files - Extra Themes
     ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/lvgl-8.3.11/src/extra/themes/default/lv_theme_default.c
     ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/lvgl-8.3.11/src/extra/themes/basic/lv_theme_basic.c
@@ -444,6 +464,17 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/lvgl-8.3.11/src/extra/others/monkey
     ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/lvgl-8.3.11/src/extra/others/msg
     ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/lvgl-8.3.11/src/extra/others/snapshot
+    ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/lvgl-8.3.11/src/extra/libs
+    ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/lvgl-8.3.11/src/extra/libs/bmp
+    ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/lvgl-8.3.11/src/extra/libs/png
+    ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/lvgl-8.3.11/src/extra/libs/gif
+    ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/lvgl-8.3.11/src/extra/libs/qrcode
+    ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/lvgl-8.3.11/src/extra/libs/sjpg
+    ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/lvgl-8.3.11/src/extra/libs/fsdrv
+    ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/lvgl-8.3.11/src/extra/libs/freetype
+    ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/lvgl-8.3.11/src/extra/libs/ffmpeg
+    ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/lvgl-8.3.11/src/extra/libs/rlottie
+    ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/lvgl-8.3.11/src/extra/libs/tiny_ttf
 )
 
 # Add project symbols (macros)

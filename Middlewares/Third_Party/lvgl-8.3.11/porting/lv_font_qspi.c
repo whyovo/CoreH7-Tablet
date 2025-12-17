@@ -21,9 +21,6 @@ static FontInfo_t g_font_info[5] = {
 static lv_font_t g_custom_fonts[5];
 static uint8_t g_font_init_done = 0;
 
-/* 添加静态缓冲区，最大支持 32x32 字体 (32*32/8 = 128 bytes) */
-static uint8_t g_glyph_buf[150];
-
 /* 声明 LVGL 内置字体 (确保在 lv_conf.h 中已启用这些字体) */
 LV_FONT_DECLARE(lv_font_montserrat_12)
 LV_FONT_DECLARE(lv_font_montserrat_16)

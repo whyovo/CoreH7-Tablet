@@ -10,7 +10,7 @@ make.exe all --print-data-base --no-builtin-variables --no-builtin-rules --quest
 make.exe: *** No rule to make target `all'.  Stop.
 
 
-# Make data base, printed on Wed Dec 10 22:42:52 2025
+# Make data base, printed on Wed Dec 17 16:56:53 2025
 
 # Variables
 
@@ -18,6 +18,8 @@ make.exe: *** No rule to make target `all'.  Stop.
 <D = $(patsubst %/,%,$(dir $<))
 # automatic
 ?F = $(notdir $?)
+# environment
+EFC_8400_2283032206 = 1
 # environment
 STM32_PRG_PATH = E:\office2\cubeprogrammer\bin
 # environment
@@ -43,7 +45,7 @@ SHELL := /bin/sh
 # environment
 WINDIR = C:\WINDOWS
 # environment
-EFC_11524_2283032206 = 1
+VSCODE_NLS_CONFIG = {"userLocale":"zh-cn","osLocale":"zh-cn","resolvedLanguage":"zh-cn","defaultMessagesFile":"C:\\Users\\lenovo\\AppData\\Local\\Programs\\Microsoft VS Code\\resources\\app\\out\\nls.messages.json","languagePack":{"translationsConfigFile":"C:\\Users\\lenovo\\AppData\\Roaming\\Code\\clp\\dec5c02ea40631d4c3a33602ff1ba952.zh-cn\\tcf.json","messagesFile":"C:\\Users\\lenovo\\AppData\\Roaming\\Code\\clp\\dec5c02ea40631d4c3a33602ff1ba952.zh-cn\\618725e67565b290ba4da6fe2d29f8fa1d4e3622\\nls.messages.json","corruptMarkerFile":"C:\\Users\\lenovo\\AppData\\Roaming\\Code\\clp\\dec5c02ea40631d4c3a33602ff1ba952.zh-cn\\corrupted.info"},"locale":"zh-cn","availableLanguages":{"*":"zh-cn"},"_languagePackId":"dec5c02ea40631d4c3a33602ff1ba952.zh-cn","_languagePackSupport":true,"_translationsConfigFile":"C:\\Users\\lenovo\\AppData\\Roaming\\Code\\clp\\dec5c02ea40631d4c3a33602ff1ba952.zh-cn\\tcf.json","_cacheRoot":"C:\\Users\\lenovo\\AppData\\Roaming\\Code\\clp\\dec5c02ea40631d4c3a33602ff1ba952.zh-cn","_resolvedLanguagePackCoreLocation":"C:\\Users\\lenovo\\AppData\\Roaming\\Code\\clp\\dec5c02ea40631d4c3a33602ff1ba952.zh-cn\\618725e67565b290ba4da6fe2d29f8fa1d4e3622","_corruptedFile":"C:\\Users\\lenovo\\AppData\\Roaming\\Code\\clp\\dec5c02ea40631d4c3a33602ff1ba952.zh-cn\\corrupted.info"}
 # environment
 !E: = e:\CODE_b\stm32ai\4k_music_game
 # environment
@@ -53,32 +55,27 @@ HDC_SERVER_PORT = 65037
 # environment
 MOSQUITTO_DIR = E:\office2\mosquitto
 # environment
-VSCODE_PID = 22492
- 
+VSCODE_PID = 29992
 # environment
 PATHEXT = .COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC
-# makefile
-MAKEFILE_LIST := 
+# environment
+EFC_8400_3789132940 = 1
 # environment
 FPS_BROWSER_USER_PROFILE_STRING = Default
 # environment
-VSCODE_NLS_CONFIG = {"userLocale":"zh-cn","osLocale":"zh-cn","resolvedLanguage":"zh-cn","defaultMessagesFile":"C:\\Users\\lenovo\\AppData\\Local\\Programs\\Microsoft VS Code\\resources\\app\\out\\nls.messages.json","languagePack":{"translationsConfigFile":"C:\\Users\\lenovo\\AppData\\Roaming\\Code\\clp\\e48cb33a7b5796d4ba1f43c8a8193679.zh-cn\\tcf.json","messagesFile":"C:\\Users\\lenovo\\AppData\\Roaming\\Code\\clp\\e48cb33a7b5796d4ba1f43c8a8193679.zh-cn\\bf9252a2fb45be6893dd8870c0bf37e2e1766d61\\nls.messages.json","corruptMarkerFile":"C:\\Users\\lenovo\\AppData\\Roaming\\Code\\clp\\e48cb33a7b5796d4ba1f43c8a8193679.zh-cn\\corrupted.info"},"locale":"zh-cn","availableLanguages":{"*":"zh-cn"},"_languagePackId":"e48cb33a7b5796d4ba1f43c8a8193679.zh-cn","_languagePackSupport":true,"_translationsConfigFile":"C:\\Users\\lenovo\\AppData\\Roaming\\Code\\clp\\e48cb33a7b5796d4ba1f43c8a8193679.zh-cn\\tcf.json","_cacheRoot":"C:\\Users\\lenovo\\AppData\\Roaming\\Code\\clp\\e48cb33a7b5796d4ba1f43c8a8193679.zh-cn","_resolvedLanguagePackCoreLocation":"C:\\Users\\lenovo\\AppData\\Roaming\\Code\\clp\\e48cb33a7b5796d4ba1f43c8a8193679.zh-cn\\bf9252a2fb45be6893dd8870c0bf37e2e1766d61","_corruptedFile":"C:\\Users\\lenovo\\AppData\\Roaming\\Code\\clp\\e48cb33a7b5796d4ba1f43c8a8193679.zh-cn\\corrupted.info"}
-# environment
 TMP = /tmp
+# environment
+EFC_8400_1592913036 = 1
 # environment
 PROGRAMW6432 = C:\Program Files
 # environment
 PROGRAMDATA = C:\ProgramData
-# environment
-EFC_11524_3789132940 = 1
 # environment
 VSCODE_CWD = C:\WINDOWS\system32
 # environment
 GCC_TOOLCHAIN_ROOT = E:\office2\stm32cubecli\software\GNU-tools-for-STM32\bin
 # environment
 PATH = /c/Users/lenovo/.vscode/extensions/cl.eide-3.26.1/res/tools/win32/unify_builder:/c/Users/lenovo/.eide/bin/builder/utils:/c/Users/lenovo/.eide/bin/scripts:/c/Users/lenovo/.vscode/extensions/cl.eide-3.26.1/res/tools/win32/7z:/c/Users/lenovo/.vscode/extensions/cl.eide-3.26.1/res/tools/win32/utils:/e/office2/armDeveloper/14.2 rel1/bin:/c/Users/lenovo/.eide/tools/openocd_7a1adfbec_mingw32/bin:/c/Users/lenovo/.eide/tools/openocd_7a1adfbec_mingw32/bin:/c/Users/lenovo/.eide/tools/st_cube_programer/bin:/usr/bin:/c/Program Files (x86)/STMicroelectronics/stlink_server:/e/office2/stm32cubecli/software:/e/office2/stm32cubecli/software/CMake/bin:/e/office2/stm32cubecli/software/st-arm-clang/bin:/e/office2/stm32cubecli/software/Ninja/bin:/e/office2/stm32cubecli/software/GNU-tools-for-STM32/bin:/e/office2/stm32cubecli/software/STLink-gdb-server/bin:/e/office2/stm32cubecli/software/STM32CubeProgrammer/bin:/e/office2/wmware/bin/:/e/office2/ImageMagick-7.1.1-Q16-HDRI:/c/Program Files (x86)/Common Files/Oracle/Java/javapath:/c/WINDOWS/system32:/c/WINDOWS:/c/WINDOWS/System32/Wbem:/c/WINDOWS/System32/WindowsPowerShell/v1.0/:/c/WINDOWS/System32/OpenSSH/:/c/Program Files (x86)/NVIDIA Corporation/PhysX/Common:/e/anaconda/install/envs:/e/anaconda/install:/e/anaconda/install/condabin:/e/office2/Git/bin:/e/anaconda/install/Scripts:/c/Program Files/Docker/Docker/resources/bin:/c/Program Files/dotnet/:/d/CODE/Microsoft VS Code:/e/office2/jds/winutils/bin:/e/office2/nodejs/:/c/ProgramData/chocolatey/bin:/e/office2/ffmpeg/ffmpeg-2025-03-31-git-35c091f4b7-full_build/bin:/e/office2/miktex1/miktex/bin/x64/:/e/office2/prince/engine/bin:/e/office2/Espressif:/e/office2/postgresql/PostgreSQL/bin:/e/office2/mosquitto:/e/cuda/cuda development/bin:/c/Program Files/MySQL/MySQL Server 9.3/bin:/c/Program Files/NVIDIA Corporation/NVIDIA App/NvDLISR:/e/CODE_b/cc3200-sdk/openocd/xpack-openocd-0.12.0-7/bin:/c/Users/lenovo/.eide/tools/gcc_arm/bin:/e/CODE_b/cc3200-sdk/uniflash_3.4.1.00012_win32/Uniflash_3.4.1.00012_win32:/e/office2/stm32cubecli/software/st-arm-clang/bin:/e/office2/stm32cubecli/software/ATfE-21.1.1-Windows-x86_64/bin:/e/office2/gcc/mingw64/bin:/e/office2/dfu-utils/dfu-util-0.11-binaries/win64:/c/Users/lenovo/.local/bin:/c/Users/lenovo/AppData/Local/Microsoft/WindowsApps:/c/Users/lenovo/AppData/Roaming/npm:/c/Users/lenovo/AppData/Local/Programs/Microsoft VS Code/bin:/c/Users/lenovo/AppData/Local/Pandoc/:/c/Program Files/Bandizip/:/e/office2/devecostuidio/DevEco Studio/bin:.:/c/tools/msys64
-# environment
-EFC_11524_1592913036 = 1
 # environment
 COMMONPROGRAMW6432 = C:\Program Files\Common Files
 # environment
@@ -93,6 +90,8 @@ PROCESSOR_ARCHITECTURE = x86
 USERPROFILE = C:\Users\lenovo
 # environment
 CHOCOLATEYINSTALL = C:\ProgramData\chocolatey
+# makefile
+MAKEFILE_LIST := 
 # environment
 ALLUSERSPROFILE = C:\ProgramData
 # environment
@@ -110,19 +109,19 @@ ELECTRON_RUN_AS_NODE = 1
 # environment
 DOTNET_ROLL_FORWARD = Major
 # environment
-CHROME_CRASHPAD_PIPE_NAME = \\.\pipe\crashpad_22492_JCNOOZYUOTMSSGGV
+CHROME_CRASHPAD_PIPE_NAME = \\.\pipe\crashpad_29992_MDSCAFJTVTMOPTCH
 # environment
 IGCCSVC_DB = AQAAANCMnd8BFdERjHoAwE/Cl+sBAAAAZ3uwyUs90EyKZ3PyQ9F9RQQAAAACAAAAAAAQZgAAAAEAACAAAABs20pEtx/13vN3AEMnqRvyd8VwkWB/eoPy/fvGgvMcBAAAAAAOgAAAAAIAACAAAAB7a9uYXkmrBajXk/dy3c/n1gdE4uJoXZ0Ki/uOMN/uOGAAAAAtISq+tMzDIdPS20ruai1hmv1B3ryN+mnFcFWlNO4yVSajyfDBiVe9+ZhkW0wDI3Ttqxemm6yHqVquhV0YQ29zyheUNfxzhjADcpIZ8DQ7bAlM7ko5xBSoF8b7cbjYASJAAAAAm1mE0p9yciIxEp8XpfFcoW8bSzStMj45BRYFtLAB64tjtVLd0XFlIEZF/FKLGSo3PPNTjhkwFl9kkjvAv7Cz2g==
 # environment
 COMPUTERNAME = DESKTOP-8U2OHEH
 # environment
-COMMONPROPERTYBAGPATH = C:\Users\lenovo\AppData\Local\Temp\csdevkit\3369f1fa.json
+COMMONPROPERTYBAGPATH = C:\Users\lenovo\AppData\Local\Temp\csdevkit\634cd84f.json
 # environment
 PROGRAMFILES = C:\Program Files (x86)
 # environment
 DRIVERDATA = C:\Windows\System32\Drivers\DriverData
 # environment
-ORIGINAL_XDG_CURRENT_DESKTOP = undefined
+EFC_8400_2775293581 = 1
 # environment
 HADOOP_HOME = E:\office2\jds\winutils
 # environment
@@ -134,17 +133,15 @@ HOME = /c/Users/lenovo
 # environment
 CHOCOLATEYTOOLSLOCATION = C:\tools
 # environment
-VSCODE_CODE_CACHE_PATH = C:\Users\lenovo\AppData\Roaming\Code\CachedData\bf9252a2fb45be6893dd8870c0bf37e2e1766d61
+VSCODE_CODE_CACHE_PATH = C:\Users\lenovo\AppData\Roaming\Code\CachedData\618725e67565b290ba4da6fe2d29f8fa1d4e3622
 # environment
 APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL = true
 # environment
-COMMONPROPERTYBAGWITHCONFIGPATH = C:\Users\lenovo\AppData\Local\Temp\csdevkit\322182bd4d151765377738550.json
+COMMONPROPERTYBAGWITHCONFIGPATH = C:\Users\lenovo\AppData\Local\Temp\csdevkit\b6119db396651765961787288.json
 # environment
 COMMONPROGRAMFILES = C:\Program Files (x86)\Common Files
 # environment
 LOGONSERVER = \\DESKTOP-8U2OHEH
-# environment
-EFC_11524_2775293581 = 1
 # environment
 VSCODE_HANDLES_UNCAUGHT_ERRORS = true
 # environment
@@ -153,8 +150,6 @@ USERDOMAIN = DESKTOP-8U2OHEH
 HF_ENDPOINT = https://hf-mirror.com
 # environment
 EIDE_TOOL_OPENOCD = C:\Users\lenovo\.eide\tools\openocd_7a1adfbec_mingw32\bin
-# environment
-EFC_11524_1262719628 = 1
 # default
 MAKE = $(MAKE_COMMAND)
 # environment
@@ -196,7 +191,7 @@ PROCESSOR_IDENTIFIER = Intel64 Family 6 Model 154 Stepping 3, GenuineIntel
 # environment
 OS = Windows_NT
 # environment
-VSCODE_IPC_HOOK = \\.\pipe\f91f9d04-1.106.3-main-sock
+VSCODE_IPC_HOOK = \\.\pipe\f91f9d04-1.107.0-main-sock
 # environment
 DOTNET_NOLOGO = true
 # environment
@@ -208,7 +203,6 @@ PROMPT = $P$G
 # environment
 MFLAGS = -Rrqp
 # automatic
- 
 *D = $(patsubst %/,%,$(dir $*))
 # environment
 SYSTEMROOT = C:\WINDOWS
@@ -217,7 +211,7 @@ SYSTEMROOT = C:\WINDOWS
 # environment
 EIDE_TOOL_GCC_ARM = E:\office2\armDeveloper\14.2 rel1\bin
 # environment
-VSCODE_L10N_BUNDLE_LOCATION = file:///c%3A/Users/lenovo/.vscode/extensions/ms-ceintl.vscode-language-pack-zh-hans-1.106.2025111209/translations/extensions/vscode.json-language-features.i18n.json
+VSCODE_L10N_BUNDLE_LOCATION = file:///c%3A/Users/lenovo/.vscode/extensions/ms-ceintl.vscode-language-pack-zh-hans-1.107.2025121009/translations/extensions/vscode.json-language-features.i18n.json
 # automatic
 +F = $(notdir $+)
 # environment
@@ -234,6 +228,8 @@ IDF_TOOLS_PATH = E:\office2\Espressif
 CLANG_GCC_CMSIS_COMPILER = E:\office2\stm32cubecli\software\st-arm-clang
 # automatic
 <F = $(notdir $<)
+# environment
+EFC_8400_1262719628 = 1
 # environment
 LC_ALL = C
 # automatic
@@ -269,7 +265,7 @@ DOTNET_CLI_TELEMETRY_OPTOUT = 1
 # environment
 USERDOMAIN_ROAMINGPROFILE = DESKTOP-8U2OHEH
 # variable set hash-table stats:
-# Load=126/1024=12%, Rehash=0, Collisions=15/148=10%
+# Load=125/1024=12%, Rehash=0, Collisions=16/147=11%
 
 # Pattern-specific Variable Values
 
@@ -351,8 +347,7 @@ GNUmakefile:
 # # of strcache buffers: 0
 # strcache size: total = 0 / max = 0 / min = 4096 / avg = 0
 # strcache free: total = 0 / max = 0 / min = 4096 / avg = 0
- 
 
-# Finished Make data base on Wed Dec 10 22:42:52 2025
+# Finished Make data base on Wed Dec 17 16:56:53 2025
 
  

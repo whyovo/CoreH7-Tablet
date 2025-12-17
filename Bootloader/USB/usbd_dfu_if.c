@@ -409,7 +409,7 @@ uint16_t MEM_If_Erase_FS(uint32_t Add)
   return DFU_InternalFlash_Erase(Add);
 
 #elif (MY_DFU_MEDIA_MODE == MODE_EXTERNAL_FLASH)
-  /* 关键修复：Add 是 DFU 协议传来的地址 (如 0x90000000)，需要转换为 QSPI 内部偏移地址 */
+  /* Add 是 DFU 协议传来的地址 (如 0x90000000)，需要转换为 QSPI 内部偏移地址 */
   /* 使用掩码去除高位：0x90000000 -> 0x00000000 */
   uint32_t qspi_addr = Add & 0x0FFFFFFF;
   return DFU_ExternalFlash_Erase(qspi_addr);

@@ -2,12 +2,16 @@
     "configurations": [
         {
             "name": "STM32",
-            "compileCommands": [
-                "${workspaceFolder}/build/Debug/compile_commands.json"
-            ],
-            "intelliSenseMode": "windows-msvc-x64",
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json",
+            "intelliSenseMode": "clang-arm",
+            "compilerPath": "starm-clang",
             "cStandard": "c17",
-            "cppStandard": "gnu++17"
+            "cppStandard": "gnu++17",
+            "defines": [
+                "STM32H750xx",
+                "USE_HAL_DRIVER",
+                "DEBUG"
+            ]
         }
     ],
     "version": 4

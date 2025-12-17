@@ -66,7 +66,7 @@ SemaphoreHandle_t lvglMutex;
 osThreadId_t defaultTaskHandle;
 const osThreadAttr_t defaultTask_attributes = {
   .name = "defaultTask",
-  .stack_size = 128 * 4,
+  .stack_size = 256 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
 
@@ -81,10 +81,31 @@ void StartDefaultTask(void *argument);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
 /* Hook prototypes */
+void configureTimerForRunTimeStats(void);
+unsigned long getRunTimeCounterValue(void);
 void vApplicationTickHook(void);
+void vApplicationStackOverflowHook(xTaskHandle xTask, signed char *pcTaskName);
+
+/* USER CODE BEGIN 1 */
+
+/* Functions needed when configGENERATE_RUN_TIME_STATS is on */
+__weak void configureTimerForRunTimeStats(void)
+{
+  /* 使用 SysTick 作为运行时统计的时基
+     SysTick 已经配置好了，直接利用它即可 */
+}
+
+__weak unsigned long getRunTimeCounterValue(void)
+{
+  /* 返回当前的系统 Tick 计数
+     这样每个 Tick (1ms) 增加一次 */
+  return xTaskGetTickCount();
+}
+/* USER CODE END 1 */
 
 /* USER CODE BEGIN 3 */
-void vApplicationTickHook(void) {
+void vApplicationTickHook(void)
+{
   /* This function will be called by each tick interrupt if
   configUSE_TICK_HOOK is set to 1 in FreeRTOSConfig.h. User code can be
   added here, but the tick hook is called from an interrupt context, so
@@ -93,6 +114,15 @@ void vApplicationTickHook(void) {
   lv_tick_inc(1);
 }
 /* USER CODE END 3 */
+
+/* USER CODE BEGIN 4 */
+void vApplicationStackOverflowHook(xTaskHandle xTask, signed char *pcTaskName)
+{
+  /* Run time stack overflow checking is performed if
+  configCHECK_FOR_STACK_OVERFLOW is defined to 1 or 2. This hook function is
+  called if a stack overflow is detected. */
+}
+/* USER CODE END 4 */
 
 /**
   * @brief  FreeRTOS initialization
@@ -129,8 +159,7 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
   /* creation of touchTask */
-  xTaskCreate(StartTouchTask, "touchTask", 1024, NULL, tskIDLE_PRIORITY + 2,
-              &touchTaskHandle);
+  xTaskCreate(StartTouchTask, "touchTask", 4096, NULL, tskIDLE_PRIORITY + 2,&touchTaskHandle);
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
@@ -150,12 +179,31 @@ void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN StartDefaultTask */
   /* Infinite loop */
-  for (;;) {
-    #ifdef LED_ENABLE
-        LED_Toggle_All();
-    #endif
+  for (;;)
+  {
+#ifdef LED_ENABLE
+    LED_Toggle_All();
+#endif
 
-    osDelay(1000);
+    /* 打印任务统计信息 */
+//     {
+//       static char pcWriteBuffer[1024];
+//       DEBUG_INFO("===== FreeRTOS Task Statistics =====");
+//       vTaskList(pcWriteBuffer);
+//       DEBUG_INFO("%s", pcWriteBuffer);
+
+// #if (configGENERATE_RUN_TIME_STATS == 1)
+//       DEBUG_INFO("===== Runtime Statistics =====");
+//       vTaskGetRunTimeStats(pcWriteBuffer);
+//       DEBUG_INFO("%s", pcWriteBuffer);
+// #endif
+
+//       DEBUG_INFO("===== Heap Info =====");
+//       DEBUG_INFO("Free Heap: %u bytes", xPortGetFreeHeapSize());
+//       DEBUG_INFO("Min Free Heap: %u bytes", xPortGetMinimumEverFreeHeapSize());
+//     }
+
+    osDelay(3000);
   }
   /* USER CODE END StartDefaultTask */
 }
@@ -164,8 +212,23 @@ void StartDefaultTask(void *argument)
 /* USER CODE BEGIN Application */
 void __attribute__((section(".dtcm_text"))) StartTouchTask(void *argument);
 TaskHandle_t touchTaskHandle;
-
-void StartTouchTask(void *argument) {
+// static void my_event_handler(lv_event_t *e)
+// {
+//   lv_obj_t *obj = lv_event_get_target(e);
+//   lv_obj_t *label = (lv_obj_t *)lv_event_get_user_data(e);
+//   lv_label_set_text(label, "Clicked!");
+//   lv_obj_set_style_opa(obj, LV_OPA_50, LV_PART_MAIN);
+// }
+/* 日志回调函数 */
+static void lvgl_log_print_cb(const char *buf)
+{
+  if (buf != NULL)
+  {
+    DEBUG_INFO("[LVGL] %s", buf);
+  }
+}
+void StartTouchTask(void *argument)
+{
 
   /* LVGL初始化 */
   lv_init();
@@ -181,6 +244,9 @@ void StartTouchTask(void *argument) {
   lv_port_jpeg_init(); // 添加初始化
   // 初始化QSPI字库
   lv_font_qspi_init();
+  /* 注册 LVGL 日志回调到 DEBUG_INFO */
+  lv_log_register_print_cb(lvgl_log_print_cb);
+
   // DEBUG_INFO("4");
   /* ===== UI 创建阶段 - 禁用显示更新 ===== */
   disp_disable_update(); /* 禁用显示刷新 */
@@ -189,8 +255,6 @@ void StartTouchTask(void *argument) {
   // lv_demo_widgets();
   // lv_demo_benchmark();
   // DEBUG_INFO("6");
- 
- 
 
   /* ===== 创建中文输入界面 - 屏幕高度 480px ===== */
   lv_obj_t *scr = lv_scr_act();
@@ -264,32 +328,37 @@ void StartTouchTask(void *argument) {
   /* ===== 显示图片 1.jpg（靠左） ===== */
   /* 左边实例 */
   lv_obj_t *img_left = lv_img_create(scr);
-  lv_img_set_src(img_left, "S:1.jpg");
-  lv_obj_set_style_img_opa(img_left, LV_OPA_50, 0); /* 50 % 透明 */
+  lv_img_set_src(img_left, "S:/1.jpg");
   lv_obj_align(img_left, LV_ALIGN_LEFT_MID, 0, 0);
 
-  /* 右边实例 */
+  // /* 右边实例 */
   lv_obj_t *img_right = lv_img_create(scr);
-  lv_img_set_src(img_right, "S:1.jpg"); 
+  lv_img_set_src(img_right, "S:/2.jpg");
   lv_obj_align(img_right, LV_ALIGN_RIGHT_MID, 0, 0);
 
-  /* ===== 启用显示更新 ===== */
-  disp_enable_update();
-  DEBUG_INFO("lvgl ready");
-  /* 主循环 */
-  for (;;) {
-    /* 获取互斥量 - 等待无限期 */
-    if (xSemaphoreTake(lvglMutex, portMAX_DELAY) == pdTRUE) {
-      /* 处理 LVGL 任务 */
-      lv_task_handler();
-      Touch_Scan();
-      /* 释放互斥量 */
-      xSemaphoreGive(lvglMutex);
-    }
 
-    vTaskDelay(pdMS_TO_TICKS(16));
-    }
-  }
+
+   /* ===== 启用显示更新 ===== */
+   disp_enable_update();
+   
+   DEBUG_INFO("lvgl ready");
+   /* 主循环 */
+   for (;;)
+   {
+     /* 获取互斥量 - 等待无限期 */
+     if (xSemaphoreTake(lvglMutex, portMAX_DELAY) == pdTRUE)
+     {
+       /* 处理 LVGL 任务 */
+       lv_task_handler();
+       Touch_Scan();
+       /* 释放互斥量 */
+       xSemaphoreGive(lvglMutex);
+     }
+
+     vTaskDelay(pdMS_TO_TICKS(16));
+   }
+}
+
 
 // void vApplicationTickHook(void) {  }
 /* USER CODE END Application */

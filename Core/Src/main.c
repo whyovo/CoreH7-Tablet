@@ -28,6 +28,7 @@
 #include "memorymap.h"
 #include "sdmmc.h"
 #include "spi.h"
+#include "usart.h"
 #include "usb_otg.h"
 #include "gpio.h"
 #include "fmc.h"
@@ -122,6 +123,7 @@ int main(void)
   MX_LTDC_Init();
   MX_I2S2_Init();
   MX_USB_OTG_HS_HCD_Init();
+  MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
   init_all();
   /* USER CODE END 2 */

@@ -423,8 +423,6 @@ void Debug_Error(const char *file, const char *func, uint32_t line, const char *
   char error_buf[512];
   int len;
 
-  printf("\r\n[%lums] ERROR\r\n", HAL_GetTick()); // 注意：这里printf可能未重定向，建议用HAL_UART_Transmit
-
   // 构建完整错误信息
   const char *filename = file;
   if (file != NULL)

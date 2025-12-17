@@ -11,32 +11,64 @@
 /* 引用外部 DMA2D 句柄 */
 extern DMA2D_HandleTypeDef hdma2d;
 
-/* === 缓存变量 === */
-/* 数据缓存：记录上一次成功解码并驻留在显存中的图片路径 */
-static char s_data_cache_src[256] = {0};
-
-/* 信息缓存：记录上一次成功读取头信息的图片路径和宽高 */
-/* 这能极大减少 decoder_info 对 SD 卡的访问频率 */
-static char s_info_cache_src[256] = {0};
-static uint32_t s_info_cache_w = 0;
-static uint32_t s_info_cache_h = 0;
-
 /* 简单的 JPEG 头解析 */
 static bool get_jpeg_size(const char *filename, uint32_t *width, uint32_t *height)
 {
-    /* 使用静态 buffer 避免频繁 malloc/free 造成的碎片和开销 */
-    /* 注意：这意味着此函数不可重入，但在 LVGL 任务中通常是安全的 */
-    static FIL file;
-    static uint8_t buf[1024];
+    /* 使用 static 并强制 32 字节对齐，确保 FIL 内部缓冲区满足 DMA 和 Cache 要求 */
+    /* 放在静态区（SRAM/SDRAM）比放在堆栈（可能在 DTCM）更安全 */
+    /* 强制放入 .ram_d2_data 段，防止被分配到 DTCM (IDMA无法访问) */
+    static FIL file __attribute__((aligned(32), section(".ram_d2_data")));
+    /* 保持 static 以确保 32 字节对齐 */
+    static uint8_t buf[1024] __attribute__((aligned(32), section(".ram_d2_data")));
 
-    if (f_open(&file, filename, FA_READ) != FR_OK)
+    FRESULT fr;
+    /* 增加简单的重试机制，应对 SD 卡偶尔忙碌的情况 */
+    for (int i = 0; i < 5; i++)
     {
+        fr = f_open(&file, filename, FA_READ);
+        if (fr == FR_OK)
+            break;
+        HAL_Delay(10);
+    }
+
+    if (fr != FR_OK)
+    {
+        char dbg[64];
+        snprintf(dbg, sizeof(dbg), "[JPEG] Info: Open failed %s (Res:%d)", filename, fr);
+        DEBUG_INFO(dbg);
         return false;
     }
 
+    /* 增加一个微小的延时，让 SD 卡状态机稳定 */
+    HAL_Delay(1);
+
     UINT br;
-    f_read(&file, buf, 1024, &br);
+    /* 修改：增加 f_read 的重试机制 */
+    for (int i = 0; i < 6; i++)
+    {
+        fr = f_read(&file, buf, 1024, &br);
+        if (fr == FR_OK)
+            break;
+
+        DEBUG_INFO("[JPEG] Info: Read retry %d (Res:%d)", i + 1, fr);
+        /* 如果读取失败，尝试复位文件指针或稍作等待 */
+        f_lseek(&file, 0);
+        HAL_Delay(5);
+    }
+
+    if (fr != FR_OK)
+    {
+        DEBUG_INFO("[JPEG] Info: Read failed");
+        f_close(&file);
+        return false;
+    }
     f_close(&file);
+
+    /* 使用 CleanInvalidate */
+    /* 如果 f_read 用 CPU 拷贝，Clean 会把数据写回 RAM；*/
+    /* 如果 f_read 用 DMA，Invalidate 会让 CPU 重新从 RAM 读取；*/
+    /* 这样无论 FatFs 内部如何实现，都能保证数据一致性。*/
+    SCB_CleanInvalidateDCache_by_Addr((uint32_t *)buf, 1024);
 
     bool ret = false;
     uint32_t i = 0;
@@ -59,6 +91,11 @@ static bool get_jpeg_size(const char *filename, uint32_t *width, uint32_t *heigh
             }
             i += 2 + len;
         }
+    }
+
+    if (!ret)
+    {
+        DEBUG_INFO("[JPEG] Info: Parse failed (Not a JPEG or Header error)");
     }
     return ret;
 }
@@ -123,19 +160,11 @@ static void DMA2D_Convert_To_Buffer(uint32_t *pSrc, uint32_t *pDst, uint32_t wid
 /* LVGL 解码器回调：获取图片信息 */
 static lv_res_t decoder_info(lv_img_decoder_t *decoder, const void *src, lv_img_header_t *header)
 {
+    (void)decoder; /* 消除未使用参数警告 */
     if (lv_img_src_get_type(src) != LV_IMG_SRC_FILE)
         return LV_RES_INV;
 
-    /* === 1. 信息缓存检查 (关键修复) === */
-    /* 如果请求的文件与上次相同，直接返回缓存的宽高，不访问 SD 卡 */
-    if (strncmp((const char *)src, s_info_cache_src, sizeof(s_info_cache_src)) == 0)
-    {
-        header->w = s_info_cache_w;
-        header->h = s_info_cache_h;
-        header->cf = LV_IMG_CF_TRUE_COLOR;
-        header->always_zero = 0;
-        return LV_RES_OK;
-    }
+    /* === 信息缓存检查已移除 === */
 
     const char *fn = src;
     /* 简单检查扩展名 */
@@ -158,10 +187,7 @@ static lv_res_t decoder_info(lv_img_decoder_t *decoder, const void *src, lv_img_
     uint32_t w, h;
     if (get_jpeg_size(path, &w, &h))
     {
-        /* 更新信息缓存 */
-        strncpy(s_info_cache_src, (const char *)src, sizeof(s_info_cache_src) - 1);
-        s_info_cache_w = w;
-        s_info_cache_h = h;
+        /* 更新信息缓存已移除 */
 
         header->always_zero = 0;
         header->cf = LV_IMG_CF_TRUE_COLOR;
@@ -169,24 +195,25 @@ static lv_res_t decoder_info(lv_img_decoder_t *decoder, const void *src, lv_img_
         header->h = h;
         return LV_RES_OK;
     }
+
+    /* 添加错误日志以便调试 */
+    char dbg[128];
+    snprintf(dbg, sizeof(dbg), "[JPEG] Info failed: %s", path);
+    DEBUG_INFO(dbg);
+
     return LV_RES_INV;
 }
 
 /* LVGL 解码器回调：打开图片 */
 static lv_res_t decoder_open(lv_img_decoder_t *decoder, lv_img_decoder_dsc_t *dsc)
 {
+    (void)decoder; /* 消除未使用参数警告 */
     char dbg[128];
 
     if (dsc->src_type != LV_IMG_SRC_FILE)
         return LV_RES_INV;
 
-    /* === 1. 数据缓存检查 === */
-    /* 如果请求的文件已经解码在显存中，直接返回地址 */
-    if (strncmp((const char *)dsc->src, s_data_cache_src, sizeof(s_data_cache_src)) == 0)
-    {
-        dsc->img_data = (void *)JPEG_ENCODE_OUTPUT_BUFFER;
-        return LV_RES_OK;
-    }
+    /* === 数据缓存检查已移除 === */
 
     snprintf(dbg, sizeof(dbg), "[JPEG] Open: %s", (const char *)dsc->src);
     DEBUG_INFO(dbg);
@@ -203,17 +230,32 @@ static lv_res_t decoder_open(lv_img_decoder_t *decoder, lv_img_decoder_dsc_t *ds
     }
 
     /* 2. 读取文件 */
-    /* 使用静态 FIL 避免 malloc */
-    static FIL file;
-    if (f_open(&file, path, FA_READ) != FR_OK)
+    /* 使用 static 并强制 32 字节对齐 */
+    /* 强制放入 .ram_d2_data 段 */
+    static FIL file __attribute__((aligned(32), section(".ram_d2_data")));
+
+    /* 增加重试机制 */
+    FRESULT fr;
+    for (int i = 0; i < 3; i++)
     {
+        fr = f_open(&file, path, FA_READ);
+        if (fr == FR_OK)
+            break;
+        HAL_Delay(5);
+    }
+
+    if (fr != FR_OK)
+    {
+        snprintf(dbg, sizeof(dbg), "[JPEG] Open failed: %d", fr);
+        DEBUG_INFO(dbg);
         return LV_RES_INV;
     }
 
     uint32_t size = f_size(&file);
     if (size > 0x200000)
     {
-        snprintf(dbg, sizeof(dbg), "[JPEG] Error: File too large (%lu)", size);
+        /* 强制转换为 unsigned long 以匹配 %lu 格式符，消除警告 */
+        snprintf(dbg, sizeof(dbg), "[JPEG] Error: File too large (%lu)", (unsigned long)size);
         DEBUG_INFO(dbg);
         f_close(&file);
         return LV_RES_INV;
@@ -233,8 +275,7 @@ static lv_res_t decoder_open(lv_img_decoder_t *decoder, lv_img_decoder_dsc_t *ds
     if (JPEG_Decode_WaitingforEnd() != JPEG_OpComplete)
     {
         DEBUG_INFO("[JPEG] Error: HW Decode Failed!");
-        /* 失败时清空缓存记录 */
-        memset(s_data_cache_src, 0, sizeof(s_data_cache_src));
+
         return LV_RES_INV;
     }
 
@@ -244,24 +285,42 @@ static lv_res_t decoder_open(lv_img_decoder_t *decoder, lv_img_decoder_dsc_t *ds
     HAL_JPEG_GetInfo(&hjpeg, &JPEG_Info);
 
     /* 4. 颜色转换 */
+
+    /* 计算所需内存大小 (RGB565 = 2 bytes per pixel) */
+    uint32_t img_data_size = JPEG_Info.ImageWidth * JPEG_Info.ImageHeight * 2;
+
+    /* 使用 lv_mem_alloc 分配内存 (确保 LVGL 堆足够大，通常在 SDRAM 中) */
+    uint8_t *img_data = lv_mem_alloc(img_data_size);
+    if (img_data == NULL)
+    {
+        DEBUG_INFO("[JPEG] Error: Memory allocation failed");
+        return LV_RES_INV;
+    }
+
+    /* 将解码后的数据通过 DMA2D 转换到新分配的内存中 */
     DMA2D_Convert_To_Buffer((uint32_t *)JPEG_OUTPUT_DATA_BUFFER,
-                            (uint32_t *)JPEG_ENCODE_OUTPUT_BUFFER,
+                            (uint32_t *)img_data,
                             JPEG_Info.ImageWidth,
                             JPEG_Info.ImageHeight,
                             JPEG_Info.ChromaSubsampling);
 
     DEBUG_INFO("[JPEG] Convert Done.");
 
-    /* === 5. 更新数据缓存记录 === */
-    strncpy(s_data_cache_src, (const char *)dsc->src, sizeof(s_data_cache_src) - 1);
+    /* === 更新数据缓存记录已移除 === */
 
-    dsc->img_data = (void *)JPEG_ENCODE_OUTPUT_BUFFER;
+    /* 将 dsc->img_data 指向新分配的独立内存 */
+    dsc->img_data = (void *)img_data;
     return LV_RES_OK;
 }
 
 static void decoder_close(lv_img_decoder_t *decoder, lv_img_decoder_dsc_t *dsc)
 {
-    /* 不做任何操作，因为我们使用的是静态缓冲区 */
+    /* 释放动态分配的内存 */
+    if (dsc->img_data)
+    {
+        lv_mem_free((void *)dsc->img_data);
+        dsc->img_data = NULL;
+    }
 }
 
 void lv_port_jpeg_init(void)
