@@ -186,33 +186,9 @@ static lv_disp_drv_t *disp_drv_flush_pending = NULL;
 //   HAL_LTDC_ProgramLineEvent(hltdc, 0);
 //   //	LED1_Toggle;
 // }
-void LV_ATTRIBUTE_FAST_MEM
-HAL_LTDC_LineEvenCallback(LTDC_HandleTypeDef *hltdc) {
-  /*
-     当进入此中断时（Line 0），意味着上一帧的扫描已经结束，
-     且如果在 disp_flush 中请求了 RELOAD，新的 CFBAR 地址此时已经生效。
-     现在显示器正在显示新的一帧，我们可以安全地告诉 LVGL 去画下一帧了。
-  */
-  // ===== 真实 FPS 计数开始 =====
-  uint32_t current_time = lv_tick_get();
-  real_fps_counter++;
 
-  if (current_time - fps_last_time >= 1000) { // 每 1000ms 更新一次
-    real_fps_display = real_fps_counter;
-    real_fps_counter = 0;
-    fps_last_time = current_time;
-  }
-  // ===== 真实 FPS 计数结束 =====
-  if (disp_drv_flush_pending != NULL) {
-    lv_disp_flush_ready(disp_drv_flush_pending);
-    disp_drv_flush_pending = NULL;
-  }
-
-  // 重新编程 Line Event 以便下一帧触发中断
-  HAL_LTDC_ProgramLineEvent(hltdc, 0);
-}
 // 提供获取实时 FPS 的接口函数
-uint32_t lv_port_get_real_fps(void) { return real_fps_display; }
+
 /*Flush the content of the internal buffer the specific area on the display
  *You can use DMA or any hardware acceleration to do this operation in the background but
  *'lv_disp_flush_ready()' has to be called when finished.*/
@@ -230,6 +206,22 @@ uint32_t lv_port_get_real_fps(void) { return real_fps_display; }
 //      *Inform the graphics library that you are ready with the flushing*/
 //     lv_disp_flush_ready(disp_drv);
 // }
+void LV_ATTRIBUTE_FAST_MEM
+HAL_LTDC_LineEvenCallback(LTDC_HandleTypeDef *hltdc)
+{
+  /*
+     当进入此中断时（Line 0），意味着上一帧的扫描已经结束，
+     且如果在 disp_flush 中请求了 RELOAD，新的 CFBAR 地址此时已经生效。
+     现在显示器正在显示新的一帧，我们可以安全地告诉 LVGL 去画下一帧了。
+  */
+  if (disp_drv_flush_pending != NULL)
+  {
+    lv_disp_flush_ready(disp_drv_flush_pending);
+    disp_drv_flush_pending = NULL;
+  }
+  // 重新编程 Line Event 以便下一帧触发中断
+  HAL_LTDC_ProgramLineEvent(hltdc, 0);
+}
 static void disp_flush(lv_disp_drv_t *disp_drv, const lv_area_t *area,
                        lv_color_t *color_p) {
   if (disp_flush_enabled) {
@@ -254,20 +246,7 @@ static void disp_flush(lv_disp_drv_t *disp_drv, const lv_area_t *area,
   /* 它被移动到了 HAL_LTDC_LineEvenCallback 中 */
 }
 
-void my_clean_dcache_cb(lv_disp_drv_t *disp_drv)
-{
-  /* 1. 获取当前绘制缓冲区的地址 */
-  /* 注意：LVGL 双缓冲时，buf_act 指向当前正在绘制的那个 buffer */
-  uint32_t buffer_addr = (uint32_t)disp_drv->draw_buf->buf_act;
 
-  /* 2. 获取缓冲区大小 (字节) */
-  /* 注意：size 是像素数，要乘以每个像素的字节数 (RGB565 = 2 bytes) */
-  uint32_t buffer_size = disp_drv->draw_buf->size * 2;
-
-  /* 3. 精确清洗这一块内存 */
-  /* 只把这块显存的数据从 Cache 刷入 RAM，不影响其他变量 */
-  SCB_CleanDCache_by_Addr((uint32_t *)buffer_addr, buffer_size);
-}
 /*OPTIONAL: GPU INTERFACE*/
 
 /*If your MCU has hardware accelerator (GPU) then you can use it to fill a memory with a color*/

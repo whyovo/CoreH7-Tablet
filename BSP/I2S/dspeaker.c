@@ -167,10 +167,6 @@ void DSPEAKER_SetVolume(uint8_t volume)
     if (volume > 100)
         volume = 100;
     s_volume = volume;
-
-    char buf[64];
-    snprintf(buf, sizeof(buf), "音量设置为 %d%%", volume);
-    DEBUG_INFO(buf);
 }
 
 /**
@@ -333,22 +329,41 @@ static void fill_buffer(uint8_t isFirstHalf)
 {
     uint32_t offset = isFirstHalf ? 0 : (DSPEAKER_BUFFER_SIZE / 2);
     uint32_t size = DSPEAKER_BUFFER_SIZE / 2;
+    int16_t *pBuffer = &s_dma_buffer[offset]; // 获取当前操作的缓冲区指针
 
-    /* 如果注册了回调，调用回调函数获取数据 */
+    /* 1. 获取原始音频数据 */
     if (s_callback != NULL)
     {
-        s_callback(&s_dma_buffer[offset], size, isFirstHalf);
+        s_callback(pBuffer, size, isFirstHalf);
     }
     else
     {
         /* 无数据时填充0（静音） */
-        memset(&s_dma_buffer[offset], 0, size * sizeof(int16_t));
+        memset(pBuffer, 0, size * sizeof(int16_t));
+        // 如果是静音，不需要下面的音量计算，直接刷Cache并返回即可
+        goto FLUSH_CACHE;
     }
-    /* === 新增：STM32H7 D-Cache 一致性维护 === */
-    /* 将更新后的数据从 Cache 刷入物理内存，确保 DMA 能读到正确的数据 */
-    /* SCB_CleanDCache_by_Addr((uint32_t*)地址, 长度字节数) */
-    SCB_CleanDCache_by_Addr((uint32_t *)&s_dma_buffer[offset],
-                            size * sizeof(int16_t));
+
+    /* 2. === 应用软件音量 === */
+    /* 只有当音量不是 100% 时才计算，节省 CPU */
+    if (s_volume != 100)
+    {
+        for (uint32_t i = 0; i < size; i++)
+        {
+            /* 使用 int32_t 防止乘法溢出 */
+            int32_t temp = pBuffer[i];
+
+            /* 核心公式： 数据 = 原始数据 * 音量 / 100 */
+            temp = (temp * s_volume) / 100;
+
+            /* 重新赋值回缓冲区 */
+            pBuffer[i] = (int16_t)temp;
+        }
+    }
+
+FLUSH_CACHE:
+    /* 3. === STM32H7 D-Cache 一致性维护 === */
+    SCB_CleanDCache_by_Addr((uint32_t *)pBuffer, size * sizeof(int16_t));
 }
 
 /**

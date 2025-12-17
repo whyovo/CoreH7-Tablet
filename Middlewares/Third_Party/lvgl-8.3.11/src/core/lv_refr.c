@@ -378,26 +378,7 @@ void _lv_disp_refr_timer(lv_timer_t * tmr)
     }
 
 
-#if LV_PORT_HAS_REAL_FPS
-    if (lv_tick_elaps(perf_monitor.perf_last_time) < 1000) {
-      if (px_num > 5000) {
-        perf_monitor.elaps_sum += elaps;
-        perf_monitor.frame_cnt++;
-      }
-    } else {
-      perf_monitor.perf_last_time = lv_tick_get();
 
-      // ===== 使用真实 FPS 替换 LVGL 计算的 FPS =====
-      extern uint32_t lv_port_get_real_fps(void);
-      uint32_t real_fps = lv_port_get_real_fps();
-
-      uint32_t cpu = 100 - lv_timer_get_idle();
-      lv_label_set_text_fmt(perf_label,
-                            "%" LV_PRIu32 " FPS\n%" LV_PRIu32 "%% CPU",
-                            real_fps, cpu);
-      // ===== 使用真实 FPS 替换完成 =====
-    }
-#else
     if (lv_tick_elaps(perf_monitor.perf_last_time) < 1000) {
       if (px_num > 5000) {
         perf_monitor.elaps_sum += elaps;
@@ -437,7 +418,6 @@ void _lv_disp_refr_timer(lv_timer_t * tmr)
 
 #endif
 
-#endif
 
 #if LV_USE_MEM_MONITOR && LV_MEM_CUSTOM == 0 && LV_USE_LABEL
     lv_obj_t * mem_label = mem_monitor.mem_label;

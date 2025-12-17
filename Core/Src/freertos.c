@@ -65,9 +65,9 @@ SemaphoreHandle_t lvglMutex;
 /* Definitions for defaultTask */
 osThreadId_t defaultTaskHandle;
 const osThreadAttr_t defaultTask_attributes = {
-  .name = "defaultTask",
-  .stack_size = 256 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
+    .name = "defaultTask",
+    .stack_size = 256 * 4,
+    .priority = (osPriority_t)osPriorityNormal,
 };
 
 /* Private function prototypes -----------------------------------------------*/
@@ -125,11 +125,12 @@ void vApplicationStackOverflowHook(xTaskHandle xTask, signed char *pcTaskName)
 /* USER CODE END 4 */
 
 /**
-  * @brief  FreeRTOS initialization
-  * @param  None
-  * @retval None
-  */
-void MX_FREERTOS_Init(void) {
+ * @brief  FreeRTOS initialization
+ * @param  None
+ * @retval None
+ */
+void MX_FREERTOS_Init(void)
+{
   /* USER CODE BEGIN Init */
 
   /* USER CODE END Init */
@@ -159,13 +160,12 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
   /* creation of touchTask */
-  xTaskCreate(StartTouchTask, "touchTask", 4096, NULL, tskIDLE_PRIORITY + 2,&touchTaskHandle);
+  xTaskCreate(StartTouchTask, "touchTask", 4096, NULL, tskIDLE_PRIORITY + 2, &touchTaskHandle);
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
   /* add events, ... */
   /* USER CODE END RTOS_EVENTS */
-
 }
 
 /* USER CODE BEGIN Header_StartDefaultTask */
@@ -186,22 +186,22 @@ void StartDefaultTask(void *argument)
 #endif
 
     /* 打印任务统计信息 */
-//     {
-//       static char pcWriteBuffer[1024];
-//       DEBUG_INFO("===== FreeRTOS Task Statistics =====");
-//       vTaskList(pcWriteBuffer);
-//       DEBUG_INFO("%s", pcWriteBuffer);
+    //     {
+    //       static char pcWriteBuffer[1024];
+    //       DEBUG_INFO("===== FreeRTOS Task Statistics =====");
+    //       vTaskList(pcWriteBuffer);
+    //       DEBUG_INFO("%s", pcWriteBuffer);
 
-// #if (configGENERATE_RUN_TIME_STATS == 1)
-//       DEBUG_INFO("===== Runtime Statistics =====");
-//       vTaskGetRunTimeStats(pcWriteBuffer);
-//       DEBUG_INFO("%s", pcWriteBuffer);
-// #endif
+    // #if (configGENERATE_RUN_TIME_STATS == 1)
+    //       DEBUG_INFO("===== Runtime Statistics =====");
+    //       vTaskGetRunTimeStats(pcWriteBuffer);
+    //       DEBUG_INFO("%s", pcWriteBuffer);
+    // #endif
 
-//       DEBUG_INFO("===== Heap Info =====");
-//       DEBUG_INFO("Free Heap: %u bytes", xPortGetFreeHeapSize());
-//       DEBUG_INFO("Min Free Heap: %u bytes", xPortGetMinimumEverFreeHeapSize());
-//     }
+    //       DEBUG_INFO("===== Heap Info =====");
+    //       DEBUG_INFO("Free Heap: %u bytes", xPortGetFreeHeapSize());
+    //       DEBUG_INFO("Min Free Heap: %u bytes", xPortGetMinimumEverFreeHeapSize());
+    //     }
 
     osDelay(3000);
   }
@@ -227,6 +227,74 @@ static void lvgl_log_print_cb(const char *buf)
     DEBUG_INFO("[LVGL] %s", buf);
   }
 }
+
+/* 全局音乐播放器实例 */
+static AudioPlayer_t g_music_player = {0};
+static uint8_t g_is_playing = 0;
+static lv_obj_t *play_btn = NULL;
+static lv_obj_t *play_label = NULL;
+static lv_obj_t *status_label = NULL;
+
+/* 播放按钮点击回调 */
+static void play_btn_event_cb(lv_event_t *e)
+{
+  lv_event_code_t code = lv_event_get_code(e);
+
+  if (code == LV_EVENT_CLICKED)
+  {
+    if (!g_is_playing)
+    {
+      /* 打开 WAV 文件 */
+      if (AudioPlayer_OpenFile(&g_music_player, "0:1.wav") != HAL_OK)
+      {
+        DEBUG_ERROR("打开音乐文件失败");
+        lv_label_set_text(play_label, "开始");
+        lv_label_set_text(status_label, "状态: 已停止");
+        return;
+      }
+
+      /* 开始无限循环播放 */
+      if (AudioPlayer_PlayWithLoop(&g_music_player, 0) == HAL_OK)
+      {
+        g_is_playing = 1;
+        lv_label_set_text(play_label, "暂停");
+        lv_obj_set_style_bg_color(play_btn, lv_color_hex(0xFF6600), LV_PART_MAIN);
+        lv_label_set_text(status_label, "状态: 播放中");
+        DEBUG_INFO("开始播放音乐");
+      }
+    }
+    else
+    {
+      /* 暂停播放 */
+      AudioPlayer_Stop(&g_music_player);
+      g_is_playing = 0;
+      lv_label_set_text(play_label, "开始");
+      lv_obj_set_style_bg_color(play_btn, lv_color_hex(0x0099FF), LV_PART_MAIN);
+      lv_label_set_text(status_label, "状态: 已停止");
+      DEBUG_INFO("暂停播放");
+    }
+  }
+}
+
+/* 音量滑条事件回调 */
+static void volume_slider_event_cb(lv_event_t *e)
+{
+  lv_obj_t *slider = lv_event_get_target(e);
+  lv_obj_t *volume_title = (lv_obj_t *)lv_event_get_user_data(e);
+  int32_t value = lv_slider_get_value(slider);
+
+  /* value 范围 0-100，转换为扬声器音量设置 */
+  char buf[32];
+  snprintf(buf, sizeof(buf), "音量: %d%%", value);
+  lv_label_set_text(volume_title, buf);
+
+
+
+
+     DSPEAKER_SetVolume((uint8_t)value);
+  
+}
+
 void StartTouchTask(void *argument)
 {
 
@@ -327,39 +395,117 @@ void StartTouchTask(void *argument)
 
   /* ===== 显示图片 1.jpg（靠左） ===== */
   /* 左边实例 */
-  lv_obj_t *img_left = lv_img_create(scr);
-  lv_img_set_src(img_left, "S:/1.jpg");
-  lv_obj_align(img_left, LV_ALIGN_LEFT_MID, 0, 0);
+  // lv_obj_t *img_left = lv_img_create(scr);
+  // lv_img_set_src(img_left, "S:/1.jpg");
+  // lv_obj_align(img_left, LV_ALIGN_LEFT_MID, 0, 0);
 
-  // /* 右边实例 */
-  lv_obj_t *img_right = lv_img_create(scr);
-  lv_img_set_src(img_right, "S:/2.jpg");
-  lv_obj_align(img_right, LV_ALIGN_RIGHT_MID, 0, 0);
+  // // /* 右边实例 */
+  // lv_obj_t *img_right = lv_img_create(scr);
+  // lv_img_set_src(img_right, "S:/2.jpg");
+  // lv_obj_align(img_right, LV_ALIGN_RIGHT_MID, 0, 0);
 
+  /* 获取字体 */
+  lv_font_t *font_32 = lv_font_qspi_get_by_size(32);
+  // lv_font_t *font_16 = lv_font_qspi_get_by_size(16);
 
+  /* ===== 标题 ===== */
+  lv_obj_t *title = lv_label_create(scr);
+  lv_label_set_text(title, "音乐播放器");
+  lv_obj_set_style_text_font(title, font_32, LV_PART_MAIN);
+  lv_obj_set_style_text_color(title, lv_color_hex(0x0066CC), LV_PART_MAIN);
+  lv_obj_align(title, LV_ALIGN_TOP_MID, 0, 20);
 
-   /* ===== 启用显示更新 ===== */
-   disp_enable_update();
-   
-   DEBUG_INFO("lvgl ready");
-   /* 主循环 */
-   for (;;)
-   {
-     /* 获取互斥量 - 等待无限期 */
-     if (xSemaphoreTake(lvglMutex, portMAX_DELAY) == pdTRUE)
-     {
-       /* 处理 LVGL 任务 */
-       lv_task_handler();
-       Touch_Scan();
-       /* 释放互斥量 */
-       xSemaphoreGive(lvglMutex);
-     }
+  /* ===== 播放/暂停按钮 ===== */
+  play_btn = lv_btn_create(scr);
+  lv_obj_set_size(play_btn, 120, 60);
+  lv_obj_align(play_btn, LV_ALIGN_TOP_MID, 0, 80);
+  lv_obj_set_style_bg_color(play_btn, lv_color_hex(0x0099FF), LV_PART_MAIN);
+  lv_obj_set_style_bg_opa(play_btn, LV_OPA_100, LV_PART_MAIN);
+  lv_obj_set_style_border_width(play_btn, 2, LV_PART_MAIN);
+  lv_obj_set_style_border_color(play_btn, lv_color_hex(0x0066CC), LV_PART_MAIN);
+  lv_obj_set_style_radius(play_btn, 10, LV_PART_MAIN);
 
-     vTaskDelay(pdMS_TO_TICKS(16));
-   }
+  play_label = lv_label_create(play_btn);
+  lv_label_set_text(play_label, "开始");
+  lv_obj_set_style_text_font(play_label, font_32, LV_PART_MAIN);
+  lv_obj_set_style_text_color(play_label, lv_color_white(), LV_PART_MAIN);
+  lv_obj_center(play_label);
+
+  /* 注册按钮事件 */
+  lv_obj_add_event_cb(play_btn, play_btn_event_cb, LV_EVENT_CLICKED, NULL);
+
+  /* ===== 音量标签 ===== */
+  lv_obj_t *volume_title = lv_label_create(scr);
+  lv_label_set_text(volume_title, "音量: 100%");
+  lv_obj_set_style_text_font(volume_title, font_32, LV_PART_MAIN);
+  lv_obj_set_style_text_color(volume_title, lv_color_hex(0x333333), LV_PART_MAIN);
+  lv_obj_set_pos(volume_title, 50, 180);
+
+  /* ===== 音量滑条 ===== */
+  lv_obj_t *volume_slider = lv_slider_create(scr);
+  lv_slider_set_range(volume_slider, 0, 100);
+  lv_slider_set_value(volume_slider, 100, LV_ANIM_OFF);
+  lv_obj_set_size(volume_slider, 700, 20);
+  lv_obj_set_pos(volume_slider, 50, 220);
+  lv_obj_set_style_bg_color(volume_slider, lv_color_hex(0xE8E8E8), LV_PART_MAIN);
+  lv_obj_set_style_bg_color(volume_slider, lv_color_hex(0x0099FF), LV_PART_INDICATOR);
+  lv_obj_set_style_bg_color(volume_slider, lv_color_hex(0x0066CC), LV_PART_KNOB);
+  lv_obj_set_style_bg_opa(volume_slider, LV_OPA_100, LV_PART_KNOB);
+
+  /* 添加音量值更新事件 */
+  lv_obj_add_event_cb(volume_slider, volume_slider_event_cb, LV_EVENT_VALUE_CHANGED, volume_title);
+
+  /* ===== 播放状态标签 ===== */
+  status_label = lv_label_create(scr);
+  lv_label_set_text(status_label, "状态: 已停止");
+  lv_obj_set_style_text_font(status_label, font_32, LV_PART_MAIN);
+  lv_obj_set_style_text_color(status_label, lv_color_hex(0x333333), LV_PART_MAIN);
+  lv_obj_set_pos(status_label, 50, 290);
+
+  /* ===== 文件信息标签 ===== */
+  lv_obj_t *file_label = lv_label_create(scr);
+  lv_label_set_text(file_label, "文件: 1.wav");
+  lv_obj_set_style_text_font(file_label, font_32, LV_PART_MAIN);
+  lv_obj_set_style_text_color(file_label, lv_color_hex(0x666666), LV_PART_MAIN);
+  lv_obj_set_pos(file_label, 50, 330);
+
+  disp_enable_update();
+  DEBUG_INFO("音乐播放器界面已创建");
+
+  /* 主循环 */
+  for (;;)
+  {
+    /* 获取互斥量 - 等待无限期 */
+    if (xSemaphoreTake(lvglMutex, portMAX_DELAY) == pdTRUE)
+    {
+      /* 处理 LVGL 任务 */
+      lv_task_handler();
+      Touch_Scan();
+
+      /* 检测播放结束（自动停止时更新状态） */
+      static uint32_t last_check = 0;
+      if (lv_tick_get() - last_check > 1000)
+      {
+        last_check = lv_tick_get();
+
+        /* 只在播放中时检查是否播放结束 */
+        if (g_is_playing && !AudioPlayer_IsPlaying(&g_music_player))
+        {
+          g_is_playing = 0;
+          lv_label_set_text(play_label, "开始");
+          lv_obj_set_style_bg_color(play_btn, lv_color_hex(0x0099FF), LV_PART_MAIN);
+          lv_label_set_text(status_label, "状态: 已停止");
+          DEBUG_INFO("音乐播放结束");
+        }
+      }
+
+      /* 释放互斥量 */
+      xSemaphoreGive(lvglMutex);
+    }
+
+    vTaskDelay(pdMS_TO_TICKS(16));
+  }
 }
-
 
 // void vApplicationTickHook(void) {  }
 /* USER CODE END Application */
-
