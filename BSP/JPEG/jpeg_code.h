@@ -91,26 +91,26 @@ extern "C"
 
 /**
  * @brief JPEG硬件解码输出缓冲区地址
- * @note  大小: 2MB (0x200000)
+ * @note  大小: 1.5MB (0x180000)
  * @note  在DMA2D中将YCbCr转换为RGB后输出到显存
  */
 #define JPEG_OUTPUT_DATA_BUFFER (0xC0400000)
 
 /**
  * @brief JPEG硬件编码输出缓冲区地址
- * @note  大小: 2MB (0x200000)
+ * @note  大小: 1MB (0x100000)
  * @note  位于解码缓冲区之后，用于存储编码后的JPEG数据
  */
-#define JPEG_ENCODE_OUTPUT_BUFFER (JPEG_OUTPUT_DATA_BUFFER + 0x200000)
+#define JPEG_ENCODE_OUTPUT_BUFFER (JPEG_OUTPUT_DATA_BUFFER + 0x180000)
 
 /**
  * @brief 文件数据缓冲区地址
- * @note  大小: 2MB (0x200000)
+ * @note  大小: 1MB (0x100000)
  * @note  位于编码缓冲区之后
  * @note  用于存储从SD卡或SPI Flash中读取的图片数据
  * @note  仅在使用SD卡或SPI Flash时需要
  */
-#define File_BUFFER (JPEG_ENCODE_OUTPUT_BUFFER + 0x200000)
+#define File_BUFFER (JPEG_ENCODE_OUTPUT_BUFFER + 0x100000)
 
   /*******************************************************************************
    *                          导出函数声明

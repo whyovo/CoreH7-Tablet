@@ -11,31 +11,41 @@
 /* 引用外部 DMA2D 句柄 */
 extern DMA2D_HandleTypeDef hdma2d;
 
-/* 简单的 JPEG 头解析 */
+/*  JPEG 头解析 */
 static bool get_jpeg_size(const char *filename, uint32_t *width, uint32_t *height)
 {
-    /* 使用 static 并强制 32 字节对齐，确保 FIL 内部缓冲区满足 DMA 和 Cache 要求 */
-    /* 放在静态区（SRAM/SDRAM）比放在堆栈（可能在 DTCM）更安全 */
-    /* 强制放入 .ram_d2_data 段，防止被分配到 DTCM (IDMA无法访问) */
-    static FIL file __attribute__((aligned(32), section(".ram_d2_data")));
-    /* 保持 static 以确保 32 字节对齐 */
-    static uint8_t buf[1024] __attribute__((aligned(32), section(".ram_d2_data")));
+
+    FIL file __attribute__((aligned(32)));
+    uint8_t buf[1024] __attribute__((aligned(32)));
+
+    /* 每次开始前彻底清空文件对象，防止残留状态 */
+    memset(&file, 0, sizeof(FIL));
 
     FRESULT fr;
-    /* 增加简单的重试机制，应对 SD 卡偶尔忙碌的情况 */
-    for (int i = 0; i < 5; i++)
+    /*重试机制，应对 SD 卡偶尔忙碌的情况 */
+    for (int i = 0; i < 10; i++)
     {
         fr = f_open(&file, filename, FA_READ);
         if (fr == FR_OK)
             break;
-        HAL_Delay(10);
+
+        /* 重试：放弃当前操作，清理句柄，恢复内存状态 */
+        DEBUG_INFO("[JPEG] Info: Open retry %d (Res:%d)", i + 1, fr);
+
+        /* 1. 尝试关闭文件（即使打开失败，确保 FatFs 内部状态释放） */
+        f_close(&file);
+
+        /* 2. 清空文件对象内存，恢复初始状态，防止脏数据影响下一次 open */
+        memset(&file, 0, sizeof(FIL));
+
+        /* 3. 稍作延时，等待 SD 卡控制器状态恢复 */
+        HAL_Delay(20);
     }
 
     if (fr != FR_OK)
     {
-        char dbg[64];
-        snprintf(dbg, sizeof(dbg), "[JPEG] Info: Open failed %s (Res:%d)", filename, fr);
-        DEBUG_INFO(dbg);
+
+        DEBUG_INFO("[JPEG] Info: Open failed %s (Res:%d)", filename, fr);
         return false;
     }
 
@@ -43,7 +53,7 @@ static bool get_jpeg_size(const char *filename, uint32_t *width, uint32_t *heigh
     HAL_Delay(1);
 
     UINT br;
-    /* 修改：增加 f_read 的重试机制 */
+    /*  f_read 的重试机制 */
     for (int i = 0; i < 6; i++)
     {
         fr = f_read(&file, buf, 1024, &br);
@@ -197,9 +207,8 @@ static lv_res_t decoder_info(lv_img_decoder_t *decoder, const void *src, lv_img_
     }
 
     /* 添加错误日志以便调试 */
-    char dbg[128];
-    snprintf(dbg, sizeof(dbg), "[JPEG] Info failed: %s", path);
-    DEBUG_INFO(dbg);
+
+    DEBUG_INFO("[JPEG] Info failed: %s", path);
 
     return LV_RES_INV;
 }
@@ -208,15 +217,13 @@ static lv_res_t decoder_info(lv_img_decoder_t *decoder, const void *src, lv_img_
 static lv_res_t decoder_open(lv_img_decoder_t *decoder, lv_img_decoder_dsc_t *dsc)
 {
     (void)decoder; /* 消除未使用参数警告 */
-    char dbg[128];
 
     if (dsc->src_type != LV_IMG_SRC_FILE)
         return LV_RES_INV;
 
     /* === 数据缓存检查已移除 === */
 
-    snprintf(dbg, sizeof(dbg), "[JPEG] Open: %s", (const char *)dsc->src);
-    DEBUG_INFO(dbg);
+    DEBUG_INFO("[JPEG] Open: %s", (const char *)dsc->src);
 
     const char *fn = dsc->src;
     char path[256];
@@ -230,24 +237,30 @@ static lv_res_t decoder_open(lv_img_decoder_t *decoder, lv_img_decoder_dsc_t *ds
     }
 
     /* 2. 读取文件 */
-    /* 使用 static 并强制 32 字节对齐 */
-    /* 强制放入 .ram_d2_data 段 */
-    static FIL file __attribute__((aligned(32), section(".ram_d2_data")));
+
+    FIL file __attribute__((aligned(32)));
+
+    /* 每次开始前彻底清空文件对象 */
+    memset(&file, 0, sizeof(FIL));
 
     /* 增加重试机制 */
     FRESULT fr;
-    for (int i = 0; i < 3; i++)
+    for (int i = 0; i < 10; i++) /* 增加重试次数 */
     {
         fr = f_open(&file, path, FA_READ);
         if (fr == FR_OK)
             break;
-        HAL_Delay(5);
+
+        /* 失败处理：关闭、清零、延时 */
+        DEBUG_INFO("[JPEG] Open retry %d (Res:%d)", i + 1, fr);
+        f_close(&file);
+        memset(&file, 0, sizeof(FIL));
+        HAL_Delay(20);
     }
 
     if (fr != FR_OK)
     {
-        snprintf(dbg, sizeof(dbg), "[JPEG] Open failed: %d", fr);
-        DEBUG_INFO(dbg);
+        DEBUG_INFO("[JPEG] Open failed: %d", fr);
         return LV_RES_INV;
     }
 
@@ -255,8 +268,7 @@ static lv_res_t decoder_open(lv_img_decoder_t *decoder, lv_img_decoder_dsc_t *ds
     if (size > 0x200000)
     {
         /* 强制转换为 unsigned long 以匹配 %lu 格式符，消除警告 */
-        snprintf(dbg, sizeof(dbg), "[JPEG] Error: File too large (%lu)", (unsigned long)size);
-        DEBUG_INFO(dbg);
+        DEBUG_INFO("[JPEG] Error: File too large (%lu)", (unsigned long)size);
         f_close(&file);
         return LV_RES_INV;
     }
@@ -265,7 +277,7 @@ static lv_res_t decoder_open(lv_img_decoder_t *decoder, lv_img_decoder_dsc_t *ds
     f_read(&file, (void *)File_BUFFER, size, &br);
     f_close(&file);
 
-    /* === 关键：清除 D-Cache === */
+    /* === 清除 D-Cache === */
     SCB_CleanDCache_by_Addr((uint32_t *)File_BUFFER, size + 32);
 
     /* 3. 硬件解码 */

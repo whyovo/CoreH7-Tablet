@@ -142,7 +142,7 @@ __attribute__((noreturn)) static void jump_to_app(uint32_t app_base)
     NVIC->ICPR[i] = 0xFFFFFFFF;
   }
 
-  /* 关键:禁用 MPU,避免配置冲突 */
+  /* 禁用 MPU,避免配置冲突 */
   HAL_MPU_Disable();
 
   /* Set vector table offset to application base address */
