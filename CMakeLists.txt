@@ -37,6 +37,9 @@ enable_language(C ASM)
 # Create an executable object type
 add_executable(${CMAKE_PROJECT_NAME})
 
+# 禁用 RELRO 以解决链接器内存布局错误
+target_link_options(${CMAKE_PROJECT_NAME} PRIVATE -Wl,-z,norelro)
+
 # Add STM32CubeMX generated sources
 add_subdirectory(cmake/stm32cubemx)
 
@@ -383,6 +386,39 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/lvgl-8.3.11/src/font/lv_font_montserrat_28.c
     ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/lvgl-8.3.11/src/font/lv_font_montserrat_30.c
     ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/lvgl-8.3.11/src/font/lv_font_montserrat_32.c
+
+    ${CMAKE_SOURCE_DIR}/Applications/system_task.c
+
+    # Launcher Application
+    ${CMAKE_SOURCE_DIR}/Applications/Launcher/launcher_task.c
+    ${CMAKE_SOURCE_DIR}/Applications/Launcher/launcher_ui.c
+    ${CMAKE_SOURCE_DIR}/Applications/Launcher/img_2048.c
+    ${CMAKE_SOURCE_DIR}/Applications/Launcher/img_camera.c
+    ${CMAKE_SOURCE_DIR}/Applications/Launcher/img_file.c
+    ${CMAKE_SOURCE_DIR}/Applications/Launcher/img_osu.c
+    ${CMAKE_SOURCE_DIR}/Applications/Launcher/img_settings.c
+
+    # Music Game Application
+    ${CMAKE_SOURCE_DIR}/Applications/MusicGame/music_game_core.c
+    ${CMAKE_SOURCE_DIR}/Applications/MusicGame/music_game_task.c
+    ${CMAKE_SOURCE_DIR}/Applications/MusicGame/music_game_ui.c
+
+    # Camera Application
+    ${CMAKE_SOURCE_DIR}/Applications/CameraApp/camera_task.c
+    ${CMAKE_SOURCE_DIR}/Applications/CameraApp/camera_ui.c
+
+    # Game 2048 Application
+    ${CMAKE_SOURCE_DIR}/Applications/Game_2048/game_2048_core.c
+    ${CMAKE_SOURCE_DIR}/Applications/Game_2048/game_2048_task.c
+    ${CMAKE_SOURCE_DIR}/Applications/Game_2048/game_2048_ui.c
+
+    # File Browser Application
+    ${CMAKE_SOURCE_DIR}/Applications/FileBrowser/file_logic.c
+    ${CMAKE_SOURCE_DIR}/Applications/FileBrowser/file_ui.c
+
+    # Settings Application
+    ${CMAKE_SOURCE_DIR}/Applications/Settings/settings_task.c
+    ${CMAKE_SOURCE_DIR}/Applications/Settings/settings_ui.c
 )
 
 # Add include paths
@@ -475,6 +511,13 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/lvgl-8.3.11/src/extra/libs/ffmpeg
     ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/lvgl-8.3.11/src/extra/libs/rlottie
     ${CMAKE_SOURCE_DIR}/Middlewares/Third_Party/lvgl-8.3.11/src/extra/libs/tiny_ttf
+    ${CMAKE_SOURCE_DIR}/Applications
+    ${CMAKE_SOURCE_DIR}/Applications/CameraApp
+    ${CMAKE_SOURCE_DIR}/Applications/Launcher
+    ${CMAKE_SOURCE_DIR}/Applications/MusicGame
+    ${CMAKE_SOURCE_DIR}/Applications/Settings
+    ${CMAKE_SOURCE_DIR}/Applications/FileBrowser
+    ${CMAKE_SOURCE_DIR}/Applications/Game_2048
 )
 
 # Add project symbols (macros)

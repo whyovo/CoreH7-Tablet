@@ -195,6 +195,24 @@ SECTIONS
     _edata = .;        /* define a global symbol at data end */
   } >RAM AT> FLASH
 
+  /* Thread local storage sections */
+  .tdata :
+  {
+
+    PROVIDE_HIDDEN (__tls_base = .);
+    
+    PROVIDE_HIDDEN (__tdata_start = .);
+    *(.tdata .tdata.* .gnu.linkonce.td.*)
+    PROVIDE_HIDDEN (__tdata_end = .);
+  } >RAM AT> FLASH
+
+  .tbss :
+  {
+    PROVIDE_HIDDEN (__tbss_start = .);
+    *(.tbss .tbss.* .gnu.linkonce.tb.*)
+    *(.tcommon)
+    PROVIDE_HIDDEN (__tbss_end = .);
+  } >RAM
 
   /* Uninitialized data section */
   . = ALIGN(4);
@@ -221,21 +239,6 @@ SECTIONS
     . = . + _Min_Stack_Size;
     . = ALIGN(8);
   } >DTCMRAM
-
-  /* TLS 符号定义 - 解决 starm-clang 库的 TLS 依赖 */
-  .tdata :
-  {
-    __tls_base = .;
-    *(.tdata*)
-    __tdata_end = .;
-  } >RAM
-
-  .tbss :
-  {
-    __tbss_start = .;
-    *(.tbss*)
-    __tbss_end = .;
-  } >RAM
 
   /* 定义 TLS 相关符号 */
   __arm32_tls_tcb_offset = 0;
