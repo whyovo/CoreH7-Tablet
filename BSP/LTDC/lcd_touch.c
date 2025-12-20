@@ -71,7 +71,6 @@ void GT9XX_Reset(void)
 	Touch_IIC_Delay(20000);											  /* 延时 */
 }
 
-
 /**
  * @brief  GT911寄存器写操作处理
  * @param  addr: 要操作的寄存器地址（16位）
@@ -278,8 +277,8 @@ uint8_t Touch_Init(void)
 	/* 识别硬件版本（仅对V1.1之前的硬件有效） */
 	PanelRecognition();
 
-        Touch_IIC_GPIO_Config(); /* 初始化IIC引脚 */
-	  GT9XX_Reset();			 /* 复位GT911芯片 */
+	Touch_IIC_GPIO_Config(); /* 初始化IIC引脚 */
+	GT9XX_Reset();			 /* 复位GT911芯片 */
 
 	/* 读取触摸屏IC信息和配置版本 */
 	GT9XX_ReadReg(GT9XX_ID_ADDR, 11, GT9XX_Info);  /* 读IC信息 */
@@ -328,7 +327,18 @@ void Touch_Scan(void)
 	uint8_t i = 0;
 
 	/* 读取触摸数据寄存器 */
-	GT9XX_ReadReg(GT9XX_READ_ADDR, 2 + 8 * TOUCH_MAX, touchData);
+	// 如果读取失败，直接返回，保持上一帧状态
+	if (GT9XX_ReadReg(GT9XX_READ_ADDR, 2 + 8 * TOUCH_MAX, touchData) != SUCCESS)
+	{
+		return;
+	}
+
+	/* 检查 Buffer Status (Bit 7) */
+	// 如果为 0，说明数据未就绪，直接返回，保持上一帧状态（解决长按断触的关键）
+	if ((touchData[0] & 0x80) == 0)
+	{
+		return;
+	}
 
 	/* 清除触摸芯片的数据有效标志位 */
 	GT9XX_WriteData(GT9XX_READ_ADDR, 0);

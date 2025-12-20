@@ -16,7 +16,7 @@
 /*********************
  *      DEFINES
  *********************/
-
+#define MAX_TOUCH_POINTS 5
 /**********************
  *      TYPEDEFS
  **********************/
@@ -56,7 +56,7 @@ static bool LV_ATTRIBUTE_FAST_MEM button_is_pressed(uint8_t id);
 /**********************
  *  STATIC VARIABLES
  **********************/
-lv_indev_t * indev_touchpad;
+lv_indev_t *indev_touchpad[MAX_TOUCH_POINTS];
 lv_indev_t * indev_mouse;
 lv_indev_t * indev_keypad;
 lv_indev_t * indev_encoder;
@@ -87,7 +87,7 @@ void lv_port_indev_init(void)
      *  You should shape them according to your hardware
      */
 
-    static lv_indev_drv_t indev_drv;
+    static lv_indev_drv_t indev_drv[MAX_TOUCH_POINTS];
 
     /*------------------
      * Touchpad
@@ -97,11 +97,21 @@ void lv_port_indev_init(void)
     touchpad_init();
 
     /*Register a touchpad input device*/
-    lv_indev_drv_init(&indev_drv);
-    indev_drv.type = LV_INDEV_TYPE_POINTER;
-    indev_drv.read_cb = touchpad_read;
-    indev_touchpad = lv_indev_drv_register(&indev_drv);
+    // lv_indev_drv_init(&indev_drv);
+    // indev_drv.type = LV_INDEV_TYPE_POINTER;
+    // indev_drv.read_cb = touchpad_read;
+    // indev_touchpad = lv_indev_drv_register(&indev_drv);
+    for (int i = 0; i < MAX_TOUCH_POINTS; i++)
+    {
+        lv_indev_drv_init(&indev_drv[i]);
+        indev_drv[i].type = LV_INDEV_TYPE_POINTER;
+        indev_drv[i].read_cb = touchpad_read;
 
+        // 将当前手指的索引 (0-4) 存入 user_data，方便在 read_cb 中区分
+        indev_drv[i].user_data = (void *)(uintptr_t)i;
+
+        indev_touchpad[i] = lv_indev_drv_register(&indev_drv[i]);
+    }
 //    /*------------------
 //     * Mouse
 //     * -----------------*/
@@ -196,21 +206,46 @@ static void touchpad_init(void)
 /*Will be called by the library to read the touchpad*/
 static void touchpad_read(lv_indev_drv_t * indev_drv, lv_indev_data_t * data)
 {
-    static lv_coord_t last_x = 0;
-    static lv_coord_t last_y = 0;
+    // static lv_coord_t last_x = 0;
+    // static lv_coord_t last_y = 0;
     
-    /*Save the pressed coordinates and the state*/
-    if(touchpad_is_pressed()) {
-        touchpad_get_xy(&last_x, &last_y);
+    // /*Save the pressed coordinates and the state*/
+    // if(touchpad_is_pressed()) {
+    //     touchpad_get_xy(&last_x, &last_y);
+    //     data->state = LV_INDEV_STATE_PR;
+    // }
+    // else {
+    //     data->state = LV_INDEV_STATE_REL;
+    // }
+
+    // /*Set the last pressed coordinates*/
+    // data->point.x = last_x;
+    // data->point.y = last_y;
+    // 获取当前回调对应的手指 ID (0, 1, 2, 3, 4)
+    uint8_t id = (uint8_t)(uintptr_t)indev_drv->user_data;
+
+    // 静态变量记录上一次坐标，用于抬起时报告
+    static lv_coord_t last_x[MAX_TOUCH_POINTS] = {0};
+    static lv_coord_t last_y[MAX_TOUCH_POINTS] = {0};
+
+    // 检查逻辑：
+    // 1. 全局标志位 flag 是否为 1
+    // 2. 当前手指索引 id 是否小于硬件检测到的总点数 num
+    if (touchInfo.flag == 1 && id < touchInfo.num)
+    {
+        last_x[id] = touchInfo.x[id];
+        last_y[id] = touchInfo.y[id];
+        data->point.x = last_x[id];
+        data->point.y = last_y[id];
         data->state = LV_INDEV_STATE_PR;
     }
-    else {
+    else
+    {
+        // 如果该 ID 超出了当前触摸点数，说明该“手指”已抬起
+        data->point.x = last_x[id];
+        data->point.y = last_y[id];
         data->state = LV_INDEV_STATE_REL;
     }
-
-    /*Set the last pressed coordinates*/
-    data->point.x = last_x;
-    data->point.y = last_y;
 }
 
 /*Return true is the touchpad is pressed*/
