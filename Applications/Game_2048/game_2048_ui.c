@@ -85,8 +85,10 @@ void Game2048_UI_Update(void)
 // 弹窗事件处理
 static void game_over_event_cb(lv_event_t *e)
 {
-    lv_obj_t *obj = lv_event_get_target(e);
-    const char *txt = lv_msgbox_get_active_btn_text(obj);
+    // 使用 lv_event_get_current_target 获取消息框对象本身
+
+    lv_obj_t *mbox = lv_event_get_current_target(e);
+    const char *txt = lv_msgbox_get_active_btn_text(mbox);
 
     if (txt)
     {
@@ -94,12 +96,15 @@ static void game_over_event_cb(lv_event_t *e)
         {
             Game2048_Core_Reset();
             Game2048_UI_Update();
+            // 只有在重启时才需要手动关闭弹窗
+            lv_msgbox_close(mbox);
         }
         else if (strcmp(txt, "Quit") == 0)
         {
+            // 切换APP会销毁整个UI根节点(ui_root)，包括这个弹窗
+            // 所以这里千万不要再调用 lv_msgbox_close(obj)，否则会造成重复释放崩溃
             Switch_To_App(&LauncherApp);
         }
-        lv_msgbox_close(obj);
     }
 }
 
@@ -108,7 +113,9 @@ static void show_game_over_dialog(void)
     static const char *btns[] = {"Restart", "Quit", ""};
 
     // 创建消息框
-    lv_obj_t *mbox = lv_msgbox_create(ui_root, "Game Over", "No more moves available!", btns, true);
+    // 将最后一个参数改为 false，隐藏右上角的关闭按钮(X)
+    // 这样用户必须点击 Restart 或 Quit，避免误点 X 导致卡在游戏结束画面
+    lv_obj_t *mbox = lv_msgbox_create(ui_root, "Game Over", "No more moves available!", btns, false);
     lv_obj_center(mbox);
 
     // 样式美化
