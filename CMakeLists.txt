@@ -415,6 +415,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # File Browser Application
     ${CMAKE_SOURCE_DIR}/Applications/FileBrowser/file_logic.c
     ${CMAKE_SOURCE_DIR}/Applications/FileBrowser/file_ui.c
+    ${CMAKE_SOURCE_DIR}/Applications/FileBrowser/file_task.c
 
     # Settings Application
     ${CMAKE_SOURCE_DIR}/Applications/Settings/settings_task.c

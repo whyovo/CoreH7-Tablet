@@ -3,10 +3,10 @@
 
 #include "system_task.h"
 
-// ÉùÃ÷ Launcher Ó¦ÓÃÃèÊö·û£¬¹©ÏµÍ³µ÷¶ÈÊ¹ÓÃ
+// å£°æ˜ Launcher åº”ç”¨æè¿°ç¬¦ï¼Œä¾›ç³»ç»Ÿè°ƒåº¦ä½¿ç”¨
 extern App_Descriptor_t LauncherApp;
 
-// º¯ÊıÉùÃ÷
+// å‡½æ•°å£°æ˜
 void Launcher_App_Init(void);
 void Launcher_App_Exit(void);
 void Launcher_Task_Entry(void *params);

@@ -4,7 +4,7 @@
 #include "config.h"      
 
 /**
- * @brief Launcher ³õÊ¼»¯
+ * @brief Launcher åˆå§‹åŒ–
  */
 void Launcher_App_Init(void)
 {
@@ -13,18 +13,18 @@ void Launcher_App_Init(void)
 }
 
 /**
- * @brief Launcher ÍË³öÇåÀí
+ * @brief Launcher é€€å‡ºæ¸…ç†
  */
 void Launcher_App_Exit(void)
 {
     DEBUG_INFO("Launcher App Exiting...");
-    // Ïú»Ù Launcher µÄ UI ¶ÔÏó
+    // é”€æ¯ Launcher çš„ UI å¯¹è±¡
     Launcher_UI_Delete();
-    // ÕâÀï¿ÉÒÔÊÍ·Å Launcher ÉêÇëµÄÆäËûÄÚ´æ
+    // è¿™é‡Œå¯ä»¥é‡Šæ”¾ Launcher ç”³è¯·çš„å…¶ä»–å†…å­˜
 }
 
 /**
- * @brief Launcher ÈÎÎñÈë¿Ú
+ * @brief Launcher ä»»åŠ¡å…¥å£
  */
 void Launcher_Task_Entry(void *params)
 {
@@ -32,13 +32,13 @@ void Launcher_Task_Entry(void *params)
 
     while (1)
     {
-        //  Launcher µÄºóÌ¨Âß¼­
+        //  Launcher çš„åå°é€»è¾‘
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
 
-/* --- ¶¨Òå Launcher Ó¦ÓÃÃèÊö·û --- */
-// ÕâÑù system_task.c ¾Í¿ÉÒÔÍ¨¹ı extern ÒıÓÃËü
+/* --- å®šä¹‰ Launcher åº”ç”¨æè¿°ç¬¦ --- */
+// è¿™æ · system_task.c å°±å¯ä»¥é€šè¿‡ extern å¼•ç”¨å®ƒ
 App_Descriptor_t LauncherApp = {
     .name = "Launcher",
     .app_init = Launcher_App_Init,

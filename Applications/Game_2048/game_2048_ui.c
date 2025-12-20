@@ -1,6 +1,6 @@
 #include "game_2048_ui.h"
 #include "game_2048_core.h"
-#include "launcher_task.h" // ÎªÁËÒıÓÃ LauncherApp
+#include "launcher_task.h" // ä¸ºäº†å¼•ç”¨ LauncherApp
 #include "system_task.h"
 #include <stdio.h>
 #include <string.h>
@@ -10,13 +10,13 @@ static lv_obj_t *ui_grid_cont = NULL;
 static lv_obj_t *ui_score_label = NULL;
 static lv_obj_t *ui_tiles[4][4];
 
-// ÑÕÉ«ÅäÖÃ
+// é¢œè‰²é…ç½®
 static uint32_t get_tile_color(uint16_t val)
 {
     switch (val)
     {
     case 0:
-        return 0xCDC1B4; // ¿Õ¸ñÑÕÉ«
+        return 0xCDC1B4; // ç©ºæ ¼é¢œè‰²
     case 2:
         return 0xEEE4DA;
     case 4:
@@ -49,16 +49,16 @@ static uint32_t get_text_color(uint16_t val)
     return (val <= 4) ? 0x776E65 : 0xF9F6F2;
 }
 
-// Ë¢ĞÂ½çÃæ
+// åˆ·æ–°ç•Œé¢
 void Game2048_UI_Update(void)
 {
     if (!ui_root)
         return;
 
-    // ¸üĞÂ·ÖÊı
+    // æ›´æ–°åˆ†æ•°
     lv_label_set_text_fmt(ui_score_label, "SCORE\n%d", Game2048_Core_GetScore());
 
-    // ¸üĞÂ¸ñ×Ó
+    // æ›´æ–°æ ¼å­
     for (int y = 0; y < 4; y++)
     {
         for (int x = 0; x < 4; x++)
@@ -82,7 +82,7 @@ void Game2048_UI_Update(void)
     }
 }
 
-// µ¯´°ÊÂ¼ş´¦Àí
+// å¼¹çª—äº‹ä»¶å¤„ç†
 static void game_over_event_cb(lv_event_t *e)
 {
     lv_obj_t *obj = lv_event_get_target(e);
@@ -107,23 +107,23 @@ static void show_game_over_dialog(void)
 {
     static const char *btns[] = {"Restart", "Quit", ""};
 
-    // ´´½¨ÏûÏ¢¿ò
+    // åˆ›å»ºæ¶ˆæ¯æ¡†
     lv_obj_t *mbox = lv_msgbox_create(ui_root, "Game Over", "No more moves available!", btns, true);
     lv_obj_center(mbox);
 
-    // ÑùÊ½ÃÀ»¯
+    // æ ·å¼ç¾åŒ–
     lv_obj_set_style_bg_color(mbox, lv_color_hex(0xFAF8EF), 0);
     lv_obj_set_style_text_color(mbox, lv_color_hex(0x776E65), 0);
     lv_obj_set_style_text_font(mbox, &lv_font_montserrat_20, 0);
 
-    // °´Å¥ÑùÊ½
+    // æŒ‰é’®æ ·å¼
     lv_obj_t *btns_obj = lv_msgbox_get_btns(mbox);
     lv_obj_set_style_bg_color(btns_obj, lv_color_hex(0x8f7a66), LV_PART_ITEMS);
 
     lv_obj_add_event_cb(mbox, game_over_event_cb, LV_EVENT_VALUE_CHANGED, NULL);
 }
 
-// ÊÖÊÆÊÂ¼ş»Øµ÷
+// æ‰‹åŠ¿äº‹ä»¶å›è°ƒ
 static void grid_gesture_cb(lv_event_t *e)
 {
     lv_dir_t dir = lv_indev_get_gesture_dir(lv_indev_get_act());
@@ -148,10 +148,10 @@ static void grid_gesture_cb(lv_event_t *e)
     }
 }
 
-// ÍË³ö°´Å¥»Øµ÷
+// é€€å‡ºæŒ‰é’®å›è°ƒ
 static void close_btn_cb(lv_event_t *e)
 {
-    // ÇĞ»»»Ø Launcher
+    // åˆ‡æ¢å› Launcher
     Switch_To_App(&LauncherApp);
 }
 
@@ -159,21 +159,21 @@ void Game2048_UI_Create(void)
 {
     lv_obj_t *scr = lv_scr_act();
 
-    // 1. ¸ùÈİÆ÷ (È«ÆÁ)
+    // 1. æ ¹å®¹å™¨ (å…¨å±)
     ui_root = lv_obj_create(scr);
     lv_obj_set_size(ui_root, 800, 480);
 
-    // ±³¾°Í¸Ã÷£¬ÈÃ Launcher µÄ±ÚÖ½Í¸³öÀ´
+    // èƒŒæ™¯é€æ˜ï¼Œè®© Launcher çš„å£çº¸é€å‡ºæ¥
     lv_obj_set_style_bg_opa(ui_root, LV_OPA_TRANSP, 0);
 
-    // È¥³ı±ß¿òºÍÔ²½Ç£¬·ÀÖ¹±ßÔµ³öÏÖÏßÌõ
+    // å»é™¤è¾¹æ¡†å’Œåœ†è§’ï¼Œé˜²æ­¢è¾¹ç¼˜å‡ºç°çº¿æ¡
     lv_obj_set_style_border_width(ui_root, 0, 0);
     lv_obj_set_style_radius(ui_root, 0, 0);
     lv_obj_set_style_pad_all(ui_root, 0, 0);
     lv_obj_clear_flag(ui_root, LV_OBJ_FLAG_SCROLLABLE);
 
-    // 2. ¶¥²¿À¸
-    // ·ÖÊı¿ò
+    // 2. é¡¶éƒ¨æ 
+    // åˆ†æ•°æ¡†
     lv_obj_t *score_box = lv_obj_create(ui_root);
     lv_obj_set_size(score_box, 120, 60);
     lv_obj_align(score_box, LV_ALIGN_TOP_MID, 0, 20);
@@ -188,32 +188,32 @@ void Game2048_UI_Create(void)
     lv_obj_set_style_text_color(ui_score_label, lv_color_white(), 0);
     lv_label_set_text(ui_score_label, "SCORE\n0");
 
-    // ÍË³ö°´Å¥ (ÓÒÉÏ½Ç X)
+    // é€€å‡ºæŒ‰é’® (å³ä¸Šè§’ X)
     lv_obj_t *close_btn = lv_btn_create(ui_root);
     lv_obj_set_size(close_btn, 50, 50);
     lv_obj_align(close_btn, LV_ALIGN_TOP_RIGHT, -20, 20);
     lv_obj_set_style_bg_color(close_btn, lv_color_hex(0x8f7a66), 0);
-    lv_obj_set_style_shadow_width(close_btn, 0, 0); // È¥³ı°´Å¥ÒõÓ°
+    lv_obj_set_style_shadow_width(close_btn, 0, 0); // å»é™¤æŒ‰é’®é˜´å½±
     lv_obj_add_event_cb(close_btn, close_btn_cb, LV_EVENT_CLICKED, NULL);
 
     lv_obj_t *close_label = lv_label_create(close_btn);
     lv_label_set_text(close_label, LV_SYMBOL_CLOSE);
     lv_obj_center(close_label);
 
-    // 3. ÓÎÏ·ÆåÅÌÇøÓò
+    // 3. æ¸¸æˆæ£‹ç›˜åŒºåŸŸ
     ui_grid_cont = lv_obj_create(ui_root);
     lv_obj_set_size(ui_grid_cont, 390, 390);
     lv_obj_align(ui_grid_cont, LV_ALIGN_BOTTOM_MID, 0, 0);
     lv_obj_set_style_bg_color(ui_grid_cont, lv_color_hex(0xBBADA0), 0);
     lv_obj_set_style_radius(ui_grid_cont, 20, 0);
-    lv_obj_set_style_border_width(ui_grid_cont, 0, 0); // È·±£ÎŞ±ß¿ò
+    lv_obj_set_style_border_width(ui_grid_cont, 0, 0); // ç¡®ä¿æ— è¾¹æ¡†
     lv_obj_clear_flag(ui_grid_cont, LV_OBJ_FLAG_SCROLLABLE);
 
-    // ÆôÓÃÊÖÊÆÊ¶±ğ
-    lv_obj_clear_flag(ui_grid_cont, LV_OBJ_FLAG_GESTURE_BUBBLE); // ×èÖ¹Ã°Åİ
+    // å¯ç”¨æ‰‹åŠ¿è¯†åˆ«
+    lv_obj_clear_flag(ui_grid_cont, LV_OBJ_FLAG_GESTURE_BUBBLE); // é˜»æ­¢å†’æ³¡
     lv_obj_add_event_cb(ui_grid_cont, grid_gesture_cb, LV_EVENT_GESTURE, NULL);
 
-    // ´´½¨ 4x4 Íø¸ñ
+    // åˆ›å»º 4x4 ç½‘æ ¼
     const int tile_size = 78;
     const int gap = 8;
 
@@ -223,12 +223,12 @@ void Game2048_UI_Create(void)
         {
             lv_obj_t *tile = lv_obj_create(ui_grid_cont);
             lv_obj_set_size(tile, tile_size, tile_size);
-            // ¾ø¶Ô¶¨Î»
+            // ç»å¯¹å®šä½
             lv_obj_set_pos(tile, gap + x * (tile_size + gap), gap + y * (tile_size + gap));
             lv_obj_set_style_radius(tile, 5, 0);
             lv_obj_set_style_border_width(tile, 0, 0);
             lv_obj_clear_flag(tile, LV_OBJ_FLAG_SCROLLABLE);
-            // ÈÃµã»÷/ÊÖÊÆ´©Í¸µ½¸¸ÈİÆ÷
+            // è®©ç‚¹å‡»/æ‰‹åŠ¿ç©¿é€åˆ°çˆ¶å®¹å™¨
             lv_obj_clear_flag(tile, LV_OBJ_FLAG_CLICKABLE);
 
             lv_obj_t *num = lv_label_create(tile);
@@ -239,7 +239,7 @@ void Game2048_UI_Create(void)
         }
     }
 
-    // ³õÊ¼Ë¢ĞÂ
+    // åˆå§‹åˆ·æ–°
     Game2048_UI_Update();
 }
 

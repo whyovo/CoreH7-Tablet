@@ -3,7 +3,7 @@
 #include "game_2048_core.h"
 #include "config.h"
 
-// ×÷ÓÃ: RTOSÈÎÎñÂß¼­Óë×´Ì¬»ú
+// ä½œç”¨: RTOSä»»åŠ¡é€»è¾‘ä¸çŠ¶æ€æœº
 
 static void Game2048_App_Init(void)
 {
@@ -23,7 +23,7 @@ static void Game2048_Task_Entry(void *params)
     DEBUG_INFO("2048 Task Running");
     while (1)
     {
-        // ÓÎÏ·Âß¼­Ö÷ÒªÓÉ UI ÊÂ¼şÇı¶¯£¬ÕâÀïÖ»ĞèÎ¬³ÖÈÎÎñ´æ»î
+        // æ¸¸æˆé€»è¾‘ä¸»è¦ç”± UI äº‹ä»¶é©±åŠ¨ï¼Œè¿™é‡Œåªéœ€ç»´æŒä»»åŠ¡å­˜æ´»
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }

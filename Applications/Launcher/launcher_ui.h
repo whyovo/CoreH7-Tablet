@@ -9,14 +9,14 @@ extern "C"
 #include "lvgl.h"
 
     /**
-     * @brief ´´½¨ Launcher Ö÷½çÃæ UI
-     * °üº¬ 3x2 µÄÓ¦ÓÃÍ¼±ê¾ØÕó
+     * @brief åˆ›å»º Launcher ä¸»ç•Œé¢ UI
+     * åŒ…å« 3x2 çš„åº”ç”¨å›¾æ ‡çŸ©é˜µ
      */
     void Launcher_UI_Create(void);
 
     /**
-     * @brief ³¹µ×Ïú»Ù Launcher UI ¶ÔÏó
-     * ÓÃÓÚÇĞ»»Ó¦ÓÃÊ±µÄÄÚ´æÊÍ·Å
+     * @brief å½»åº•é”€æ¯ Launcher UI å¯¹è±¡
+     * ç”¨äºåˆ‡æ¢åº”ç”¨æ—¶çš„å†…å­˜é‡Šæ”¾
      */
     void Launcher_UI_Delete(void);
 

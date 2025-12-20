@@ -6,20 +6,21 @@
 #include "img_camera.h"
 #include "img_2048.h"
 #include "game_2048_task.h"
+#include "file_task.h"
 
-// ¾²Ì¬±äÁ¿
+// é™æ€å˜é‡
 static lv_obj_t *ui_main_cont = NULL;
 static lv_obj_t *ui_bg_img = NULL;
 
 /**
- * @brief Í¼±êµã»÷ÊÂ¼ş»Øµ÷
+ * @brief å›¾æ ‡ç‚¹å‡»äº‹ä»¶å›è°ƒ
  */
 static void icon_click_cb(lv_event_t *e)
 {
-    // »ñÈ¡°ó¶¨ÔÚ¸Ã¶ÔÏóÉÏµÄ App ÃèÊö·û
+    // è·å–ç»‘å®šåœ¨è¯¥å¯¹è±¡ä¸Šçš„ App æè¿°ç¬¦
     App_Descriptor_t *app = (App_Descriptor_t *)lv_event_get_user_data(e);
     if (app != NULL)
-        // µ÷ÓÃÏµÍ³½Ó¿ÚÇĞ»»Ó¦ÓÃ
+        // è°ƒç”¨ç³»ç»Ÿæ¥å£åˆ‡æ¢åº”ç”¨
         Switch_To_App(app);
 }
 
@@ -28,32 +29,32 @@ void Launcher_UI_Create(void)
     lv_obj_t *scr = lv_scr_act();
     lv_obj_set_style_bg_color(scr, lv_color_black(), 0);
 
-    // È·±£Ö®Ç°µÄ UI ÒÑÇåÀí
+    // ç¡®ä¿ä¹‹å‰çš„ UI å·²æ¸…ç†
     if (ui_main_cont != NULL)
         Launcher_UI_Delete();
 
-    // 1. ´´½¨±³¾°Í¼Æ¬ (Èç¹û²»´æÔÚ²Å´´½¨)
+    // 1. åˆ›å»ºèƒŒæ™¯å›¾ç‰‡ (å¦‚æœä¸å­˜åœ¨æ‰åˆ›å»º)
     if (ui_bg_img == NULL)
     {
         ui_bg_img = lv_img_create(scr);
         lv_img_set_src(ui_bg_img, "S:/sys/background/1.jpg");
         lv_obj_set_size(ui_bg_img, 800, 480);
         lv_obj_center(ui_bg_img);
-        // È·±£±³¾°ÔÚ×îµ×²ã
+        // ç¡®ä¿èƒŒæ™¯åœ¨æœ€åº•å±‚
         lv_obj_move_background(ui_bg_img);
     }
 
-    // 2. ´´½¨Ö÷ÈİÆ÷ (Í¸Ã÷£¬ÓÃÓÚ³ĞÔØÄÚÈİ)
+    // 2. åˆ›å»ºä¸»å®¹å™¨ (é€æ˜ï¼Œç”¨äºæ‰¿è½½å†…å®¹)
     ui_main_cont = lv_obj_create(scr);
     lv_obj_set_size(ui_main_cont, 800, 480);
     lv_obj_set_style_bg_opa(ui_main_cont, LV_OPA_TRANSP, 0);
     lv_obj_set_style_border_width(ui_main_cont, 0, 0);
     lv_obj_set_style_pad_all(ui_main_cont, 0, 0);
     lv_obj_clear_flag(ui_main_cont, LV_OBJ_FLAG_SCROLLABLE);
-    // Ç¿ÖÆ¹Ø±Õ¹ö¶¯Ìõ£¨ÓÒ²àÄÇ¸ùÏß£©
+    // å¼ºåˆ¶å…³é—­æ»šåŠ¨æ¡ï¼ˆå³ä¾§é‚£æ ¹çº¿ï¼‰
     lv_obj_set_scrollbar_mode(ui_main_cont, LV_SCROLLBAR_MODE_OFF);
 
-    // --- 3. ¶¥²¿×´Ì¬À¸ ---
+    // --- 3. é¡¶éƒ¨çŠ¶æ€æ  ---
     lv_obj_t *status_bar = lv_obj_create(ui_main_cont);
     lv_obj_set_size(status_bar, 800, 40);
     lv_obj_set_align(status_bar, LV_ALIGN_TOP_MID);
@@ -62,36 +63,36 @@ void Launcher_UI_Create(void)
     lv_obj_set_style_border_width(status_bar, 0, 0);
     lv_obj_set_style_radius(status_bar, 0, 0);
     lv_obj_set_style_pad_hor(status_bar, 20, 0);
-    // ¹Ø±Õ×´Ì¬À¸¹ö¶¯ÊôĞÔ
+    // å…³é—­çŠ¶æ€æ æ»šåŠ¨å±æ€§
     lv_obj_clear_flag(status_bar, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_set_scrollbar_mode(status_bar, LV_SCROLLBAR_MODE_OFF);
 
     lv_obj_t *status_icons = lv_label_create(status_bar);
-    // Ìí¼ÓÁË SD ¿¨Í¼±ê
+    // æ·»åŠ äº† SD å¡å›¾æ ‡
     lv_label_set_text(status_icons, LV_SYMBOL_SD_CARD "  " LV_SYMBOL_WIFI "  " LV_SYMBOL_BATTERY_FULL);
     lv_obj_set_style_text_color(status_icons, lv_color_white(), 0);
-    // ×ÖÌå´óĞ¡¸ÄÎª 20
+    // å­—ä½“å¤§å°æ”¹ä¸º 20
     lv_obj_set_style_text_font(status_icons, &lv_font_montserrat_20, 0);
     lv_obj_align(status_icons, LV_ALIGN_RIGHT_MID, 0, 0);
 
-    // --- 4. Í¼±êÇøÓò²¼¾Ö ---
+    // --- 4. å›¾æ ‡åŒºåŸŸå¸ƒå±€ ---
     lv_obj_t *icon_grid = lv_obj_create(ui_main_cont);
     lv_obj_set_size(icon_grid, 800, 440);
     lv_obj_align(icon_grid, LV_ALIGN_BOTTOM_MID, 0, 0);
-    // ÑùÊ½³¹µ×Í¸Ã÷»¯
+    // æ ·å¼å½»åº•é€æ˜åŒ–
     lv_obj_set_style_bg_opa(icon_grid, LV_OPA_TRANSP, 0);
     lv_obj_set_style_border_width(icon_grid, 0, 0);
     lv_obj_set_scrollbar_mode(icon_grid, LV_SCROLLBAR_MODE_OFF);
 
-    // ÉèÖÃ×ó¶ÔÆë²¼¾Ö
+    // è®¾ç½®å·¦å¯¹é½å¸ƒå±€
     lv_obj_set_flex_flow(icon_grid, LV_FLEX_FLOW_ROW_WRAP);
-    // ¸ÄÎª START£¬ÅäºÏ pad_column ÊµÏÖÊÖ¶¯¼ä¾à
+    // æ”¹ä¸º STARTï¼Œé…åˆ pad_column å®ç°æ‰‹åŠ¨é—´è·
     lv_obj_set_flex_align(icon_grid, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);
 
-    // ¼ä¾àÎ¢µ÷£º
-    // ÆÁÄ» 800 - (×óÓÒÄÚ±ß¾à 35*2) = 730 ¿ÉÓÃ¡£
-    // 4¸öÍ¼±ê 160*4 = 640¡£
-    // Ê£Óà 90 ÏñËØ·ÖÅä¸ø 3 ¸ö¼äÏ¶£¬Ã¿¸ö¼äÏ¶ 30¡£
+    // é—´è·å¾®è°ƒï¼š
+    // å±å¹• 800 - (å·¦å³å†…è¾¹è· 35*2) = 730 å¯ç”¨ã€‚
+    // 4ä¸ªå›¾æ ‡ 160*4 = 640ã€‚
+    // å‰©ä½™ 90 åƒç´ åˆ†é…ç»™ 3 ä¸ªé—´éš™ï¼Œæ¯ä¸ªé—´éš™ 30ã€‚
     lv_obj_set_style_pad_all(icon_grid, 35, 0);
     lv_obj_set_style_pad_column(icon_grid, 30, 0);
     lv_obj_set_style_pad_row(icon_grid, 20, 0);
@@ -104,7 +105,7 @@ void Launcher_UI_Create(void)
     } apps[] = {
         {&img_camera, "Camera", NULL},
         {&img_osu, "Osu!", NULL},
-        {&img_file, "Files", NULL},
+        {&img_file, "Files", &FileBrowserApp},
         {&img_2048, "2048", &Game2048App},
         {&img_settings, "Settings", NULL},
         {NULL, NULL, NULL}};
@@ -115,25 +116,25 @@ void Launcher_UI_Create(void)
         lv_obj_set_size(item, 160, 185);
         lv_obj_set_flex_flow(item, LV_FLEX_FLOW_COLUMN);
         lv_obj_set_flex_align(item, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-        // Çå³ı Item Ä¬ÈÏÑùÊ½
+        // æ¸…é™¤ Item é»˜è®¤æ ·å¼
         lv_obj_set_style_bg_opa(item, LV_OPA_TRANSP, 0);
         lv_obj_set_style_border_width(item, 0, 0);
         lv_obj_clear_flag(item, LV_OBJ_FLAG_SCROLLABLE);
         lv_obj_set_scrollbar_mode(item, LV_SCROLLBAR_MODE_OFF);
 
-        // µã»÷Ëõ·ÅĞ§¹û£¨256ÊÇ1:1£©
+        // ç‚¹å‡»ç¼©æ”¾æ•ˆæœï¼ˆ256æ˜¯1:1ï¼‰
         lv_obj_set_style_transform_zoom(item, 240, LV_STATE_PRESSED);
-        // 1. Í¼±ê
+        // 1. å›¾æ ‡
         lv_obj_t *img = lv_img_create(item);
         lv_img_set_src(img, apps[i].img);
-        // 2. ÎÄ×Ö
+        // 2. æ–‡å­—
 
         lv_obj_t *label = lv_label_create(item);
         lv_label_set_text(label, apps[i].name);
         lv_obj_set_style_text_color(label, lv_color_white(), 0);
-        lv_obj_set_style_text_font(label, &lv_font_montserrat_20, 0); // Óë×´Ì¬À¸Í³Ò»
+        lv_obj_set_style_text_font(label, &lv_font_montserrat_20, 0); // ä¸çŠ¶æ€æ ç»Ÿä¸€
         lv_obj_set_style_pad_top(label, 8, 0);
-        // ÊÂ¼ş°ó¶¨µ½ item ÈİÆ÷ÉÏ£¬Ôö¼Óµã»÷Ãæ»ı
+        // äº‹ä»¶ç»‘å®šåˆ° item å®¹å™¨ä¸Šï¼Œå¢åŠ ç‚¹å‡»é¢ç§¯
         lv_obj_add_flag(item, LV_OBJ_FLAG_CLICKABLE);
         lv_obj_add_event_cb(item, icon_click_cb, LV_EVENT_CLICKED, (void *)apps[i].app_desc);
     }
@@ -141,7 +142,7 @@ void Launcher_UI_Create(void)
 
 void Launcher_UI_Delete(void)
 {
-    // É¾³ıÖ÷ÄÚÈİÈİÆ÷£¨Í¼±êµÈ£©
+    // åˆ é™¤ä¸»å†…å®¹å®¹å™¨ï¼ˆå›¾æ ‡ç­‰ï¼‰
     if (ui_main_cont != NULL)
     {
         lv_obj_del(ui_main_cont);

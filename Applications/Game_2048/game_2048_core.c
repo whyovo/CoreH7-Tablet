@@ -1,7 +1,7 @@
 #include "game_2048_core.h"
 #include <stdlib.h>
 #include <string.h>
-#include "FreeRTOS.h" // ÒıÈë FreeRTOS ÒÔÊ¹ÓÃ xTaskGetTickCount
+#include "FreeRTOS.h" // å¼•å…¥ FreeRTOS ä»¥ä½¿ç”¨ xTaskGetTickCount
 #include "task.h"
 
 #define BOARD_SIZE 4
@@ -9,7 +9,7 @@
 static uint16_t board[BOARD_SIZE][BOARD_SIZE];
 static uint32_t score = 0;
 
-// ÔÚ¿ÕÎ»Éú³ÉÒ»¸öËæ»ú¿é (2 »ò 4)
+// åœ¨ç©ºä½ç”Ÿæˆä¸€ä¸ªéšæœºå— (2 æˆ– 4)
 static void spawn_random_tile(void)
 {
     int empty_spots[BOARD_SIZE * BOARD_SIZE][2];
@@ -31,14 +31,14 @@ static void spawn_random_tile(void)
     if (count > 0)
     {
         int r = rand() % count;
-        int val = (rand() % 10 == 0) ? 4 : 2; // 10% ¸ÅÂÊÉú³É 4
+        int val = (rand() % 10 == 0) ? 4 : 2; // 10% æ¦‚ç‡ç”Ÿæˆ 4
         board[empty_spots[r][1]][empty_spots[r][0]] = val;
     }
 }
 
 void Game2048_Core_Init(void)
 {
-    // Ê¹ÓÃÏµÍ³ Tick ×÷ÎªËæ»úÖÖ×Ó
+    // ä½¿ç”¨ç³»ç»Ÿ Tick ä½œä¸ºéšæœºç§å­
     srand(xTaskGetTickCount());
     Game2048_Core_Reset();
 }
@@ -51,7 +51,7 @@ void Game2048_Core_Reset(void)
     spawn_random_tile();
 }
 
-// Ğı×ª¾ØÕó£¨ÓÃÓÚ¼ò»¯ÒÆ¶¯Âß¼­£¬Ö»ÊµÏÖÏò×óÒÆ¶¯£¬ÆäËû·½ÏòÍ¨¹ıĞı×ªÊµÏÖ£©
+// æ—‹è½¬çŸ©é˜µï¼ˆç”¨äºç®€åŒ–ç§»åŠ¨é€»è¾‘ï¼Œåªå®ç°å‘å·¦ç§»åŠ¨ï¼Œå…¶ä»–æ–¹å‘é€šè¿‡æ—‹è½¬å®ç°ï¼‰
 static void rotate_board(void)
 {
     uint16_t temp[BOARD_SIZE][BOARD_SIZE];
@@ -65,13 +65,13 @@ static void rotate_board(void)
     memcpy(board, temp, sizeof(board));
 }
 
-// Ïò×óÒÆ¶¯²¢ºÏ²¢µÄÒ»ĞĞÂß¼­
+// å‘å·¦ç§»åŠ¨å¹¶åˆå¹¶çš„ä¸€è¡Œé€»è¾‘
 static bool move_left_line(uint16_t *line)
 {
     bool moved = false;
     int insert_pos = 0;
 
-    // 1. ÒÆ¶¯·ÇÁãÊıµ½×ó²à
+    // 1. ç§»åŠ¨éé›¶æ•°åˆ°å·¦ä¾§
     for (int i = 0; i < BOARD_SIZE; i++)
     {
         if (line[i] != 0)
@@ -86,7 +86,7 @@ static bool move_left_line(uint16_t *line)
         }
     }
 
-    // 2. ºÏ²¢ÏàÍ¬µÄÊı
+    // 2. åˆå¹¶ç›¸åŒçš„æ•°
     for (int i = 0; i < BOARD_SIZE - 1; i++)
     {
         if (line[i] != 0 && line[i] == line[i + 1])
@@ -95,7 +95,7 @@ static bool move_left_line(uint16_t *line)
             score += line[i];
             line[i + 1] = 0;
             moved = true;
-            // ºÏ²¢ºóºóÃæµÄÊıĞèÒªÔÙ´Î½ô´Õ
+            // åˆå¹¶ååé¢çš„æ•°éœ€è¦å†æ¬¡ç´§å‡‘
             for (int j = i + 1; j < BOARD_SIZE - 1; j++)
             {
                 line[j] = line[j + 1];
@@ -111,19 +111,19 @@ bool Game2048_Core_Move(Game2048_Dir_t dir)
     bool moved = false;
     int rotations = 0;
 
-    // ½«ÈÎÒâ·½ÏòĞı×ªÎªÏò×ó
+    // å°†ä»»æ„æ–¹å‘æ—‹è½¬ä¸ºå‘å·¦
     if (dir == DIR_UP)
-        rotations = 1; // ÄæÊ±Õë90¶È -> ×ó
+        rotations = 1; // é€†æ—¶é’ˆ90åº¦ -> å·¦
     else if (dir == DIR_RIGHT)
-        rotations = 2; // 180¶È -> ×ó
+        rotations = 2; // 180åº¦ -> å·¦
     else if (dir == DIR_DOWN)
-        rotations = 3; // Ë³Ê±Õë90¶È -> ×ó
+        rotations = 3; // é¡ºæ—¶é’ˆ90åº¦ -> å·¦
 
-    // Ğı×ª¾ØÕóÒÔ±ãÍ³Ò»´¦Àí
+    // æ—‹è½¬çŸ©é˜µä»¥ä¾¿ç»Ÿä¸€å¤„ç†
     for (int i = 0; i < rotations; i++)
         rotate_board();
 
-    // Ö´ĞĞÏò×óÒÆ¶¯
+    // æ‰§è¡Œå‘å·¦ç§»åŠ¨
     for (int y = 0; y < BOARD_SIZE; y++)
     {
         if (move_left_line(board[y]))
@@ -132,7 +132,7 @@ bool Game2048_Core_Move(Game2048_Dir_t dir)
         }
     }
 
-    // »¹Ô­Ğı×ª
+    // è¿˜åŸæ—‹è½¬
     for (int i = 0; i < (4 - rotations) % 4; i++)
         rotate_board();
 
@@ -158,13 +158,13 @@ uint16_t Game2048_Core_GetTile(int x, int y)
 
 bool Game2048_Core_IsGameOver(void)
 {
-    // ¼ì²éÊÇ·ñÓĞ¿ÕÎ»
+    // æ£€æŸ¥æ˜¯å¦æœ‰ç©ºä½
     for (int y = 0; y < BOARD_SIZE; y++)
         for (int x = 0; x < BOARD_SIZE; x++)
             if (board[y][x] == 0)
                 return false;
 
-    // ¼ì²éÊÇ·ñÓĞÏàÁÚÏàÍ¬
+    // æ£€æŸ¥æ˜¯å¦æœ‰ç›¸é‚»ç›¸åŒ
     for (int y = 0; y < BOARD_SIZE; y++)
     {
         for (int x = 0; x < BOARD_SIZE; x++)
