@@ -8,6 +8,11 @@
 #include <stdio.h>
 #include <string.h>
 
+#ifdef READER_BUFFER_SIZE
+#undef READER_BUFFER_SIZE
+#endif
+#define READER_BUFFER_SIZE (512)
+
 static lv_obj_t *ui_root = NULL;
 
 // 页面容器
@@ -50,9 +55,14 @@ static void load_current_page(void)
     // 更新进度显示
     if (total_file_size > 0)
     {
+        // 计算当前是第几“块”
+        int current_page_idx = (current_offset / READER_BUFFER_SIZE) + 1;
+        int total_pages = (total_file_size + READER_BUFFER_SIZE - 1) / READER_BUFFER_SIZE;
         int percent = (current_offset * 100) / total_file_size;
-        lv_label_set_text_fmt(ui_progress_label, "%d%% (%lu/%lu KB)",
-                              percent, current_offset / 1024, total_file_size / 1024);
+
+        // 显示百分比和页码块信息
+        lv_label_set_text_fmt(ui_progress_label, "%d%% (Page %d/%d)",
+                              percent, current_page_idx, total_pages);
     }
 
     // 滚回顶部
@@ -67,7 +77,6 @@ static void prev_page_cb(lv_event_t *e)
     if (current_offset >= READER_BUFFER_SIZE)
     {
         // 简单的回退逻辑：回退一个缓冲区大小
-        // 注意：这可能导致上一页的末尾和这一页的开头不完全衔接（因为UTF8截断），但对于阅读影响不大
         current_offset -= READER_BUFFER_SIZE;
     }
     else
@@ -128,10 +137,10 @@ static void file_btn_click_handler(lv_event_t *e)
     lv_obj_clear_flag(ui_read_page, LV_OBJ_FLAG_HIDDEN);
     lv_label_set_text(ui_title_label, current_filename);
 
-    // 分配内存
+    // 分配内存 (如果之前分配的大小不同，这里最好重新分配，或者确保 READER_BUFFER_SIZE 不变)
     if (text_buffer == NULL)
     {
-        text_buffer = lv_mem_alloc(READER_BUFFER_SIZE);
+        text_buffer = lv_mem_alloc(READER_BUFFER_SIZE + 1); // +1 for safety null terminator
     }
 
     // 加载第一页
@@ -183,6 +192,7 @@ void Reader_UI_Create(void)
     lv_obj_set_size(ui_list_page, lv_pct(100), lv_pct(100));
     lv_obj_set_style_bg_opa(ui_list_page, LV_OPA_TRANSP, 0);
     lv_obj_set_style_border_width(ui_list_page, 0, 0);
+    lv_obj_clear_flag(ui_list_page, LV_OBJ_FLAG_SCROLLABLE);
 
     lv_obj_t *list_title = lv_label_create(ui_list_page);
     lv_label_set_text(list_title, "My Books (S:/mytxt)");
@@ -217,6 +227,7 @@ void Reader_UI_Create(void)
     lv_obj_set_style_bg_color(ui_read_page, lv_color_hex(0xF5F5DC), 0);
     lv_obj_set_style_border_width(ui_read_page, 0, 0);
     lv_obj_add_flag(ui_read_page, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_clear_flag(ui_read_page, LV_OBJ_FLAG_SCROLLABLE); // 禁用页面滚动
 
     // 1. 顶部栏
     lv_obj_t *top_bar = lv_obj_create(ui_read_page);
@@ -224,8 +235,9 @@ void Reader_UI_Create(void)
     lv_obj_align(top_bar, LV_ALIGN_TOP_MID, 0, 0);
     lv_obj_set_style_bg_color(top_bar, lv_color_hex(0xDDCBA0), 0);
     lv_obj_set_style_border_width(top_bar, 0, 0);
+    lv_obj_clear_flag(top_bar, LV_OBJ_FLAG_SCROLLABLE);
 
-    lv_obj_t *back_btn = lv_btn_create(top_bar);
+        lv_obj_t *back_btn = lv_btn_create(top_bar);
     lv_obj_set_size(back_btn, 80, 40);
     lv_obj_align(back_btn, LV_ALIGN_LEFT_MID, 0, 0);
     lv_obj_set_style_bg_color(back_btn, lv_color_hex(0x8B4513), 0);
@@ -250,6 +262,7 @@ void Reader_UI_Create(void)
     lv_obj_align(bottom_bar, LV_ALIGN_BOTTOM_MID, 0, 0);
     lv_obj_set_style_bg_color(bottom_bar, lv_color_hex(0xDDCBA0), 0);
     lv_obj_set_style_border_width(bottom_bar, 0, 0);
+    lv_obj_clear_flag(bottom_bar, LV_OBJ_FLAG_SCROLLABLE);
 
     // 上一页按钮
     lv_obj_t *prev_btn = lv_btn_create(bottom_bar);
@@ -279,13 +292,17 @@ void Reader_UI_Create(void)
 
     // 3. 文本滚动区域
     ui_text_scroller = lv_obj_create(ui_read_page);
-    lv_obj_set_size(ui_text_scroller, 780, 360);             // 高度减小
+    lv_obj_set_size(ui_text_scroller, 780, 320);             // 高度减小
     lv_obj_align(ui_text_scroller, LV_ALIGN_TOP_MID, 0, 55); // 位于顶部栏下方
     lv_obj_set_style_bg_opa(ui_text_scroller, LV_OPA_TRANSP, 0);
     lv_obj_set_style_border_width(ui_text_scroller, 0, 0);
 
+    // 禁用滚动
+    lv_obj_set_scroll_dir(ui_text_scroller, LV_DIR_VER);
+
     ui_content_label = lv_label_create(ui_text_scroller);
-    lv_obj_set_width(ui_content_label, 760);
+    // 使用百分比宽度，减去一点边距，确保不会触发水平滚动
+    lv_obj_set_width(ui_content_label, lv_pct(95));
     lv_label_set_long_mode(ui_content_label, LV_LABEL_LONG_WRAP);
     lv_obj_set_style_text_color(ui_content_label, lv_color_black(), 0);
 
