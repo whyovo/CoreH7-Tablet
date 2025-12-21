@@ -42,7 +42,15 @@ void FatFs_Check(void)
         DEBUG_INFO("未检测到文件系统，尝试格式化 SD 卡");
 
         /* 格式化 SD 卡为 FAT32 */
-        MyFile_Res = f_mkfs(SDPath, FM_FAT32, 0, work, sizeof(work));
+        // MyFile_Res = f_mkfs(SDPath, FM_FAT32, 0, work, sizeof(work));
+        MKFS_PARM opt;
+        opt.fmt = FM_FAT32; /* 格式化为 FAT32 */
+        opt.n_fat = 1;      /* FAT 表数量，通常为 1 或 2 */
+        opt.align = 0;      /* 自动对齐 */
+        opt.n_root = 0;     /* 根目录项数（仅对 FAT12/16 有效） */
+        opt.au_size = 0;    /* 分配单元大小（0 为自动） */
+
+        MyFile_Res = f_mkfs(SDPath, &opt, work, sizeof(work));
 
         if (MyFile_Res == FR_OK)
         {

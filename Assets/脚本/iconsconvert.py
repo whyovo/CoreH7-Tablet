@@ -7,7 +7,6 @@ def rgb888_to_rgb565(r, g, b):
     # 将 888 转换为 565 格式 (Little Endian 存储准备)
     # RRRRRGGG GGGBBBBB
     be_val = ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3)
-    # 返回低字节和高字节 (STM32 为小端序)
     return be_val & 0xFF, (be_val >> 8) & 0xFF
 
 
@@ -18,35 +17,53 @@ def process_images(
         print(f"错误: 路径 '{input_dir}' 不存在")
         return
 
-    # 模式设置
-    if mode == "3":
-        in_ext, out_ext = ".png", ".c"
-    else:
-        in_ext, out_ext = (".png", ".jpg") if mode == "1" else (".jpg", ".png")
+    # 逻辑配置
+    do_bg_removal = False
+    in_exts = (".png", ".jpg", ".jpeg")
 
-    print(f"模式 {mode} 启动 | 容差: {tolerance} | 蚕食像素: {expand_pixels}")
+    if mode == "1":
+        out_ext = ".jpg"
+        print(f"-> 启动模式 1: [背景填充] PNG 转高质 JPG")
+    elif mode == "2":
+        out_ext = ".png"
+        do_bg_removal = True
+        print(f"-> 启动模式 2: [智能抠图] JPG 转透明 PNG (容差:{tolerance})")
+    elif mode == "3":
+        out_ext = ".c"
+        do_bg_removal = True  # 默认开启抠图以防源码是带白边的JPG
+        print(f"-> 启动模式 3: [嵌入式源码] 转 LVGL C数组 (RGB565 + Alpha)")
+    elif mode == "4":
+        out_ext = ".png"
+        do_bg_removal = False  # 直接缩放，保留原有的透明度
+        print(
+            f"-> 启动模式 4: [图标标准化] 任意尺寸统一转为 {target_size[0]}x{target_size[1]} 透明 PNG"
+        )
+    else:
+        print("无效模式，退出。")
+        return
 
     for root, dirs, files in os.walk(input_dir):
         for file in files:
-            if file.lower().endswith(in_ext):
+            if file.lower().endswith(in_exts):
                 file_path = os.path.join(root, file)
                 try:
                     with Image.open(file_path) as img:
-                        # 1. 尺寸归一化与裁剪
+                        # 1. 尺寸归一化与居中裁剪 (Center Crop)
                         w, h = img.size
                         ratio = max(target_size[0] / w, target_size[1] / h)
                         new_size = (int(w * ratio), int(h * ratio))
                         img = img.resize(new_size, Image.Resampling.LANCZOS)
-                        left, top = (new_size[0] - target_size[0]) / 2, (
-                            new_size[1] - target_size[1]
-                        ) / 2
+
+                        left = (new_size[0] - target_size[0]) / 2
+                        top = (new_size[1] - target_size[1]) / 2
                         img = img.crop(
                             (left, top, left + target_size[0], top + target_size[1])
                         )
 
-                        # 2. 核心处理：抠图逻辑 (仅模式2和3需要)
                         img = img.convert("RGBA")
-                        if mode in ["2", "3"]:
+
+                        # 2. 抠图逻辑 (Flood Fill 算法)
+                        if do_bg_removal:
                             width, height = img.size
                             pixels = img.load()
                             is_bg = [
@@ -61,6 +78,7 @@ def process_images(
                                     (255 - r) ** 2 + (255 - g) ** 2 + (255 - b) ** 2
                                 ) ** 0.5 < tolerance
 
+                            # 边界扫描
                             for x in range(width):
                                 for y in [0, height - 1]:
                                     if is_white_enough(x, y):
@@ -95,6 +113,7 @@ def process_images(
                                         if (nx, ny) not in visited:
                                             queue.append((nx, ny))
 
+                            # 蚕食边缘 (针对白边优化)
                             if expand_pixels > 0:
                                 for _ in range(expand_pixels):
                                     to_add = []
@@ -125,13 +144,12 @@ def process_images(
                             img.convert("RGB").save(
                                 os.path.join(root, base_name + ".jpg"), quality=100
                             )
-                        elif mode == "2":
+                        elif mode in ["2", "4"]:
                             img.save(os.path.join(root, base_name + ".png"))
                         elif mode == "3":
                             # 生成 C 数组 (RGB565 + Alpha)
                             c_path = os.path.join(root, f"img_{base_name}.c")
                             h_path = os.path.join(root, f"img_{base_name}.h")
-
                             with open(c_path, "w") as f_c:
                                 f_c.write('#include "lvgl.h"\n\n')
                                 f_c.write(
@@ -155,25 +173,43 @@ def process_images(
                                     f"  .data_size = {target_size[0] * target_size[1] * 3},\n"
                                 )
                                 f_c.write(f"  .data = img_{base_name}_map,\n}};\n")
-
                             with open(h_path, "w") as f_h:
                                 f_h.write(
                                     f"#ifndef IMG_{base_name.upper()}_H\n#define IMG_{base_name.upper()}_H\n\n"
                                 )
                                 f_h.write('#include "lvgl.h"\n\n')
                                 f_h.write(
-                                    f"extern const lv_img_dsc_t img_{base_name};\n\n"
+                                    f"extern const lv_img_dsc_t img_{base_name};\n\n#endif\n"
                                 )
-                                f_h.write("#endif\n")
 
-                        print(f"完成: {file}")
+                        print(f"已处理完成: {file}")
 
                 except Exception as e:
-                    print(f"跳过 {file}: {e}")
+                    print(f"!!! 无法处理 {file}: {e}")
 
 
 if __name__ == "__main__":
-    print("模式选择: 1-JPG, 2-透明PNG, 3-LVGL C数组(16bit+Alpha)")
-    choice = input("请输入模式: ").strip()
-    path = input("请输入路径: ").strip('"').strip()
-    process_images(path, choice, tolerance=70, expand_pixels=1)
+    print("\n" + "=" * 50)
+    print("      STM32 / LVGL 图标自动化处理脚本 V2.0")
+    print("=" * 50)
+    print(" [1] 背景填充模式: PNG 转 JPG ")
+    print("     - 自动缩放裁剪，无透明度，体积小。")
+    print("\n [2] 智能抠图模式: JPG 转透明 PNG (用于普通图标自制)")
+    print("     - 识别边界白色并转为透明，自动蚕食边缘减少白边。")
+    print("\n [3] 源码生成模式: 转为 LVGL C语言数组 (用于固件内置)")
+    print("     - 格式: RGB565 + Alpha (True Color Alpha)。")
+    print("     - 会自动执行抠图逻辑。")
+    print("\n [4] 图标标准化模式: 任意png尺寸转 120x120 透明 PNG")
+    print("     - 纯粹的缩放居中裁剪，不改变原有透明信息。")
+    print("     - 适合原本就是透明的素材进行统一尺寸处理。")
+    print("=" * 50)
+
+    choice = input("\n请选择工作模式 (1-4): ").strip()
+    path = input("请输入素材文件夹路径: ").strip('"').strip()
+
+    # 执行处理
+    process_images(path, choice, target_size=(120, 120), tolerance=70, expand_pixels=1)
+
+    print("\n" + "=" * 50)
+    print(" 所有任务执行完毕！")
+    print("=" * 50)

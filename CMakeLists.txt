@@ -397,6 +397,10 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     ${CMAKE_SOURCE_DIR}/Applications/Launcher/img_file.c
     ${CMAKE_SOURCE_DIR}/Applications/Launcher/img_osu.c
     ${CMAKE_SOURCE_DIR}/Applications/Launcher/img_settings.c
+    ${CMAKE_SOURCE_DIR}/Applications/Launcher/img_recoder.c
+    ${CMAKE_SOURCE_DIR}/Applications/Launcher/img_reader.c
+    ${CMAKE_SOURCE_DIR}/Applications/Launcher/img_musicplay.c
+    ${CMAKE_SOURCE_DIR}/Applications/Launcher/img_aichat.c
 
     # Music Game Application
     ${CMAKE_SOURCE_DIR}/Applications/MusicGame/music_game_core.c
@@ -420,6 +424,11 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # Settings Application
     ${CMAKE_SOURCE_DIR}/Applications/Settings/settings_task.c
     ${CMAKE_SOURCE_DIR}/Applications/Settings/settings_ui.c
+
+    ${CMAKE_SOURCE_DIR}/Applications/Reader/reader_core.c
+    ${CMAKE_SOURCE_DIR}/Applications/Reader/reader_task.c
+    ${CMAKE_SOURCE_DIR}/Applications/Reader/reader_ui.c
+
 )
 
 # Add include paths
@@ -519,6 +528,9 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     ${CMAKE_SOURCE_DIR}/Applications/Settings
     ${CMAKE_SOURCE_DIR}/Applications/FileBrowser
     ${CMAKE_SOURCE_DIR}/Applications/Game_2048
+    ${CMAKE_SOURCE_DIR}/Applications/Reader
+    ${CMAKE_SOURCE_DIR}/Applications/AIChat
+
 )
 
 # Add project symbols (macros)

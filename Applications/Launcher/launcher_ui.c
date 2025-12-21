@@ -5,8 +5,13 @@
 #include "img_file.h"
 #include "img_camera.h"
 #include "img_2048.h"
+#include "img_reader.h"
+#include "img_recoder.h"
+#include "img_musicplay.h"
 #include "game_2048_task.h"
 #include "file_task.h"
+#include "reader_task.h"
+#include "img_aichat.h"
 
 // 静态变量
 static lv_obj_t *ui_main_cont = NULL;
@@ -108,6 +113,10 @@ void Launcher_UI_Create(void)
         {&img_file, "Files", &FileBrowserApp},
         {&img_2048, "2048", &Game2048App},
         {&img_settings, "Settings", NULL},
+        {&img_recoder, "Recorder", NULL},
+        {&img_reader, "Reader", &ReaderApp},
+        {&img_musicplay, "Music", NULL},
+        {&img_aichat, "AI Chat", NULL},
         {NULL, NULL, NULL}};
 
     for (int i = 0; apps[i].img != NULL; i++)
