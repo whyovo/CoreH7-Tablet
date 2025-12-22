@@ -51,7 +51,7 @@ extern "C" {
 #ifdef DSPEAKER_ENABLE
 
 
-// #define MP3_PLAY_ENABLE      //定义了就开启mp3功能，不开启就不编译mp3相关代码，减小体积
+#define MP3_PLAY_ENABLE      //定义了就开启mp3功能，不开启就不编译mp3相关代码，减小体积
 #define WAV_PLAY_ENABLE      // 定义了就开启wav功能，不开启就不编译wav相关代码，减小体积
 /*******************************************************************************
  *                              I2S 外设配置

@@ -54,7 +54,7 @@ static void paste_btn_cb(lv_event_t *e)
 static void file_action_cb(lv_event_t *e)
 {
     lv_obj_t *obj = lv_event_get_target(e);
-    // 修改：使用索引判断更安全 (0:复制, 1:删除, 2:取消)
+    // 使用索引判断更安全 (0:复制, 1:删除, 2:取消)
     uint16_t btn_id = lv_msgbox_get_active_btn(obj);
     const char *filename = (const char *)lv_event_get_user_data(e);
 

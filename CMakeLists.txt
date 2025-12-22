@@ -64,6 +64,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     ${CMAKE_SOURCE_DIR}/BSP/I2S/dmic.c
     ${CMAKE_SOURCE_DIR}/BSP/I2S/dspeaker.c
     ${CMAKE_SOURCE_DIR}/BSP/I2S/audio_player.c
+    ${CMAKE_SOURCE_DIR}/BSP/I2S/mp3_player.c
 
     ${CMAKE_SOURCE_DIR}/BSP/JPEG/jpeg_app.c
     ${CMAKE_SOURCE_DIR}/BSP/JPEG/jpeg_code.c
@@ -429,6 +430,8 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     ${CMAKE_SOURCE_DIR}/Applications/Reader/reader_task.c
     ${CMAKE_SOURCE_DIR}/Applications/Reader/reader_ui.c
 
+    ${CMAKE_SOURCE_DIR}/Applications/MusicPlay/music_task.c
+    ${CMAKE_SOURCE_DIR}/Applications/MusicPlay/music_ui.c
 )
 
 # Add include paths
@@ -439,6 +442,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     ${CMAKE_SOURCE_DIR}/BSP/FMC
     ${CMAKE_SOURCE_DIR}/BSP/GPIO
     ${CMAKE_SOURCE_DIR}/BSP/I2S
+    ${CMAKE_SOURCE_DIR}/BSP/I2S/minimp3
     ${CMAKE_SOURCE_DIR}/BSP/JPEG
     ${CMAKE_SOURCE_DIR}/BSP/LTDC
     ${CMAKE_SOURCE_DIR}/BSP/QSPI
@@ -530,6 +534,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     ${CMAKE_SOURCE_DIR}/Applications/Game_2048
     ${CMAKE_SOURCE_DIR}/Applications/Reader
     ${CMAKE_SOURCE_DIR}/Applications/AIChat
+    ${CMAKE_SOURCE_DIR}/Applications/MusicPlay
 
 )
 

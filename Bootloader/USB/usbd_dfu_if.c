@@ -89,7 +89,7 @@
 #if (MY_DFU_MEDIA_MODE == MODE_INTERNAL_FLASH)
 #define FLASH_DESC_STR "@Internal Flash   /0x08100000/10*128Kg"
 #elif (MY_DFU_MEDIA_MODE == MODE_EXTERNAL_FLASH)
-/* 修改为 512个 64KB 块 (32MB total) */
+/*  512个 64KB 块 (32MB total) */
 #define FLASH_DESC_STR "@QSPI Flash       /0x90000000/512*64Kg"
 #endif
 

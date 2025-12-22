@@ -11,6 +11,8 @@
 #include "game_2048_task.h"
 #include "file_task.h"
 #include "reader_task.h"
+#include "music_task.h"
+
 #include "img_aichat.h"
 
 // 静态变量
@@ -110,12 +112,15 @@ void Launcher_UI_Create(void)
     } apps[] = {
         {&img_camera, "Camera", NULL},
         {&img_osu, "Osu!", NULL},
-        {&img_file, "Files", &FileBrowserApp},
-        {&img_2048, "2048", &Game2048App},
+        // {&img_file, "Files", &FileBrowserApp},
+        // {&img_2048, "2048", &Game2048App},
+        {&img_file, "Files", NULL},
+        {&img_2048, "2048", NULL},
         {&img_settings, "Settings", NULL},
         {&img_recoder, "Recorder", NULL},
-        {&img_reader, "Reader", &ReaderApp},
-        {&img_musicplay, "Music", NULL},
+        {&img_reader, "Reader", NULL},
+        // {&img_reader, "Reader", &ReaderApp},
+        {&img_musicplay, "Music", &MusicPlayerApp},
         {&img_aichat, "AI Chat", NULL},
         {NULL, NULL, NULL}};
 

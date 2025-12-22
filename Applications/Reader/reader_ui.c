@@ -221,7 +221,7 @@ void Reader_UI_Create(void)
 
     Reader_Core_ScanDir(on_file_found_add_btn, NULL);
 
-    // ================= 阅读页 (修改布局) =================
+    // ================= 阅读页=================
     ui_read_page = lv_obj_create(ui_root);
     lv_obj_set_size(ui_read_page, lv_pct(100), lv_pct(100));
     lv_obj_set_style_bg_color(ui_read_page, lv_color_hex(0xF5F5DC), 0);

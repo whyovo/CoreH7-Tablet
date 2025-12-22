@@ -3,7 +3,6 @@
 #include "game_2048_core.h"
 #include "config.h"
 
-// 作用: RTOS任务逻辑与状态机
 
 static void Game2048_App_Init(void)
 {
