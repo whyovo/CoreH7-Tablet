@@ -26,6 +26,9 @@
 extern "C" {
 #endif
 
+#include "config.h"
+#ifdef FATFS_ENABLE
+
 #if !defined(FFCONF_DEF)
 #include "ffconf.h"		/* FatFs configuration options */
 #endif
@@ -440,6 +443,7 @@ void ff_mutex_give (int vol);		/* Unlock sync object */
 #define AM_DIR	0x10	/* Directory */
 #define AM_ARC	0x20	/* Archive */
 
+#endif
 
 #ifdef __cplusplus
 }

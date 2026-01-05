@@ -77,6 +77,13 @@ void RGB_LCD_Init(void) {
   RGB_LCD_SetTextFont(24);                   // 设置默认中英文字体
   RGB_LCD_ShowNumMode(Fill_Space_RGB);       // 设置数字显示默认填充空格
 
+#if RGB_LCD_NUM_LAYERS == 2 // 如果开启了双层显示
+  RGB_LCD_SetLayer(1);                 // 切换到 layer1
+  RGB_LCD_SetBackColor(0x00000000);    // 设置背景色
+  RGB_LCD_SetColor(RGB_LCD_WHITE);     // 设置画笔颜色
+  RGB_LCD_Clear();                     // 清屏，刷背景色
+#endif
+
   RGB_LCD_SetLayer(0);                 // 切换到 layer0
   RGB_LCD_SetBackColor(RGB_LCD_BLACK); // 设置背景色
   RGB_LCD_SetColor(RGB_LCD_WHITE);     // 设置画笔颜色
@@ -554,7 +561,7 @@ void RGB_LCD_DisplayChinese(uint16_t x, uint16_t y, char *pText) {
   // 渲染到屏幕
   RGB_DrawFont_Bitmap(x, y, font_size, font_size, pFontData);
 #else
-  uint16_t i = 0, index = 0, counter = 0; // 计数变量
+  uint16_t  index = 0, counter = 0; // 计数变量
   uint16_t addr = 0;                      // 字模地址
   uint8_t disChar;                        // 字模的值
   uint16_t Xaddress = 0;                  // 水平坐标
@@ -1086,6 +1093,60 @@ void RGB_LCD_FillCircle(uint16_t x, uint16_t y, uint16_t r) {
 
   RGB_LCD_DrawCircle(x, y, r);
 }
+/* ================================================================== */
+/*                        图层动态控制函数实现                     */
+/* ================================================================== */
+
+/**
+ * @brief  开启或关闭指定硬件图层
+ * @param  LayerIndex: 0 (底层) 或 1 (顶层)
+ * @param  State: ENABLE 或 DISABLE
+ */
+void RGB_LCD_LayerEnable(uint8_t LayerIndex, FunctionalState State)
+{
+  if (State == ENABLE)
+  {
+    __HAL_LTDC_LAYER_ENABLE(&hltdc, LayerIndex);
+  }
+  else
+  {
+    __HAL_LTDC_LAYER_DISABLE(&hltdc, LayerIndex);
+  }
+  // 立即重载配置使其生效
+  __HAL_LTDC_RELOAD_CONFIG(&hltdc);
+}
+
+/**
+ * @brief  设置指定图层的显存地址
+ * @param  LayerIndex: 0 或 1
+ * @param  Address: 显存地址 (如 SDRAM_BANK_ADDR)
+ */
+void RGB_LCD_SetLayerAddress(uint8_t LayerIndex, uint32_t Address)
+{
+  HAL_LTDC_SetAddress(&hltdc, Address, LayerIndex);
+  // 注意：HAL_LTDC_SetAddress 内部通常不包含 Reload，需要手动重载
+  // 使用垂直消隐期重载防止撕裂
+  HAL_LTDC_Reload(&hltdc, LTDC_RELOAD_VERTICAL_BLANKING);
+
+  // 如果当前绘图上下文也是这一层，同步更新结构体，防止后续绘图出错
+  if (LCD_RGB.Layer == LayerIndex)
+  {
+    LCD_RGB.LayerMemoryAdd = Address;
+  }
+}
+
+/**
+ * @brief  设置指定图层的恒定透明度 (Constant Alpha)
+ * @param  LayerIndex: 0 或 1
+ * @param  Alpha: 0(全透) ~ 255(不透)
+ */
+void RGB_LCD_SetLayerAlpha(uint8_t LayerIndex, uint8_t Alpha)
+{
+  HAL_LTDC_SetAlpha(&hltdc, Alpha, LayerIndex);
+  HAL_LTDC_Reload(&hltdc, LTDC_RELOAD_VERTICAL_BLANKING);
+}
+
+
 
 /**
  * @brief  RGB LCD 综合功能测试

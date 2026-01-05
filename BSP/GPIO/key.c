@@ -38,13 +38,27 @@
 KEY keys[] = {KEY_LIST};
 #undef X
 
-static uint8_t stable_state[KEY_COUNT]; /*!< 去抖后的稳定状态（0/1） */
-static uint8_t last_raw[KEY_COUNT]; /*!< 上一次原始电平（用于检测变化） */
+/**
+ * @brief  获取按键结构体指针
+ * @param  id: 按键ID
+ * @retval 按键指针
+ */
+KEY *KEY_GetPtr(KEY_ID id)
+{
+  if (id >= KEY_COUNT)
+  {
+    return NULL;
+  }
+  return &keys[id];
+}
+
+static uint8_t stable_state[KEY_COUNT];    /*!< 去抖后的稳定状态（0/1） */
+static uint8_t last_raw[KEY_COUNT];        /*!< 上一次原始电平（用于检测变化） */
 static uint32_t last_change_ts[KEY_COUNT]; /*!< 上一次电平变化时间戳 */
 static uint32_t press_ts[KEY_COUNT];       /*!< 按下时间戳 */
 static uint32_t release_ts[KEY_COUNT];     /*!< 释放时间戳 */
-static uint8_t click_pending[KEY_COUNT]; /*!< 单击待处理标志（等待双击窗口） */
-static uint8_t long_reported[KEY_COUNT]; /*!< 长按已报告标志 */
+static uint8_t click_pending[KEY_COUNT];   /*!< 单击待处理标志（等待双击窗口） */
+static uint8_t long_reported[KEY_COUNT];   /*!< 长按已报告标志 */
 
 static KEY_Callback callbacks[KEY_COUNT] = {0}; /*!< 回调函数数组 */
 
@@ -54,23 +68,53 @@ static KEY_Callback callbacks[KEY_COUNT] = {0}; /*!< 回调函数数组 */
 static void emit_event(KEY_ID id, KEY_Event ev);
 
 /**
- * @brief  读取按键原始GPIO电平
+ * @brief  读取按键原始GPIO电平（指针版本）
  * @param  key: 按键指针
  * @retval GPIO_PIN_RESET(0) 或 GPIO_PIN_SET(1)
  */
-uint8_t KEY_ReadRaw(KEY *key) {
+uint8_t KEY_ReadRaw_Ptr(KEY *key)
+{
+  if (key == NULL)
+  {
+    return 0;
+  }
   return (uint8_t)HAL_GPIO_ReadPin(key->port, key->pin);
 }
 
 /**
- * @brief  判断按键是否处于按下状态（考虑极性）
+ * @brief  读取按键原始GPIO电平（ID版本）
+ * @param  id: 按键ID
+ * @retval 0=低电平，1=高电平
+ */
+uint8_t KEY_ReadRaw(KEY_ID id)
+{
+  return KEY_ReadRaw_Ptr(KEY_GetPtr(id));
+}
+
+/**
+ * @brief  判断按键是否处于按下状态（指针版本，考虑极性）
  * @param  key: 按键指针
  * @retval 0=未按下，1=按下
  */
-uint8_t KEY_IsPressed(KEY *key) {
-  uint8_t raw = KEY_ReadRaw(key);
+uint8_t KEY_IsPressed_Ptr(KEY *key)
+{
+  if (key == NULL)
+  {
+    return 0;
+  }
+  uint8_t raw = KEY_ReadRaw_Ptr(key);
   /* 按下时电平与空闲电平相反 */
   return (raw != key->idle_level) ? 1 : 0;
+}
+
+/**
+ * @brief  判断按键是否处于按下状态（ID版本，考虑极性）
+ * @param  id: 按键ID
+ * @retval 0=未按下，1=按下
+ */
+uint8_t KEY_IsPressed(KEY_ID id)
+{
+  return KEY_IsPressed_Ptr(KEY_GetPtr(id));
 }
 
 /**
@@ -81,18 +125,21 @@ uint8_t KEY_IsPressed(KEY *key) {
  * @note   不同编译器的弱符号语法略有差异，此处做兼容处理
  */
 #if defined(__GNUC__) || defined(__clang__)
-__attribute__((weak)) void KEY_EventHandler(KEY_ID id, KEY_Event ev) {
+__attribute__((weak)) void KEY_EventHandler(KEY_ID id, KEY_Event ev)
+{
   (void)id;
   (void)ev;
 }
 #elif defined(__ICCARM__)
 /* IAR不支持同名弱符号覆盖，用户可使用回调注册或链接脚本 */
-void KEY_EventHandler(KEY_ID id, KEY_Event ev) {
+void KEY_EventHandler(KEY_ID id, KEY_Event ev)
+{
   (void)id;
   (void)ev;
 }
 #else
-__weak void KEY_EventHandler(KEY_ID id, KEY_Event ev) {
+__weak void KEY_EventHandler(KEY_ID id, KEY_Event ev)
+{
   (void)id;
   (void)ev;
 }
@@ -104,7 +151,8 @@ __weak void KEY_EventHandler(KEY_ID id, KEY_Event ev) {
  * @param  ev: 事件类型
  * @note   优先调用已注册回调，否则调用弱处理函数
  */
-static void emit_event(KEY_ID id, KEY_Event ev) {
+static void emit_event(KEY_ID id, KEY_Event ev)
+{
   if (id >= KEY_COUNT)
     return;
 
@@ -119,11 +167,13 @@ static void emit_event(KEY_ID id, KEY_Event ev) {
  * @note   清空状态数组并读取初始电平
  * @retval None
  */
-void KEY_Init(void) {
+void KEY_Init(void)
+{
   uint32_t now = HAL_GetTick();
-  for (int i = 0; i < KEY_COUNT; ++i) {
+  for (int i = 0; i < KEY_COUNT; ++i)
+  {
     /* 读取初始电平作为空闲电平(假设按键未按下) */
-    keys[i].idle_level = KEY_ReadRaw(&keys[i]);
+    keys[i].idle_level = KEY_ReadRaw_Ptr(&keys[i]);
 
     last_raw[i] = keys[i].idle_level;
     stable_state[i] = 0; /* 初始化为未按下 */
@@ -143,8 +193,10 @@ void KEY_Init(void) {
  * @note   注册后该按键的事件将调用回调而非KEY_EventHandler
  * @retval None
  */
-void KEY_RegisterCallback(KEY_ID id, KEY_Callback cb) {
-  if (id >= KEY_COUNT) {
+void KEY_RegisterCallback(KEY_ID id, KEY_Callback cb)
+{
+  if (id >= KEY_COUNT)
+  {
     DEBUG_ERROR("KEY_RegisterCallback: 无效的按键ID");
     return;
   }
@@ -157,8 +209,10 @@ void KEY_RegisterCallback(KEY_ID id, KEY_Callback cb) {
  * @note   取消后该按键的事件将回到调用KEY_EventHandler
  * @retval None
  */
-void KEY_UnregisterCallback(KEY_ID id) {
-  if (id >= KEY_COUNT) {
+void KEY_UnregisterCallback(KEY_ID id)
+{
+  if (id >= KEY_COUNT)
+  {
     DEBUG_ERROR("KEY_UnregisterCallback: 无效的按键ID");
     return;
   }
@@ -178,63 +232,86 @@ void KEY_UnregisterCallback(KEY_ID id) {
  *         4. 按下后持续时间检测 -> 触发长按事件
  *         5. 释放后检测持续时间 -> 判断单击/双击
  */
-void KEY_Task(void) {
+void KEY_Task(void)
+{
   uint32_t now = HAL_GetTick();
 
-  for (int i = 0; i < KEY_COUNT; ++i) {
-    uint8_t raw = KEY_ReadRaw(&keys[i]);
+  for (int i = 0; i < KEY_COUNT; ++i)
+  {
+    uint8_t raw = KEY_ReadRaw_Ptr(&keys[i]);
     uint8_t pressed = (raw != keys[i].idle_level) ? 1 : 0;
 
     /* 阶段1: 检测原始电平变化 */
-    if (raw != last_raw[i]) {
+    if (raw != last_raw[i])
+    {
       last_change_ts[i] = now; /* 重置消抖计时器 */
       last_raw[i] = raw;
-    } else {
+    }
+    else
+    {
       /* 阶段2: 原始电平稳定,检查是否超过消抖时间 */
-      if (((int32_t)(now - last_change_ts[i])) >= KEY_DEBOUNCE_MS) {
+      if (((int32_t)(now - last_change_ts[i])) >= KEY_DEBOUNCE_MS)
+      {
         /* 阶段3: 比较去抖后状态,检测边沿 */
-        if (pressed != stable_state[i]) {
+        if (pressed != stable_state[i])
+        {
           stable_state[i] = pressed;
 
-          if (pressed) {
+          if (pressed)
+          {
             /* 按下边沿 */
             press_ts[i] = now;
             long_reported[i] = 0;
             emit_event((KEY_ID)i, KEY_EV_PRESS);
-          } else {
+          }
+          else
+          {
             /* 释放边沿 */
             release_ts[i] = now;
             emit_event((KEY_ID)i, KEY_EV_RELEASE);
 
             uint32_t held = (press_ts[i] ? (now - press_ts[i]) : 0);
 
-            if (held < KEY_LONG_MS) {
+            if (held < KEY_LONG_MS)
+            {
               /* 短按: 检测单击/双击 */
-              if (click_pending[i] && ((now - release_ts[i]) <= KEY_DBL_MS)) {
+              if (click_pending[i] && ((now - release_ts[i]) <= KEY_DBL_MS))
+              {
                 /* 双击窗口内的第二次释放 -> 双击 */
                 click_pending[i] = 0;
                 emit_event((KEY_ID)i, KEY_EV_DOUBLE_CLICK);
-              } else {
+              }
+              else
+              {
                 /* 标记单击待处理，等待双击窗口结束 */
                 click_pending[i] = 1;
               }
-            } else {
+            }
+            else
+            {
               /* 长按后释放,不当作点击 */
               click_pending[i] = 0;
             }
           }
-        } else {
+        }
+        else
+        {
           /* 阶段4: 状态稳定,检测长按和双击超时 */
-          if (stable_state[i]) {
+          if (stable_state[i])
+          {
             /* 持续按下: 检测长按 */
             if (!long_reported[i] && press_ts[i] &&
-                ((now - press_ts[i]) >= KEY_LONG_MS)) {
+                ((now - press_ts[i]) >= KEY_LONG_MS))
+            {
               long_reported[i] = 1;
               emit_event((KEY_ID)i, KEY_EV_LONG_PRESS);
             }
-          } else {
+          }
+          else
+          {
             /* 持续释放: 检测单击超时 */
-            if (click_pending[i] && ((now - release_ts[i]) > KEY_DBL_MS)) {
+            if (click_pending[i] && ((now - release_ts[i]) > KEY_DBL_MS))
+            {
               click_pending[i] = 0;
               emit_event((KEY_ID)i, KEY_EV_CLICK);
             }

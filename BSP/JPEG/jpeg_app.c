@@ -14,7 +14,7 @@
 #include <string.h>
 
 
-#ifdef JPEG_ENABLE
+#if defined(JPEG_ENABLE)&& defined(FATFS_ENABLE)
 /* RGB565颜色宏定义 */
 #define RGB565(R, G, B) (((R >> 3) << 11) | ((G >> 2) << 5) | (B >> 3))
 
@@ -158,6 +158,84 @@ int JPEG_App_CreateSolidColorImage(const char *filename, uint16_t width,
 
   DEBUG_INFO("文件保存成功");
 
+  return 0;
+}
+
+/**
+ * @brief  截屏指定图层内容并保存到SD卡
+ */
+uint8_t JPEG_Save_Screenshot(const char *filepath, uint32_t LayerIndex)
+{
+  FIL file;
+  FRESULT res;
+  uint32_t bw;
+  char auto_filename[64];
+  uint32_t source_addr;
+
+  // 1. 获取指定 LTDC 显示层的显存地址
+  // 读取 CFBAR 寄存器可以获取当前硬件正在读取的显存地址 (兼容双缓冲)
+  if (LayerIndex == 0)
+  {
+    source_addr = LTDC_Layer1->CFBAR; // Layer 0
+  }
+  else
+  {
+    source_addr = LTDC_Layer2->CFBAR; // Layer 1
+  }
+
+  // 2. 处理文件名
+  if (filepath == NULL)
+  {
+    // 自动生成文件名: 0:/screenshot_0.jpg, 0:/screenshot_1.jpg ...
+    for (int i = 0; i < 1000; i++)
+    {
+      sprintf(auto_filename, "0:/screenshot_%d.jpg", i);
+      FILINFO fno;
+      if (f_stat(auto_filename, &fno) != FR_OK)
+      {
+        // 文件不存在，可以使用此文件名
+        filepath = auto_filename;
+        break;
+      }
+    }
+  }
+
+  DEBUG_INFO("开始截屏(Layer%d): %s, 源地址: 0x%X", LayerIndex, filepath, source_addr);
+
+  // 3. 刷新 D-Cache
+  // 显存数据可能由 DMA (摄像头) 写入，CPU 读取前需无效化 Cache 以保证数据一致性
+  SCB_InvalidateDCache_by_Addr((uint32_t *)source_addr, RGB_LCD_Width * RGB_LCD_Height * 2);
+
+  // 4. 执行 JPEG 编码
+  // 使用 JPEG_OUTPUT_DATA_BUFFER 作为中间 YCbCr 缓冲区
+  // 使用 JPEG_ENCODE_OUTPUT_BUFFER 作为最终 JPEG 数据缓冲区
+  // 质量设为 High，采样设为 4:4:4 以获得最好画质
+  if (JPEG_Encode_RGB565(RGB_LCD_Width, RGB_LCD_Height, source_addr,
+                         JPEG_OUTPUT_DATA_BUFFER, JPEG_ENCODE_OUTPUT_BUFFER,
+                         JPEG_Quality_High, JPEG_Encode_444) != 0)
+  {
+    DEBUG_ERROR("截屏失败: JPEG编码错误");
+    return 1;
+  }
+
+  // 5. 保存到 SD 卡
+  res = f_open(&file, filepath, FA_WRITE | FA_CREATE_ALWAYS);
+  if (res != FR_OK)
+  {
+    DEBUG_ERROR("截屏失败: 无法打开文件 (Res=%d)", res);
+    return 2;
+  }
+
+  res = f_write(&file, (void *)JPEG_ENCODE_OUTPUT_BUFFER, JPEG_GetEncodedSize(), &bw);
+  f_close(&file);
+
+  if (res != FR_OK)
+  {
+    DEBUG_ERROR("截屏失败: 写入错误");
+    return 3;
+  }
+
+  DEBUG_INFO("截屏成功! 大小: %d Bytes", JPEG_GetEncodedSize());
   return 0;
 }
 

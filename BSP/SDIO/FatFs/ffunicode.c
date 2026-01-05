@@ -24,6 +24,7 @@
 
 
 #include "ff.h"
+#ifdef FATFS_ENABLE
 
 #if FF_USE_LFN != 0	/* This module will be blanked if in non-LFN configuration */
 
@@ -15591,3 +15592,6 @@ DWORD ff_wtoupper (	/* Returns up-converted code point */
 
 
 #endif /* #if FF_USE_LFN != 0 */
+
+
+#endif

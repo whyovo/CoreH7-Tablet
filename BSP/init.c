@@ -109,10 +109,6 @@ void init_all(void) {
   Touch_Init(); /* 初始化LCD触摸驱动 */
 #endif
 
-#ifdef DSPEAKER_ENABLE
-  DSPEAKER_Init(); /* 初始化LCD触摸驱动 */
-#endif
-
 #ifdef USB_DEVICE_ENABLE
   MX_USB_DEVICE_Init();
 #endif
@@ -120,6 +116,36 @@ void init_all(void) {
 #ifdef USB_HOST_ENABLE
   MX_USB_HOST_Init();
 #endif
+
+#ifdef RTC_ENABLE
+  RTC_App_Init();
+#endif
+
+#ifdef UART_WIFI_ENABLE
+  UART_WIFI_Init();
+#endif
+
+#ifdef UART_DEV_ENABLE
+  UART_DEV_Init();
+#endif
+
+#ifdef OLED_I2C_ENABLE
+  OLED_Init();
+#endif
+
+#ifdef MPU6050_I2C_ENABLE
+  MPU6050_Init();
+#endif
+
+#ifdef OV5640_ENABLE
+  DCMI_OV5640_Init();
+  /* 下载自动对焦固件并开启持续对焦 */
+  OV5640_AF_Download_Firmware();
+  OV5640_AF_Trigger_Constant();
+#endif
+
+
+
   DEBUG_INFO("初始化完成");
   /*******************************************************************************
    *                              用户自定义初始化部分

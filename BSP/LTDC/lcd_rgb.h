@@ -35,17 +35,12 @@
 #define __LCD_RGB_H
 
 #include "config.h"
-#include "lcd_fonts.h"
-#include "lcd_image.h"
-#include "sdram.h"
-#include <stdio.h>
-
 #ifdef LCD_RGB_ENABLE
-typedef struct _pFont pFONT; // 前向声明
+
 /*******************************************************************************
  *                             配置是否用外部字库
  ******************************************************************************/
-#define USE_FLASH_FONT_RGB /*!< 定义了：使用Flash字库,                 \
+#define USE_FLASH_FONT_RGB /*!< 定义了：使用Flash字库, \
                               注释后：使用内置取模字库 */
 // #define IS_GB2312_RGB     /*!< 定义了：使用gb2312, 注释后：使用UTF8 */
 
@@ -58,6 +53,18 @@ typedef struct _pFont pFONT; // 前向声明
 #ifdef USE_FLASH_FONT_RGB
 #include "flash_font.h"
 #endif
+
+/*******************************************************************************
+ *                             include
+ ******************************************************************************/
+#include "lcd_fonts.h"
+#include "lcd_image.h"
+#include "sdram.h"
+#include <stdio.h>
+
+
+typedef struct _pFont pFONT; // 前向声明
+
 /*******************************************************************************
  *                              LTDC层配置
  ******************************************************************************/
@@ -66,7 +73,7 @@ typedef struct _pFont pFONT; // 前向声明
  * @brief 显示层数定义
  * @note  H7可驱动两层显示，过多层会增加SDRAM占用导致花屏
  */
-#define RGB_LCD_NUM_LAYERS 1
+#define RGB_LCD_NUM_LAYERS 2
 
 /**
  * @brief Layer0 颜色格式定义
@@ -472,7 +479,31 @@ void RGB_LCD_FillRect(uint16_t x, uint16_t y, uint16_t width, uint16_t height);
  * @retval None
  */
 void RGB_LCD_FillCircle(uint16_t x, uint16_t y, uint16_t r);
+/* ================================================================== */
+/*                        图层动态控制函数                        */
+/* ================================================================== */
 
+/**
+ * @brief  开启或关闭指定硬件图层
+ * @param  LayerIndex: 0 或 1
+ * @param  State: ENABLE 或 DISABLE
+ */
+void RGB_LCD_LayerEnable(uint8_t LayerIndex, FunctionalState State);
+
+/**
+ * @brief  设置指定图层的显存地址
+ * @param  LayerIndex: 0 或 1
+ * @param  Address: 显存地址
+ */
+void RGB_LCD_SetLayerAddress(uint8_t LayerIndex, uint32_t Address);
+
+/**
+ * @brief  设置指定图层的透明度 (Alpha)
+ * @param  LayerIndex: 0 或 1
+ * @param  Alpha: 0(全透) ~ 255(不透)
+ * @note   用于调整整个图层的透明度
+ */
+void RGB_LCD_SetLayerAlpha(uint8_t LayerIndex, uint8_t Alpha);
 /*******************************************************************************
  *                              图像显示
  ******************************************************************************/
@@ -502,6 +533,10 @@ void RGB_LCD_DrawImage(uint16_t x, uint16_t y, uint16_t width, uint16_t height,
  *         5. 区域填充
  */
 void lcd_test(void);
+
+
+
+
 #endif
 
 #endif //__LCD_RGB_H

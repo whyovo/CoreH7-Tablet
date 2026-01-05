@@ -14,7 +14,7 @@ extern "C" {
 #endif
 
 #include "config.h"
-#ifdef JPEG_ENABLE
+#if defined(JPEG_ENABLE) && defined(FATFS_ENABLE)
 #include "jpeg_code.h"
 /**
  * @brief  从SD卡读取JPEG文件并在屏幕上显示
@@ -41,7 +41,19 @@ int JPEG_App_DisplayFile(const char *filename, uint16_t x, uint16_t y);
 int JPEG_App_CreateSolidColorImage(const char *filename, uint16_t width,
                                    uint16_t height, uint16_t color,
                                    JPEG_QualityTypeDef quality);
+
+/**
+ * @brief  截屏指定图层内容并保存到SD卡
+ * @param  filepath: 文件路径 (例如 "0:/capture.jpg")
+ *                   - 如果为 NULL，自动在根目录生成 "0:/screenshot_x.jpg"
+ *                   - 如果指定路径，则直接保存为该文件名
+ * @param  LayerIndex: 图层索引 (0: Layer1/背景层, 1: Layer2/前景层)
+ * @retval 0:成功, 1:编码失败, 2:文件打开失败, 3:写入失败
+ */
+uint8_t JPEG_Save_Screenshot(const char *filepath, uint32_t LayerIndex);
+
 #endif
+
 #ifdef __cplusplus
 }
 #endif

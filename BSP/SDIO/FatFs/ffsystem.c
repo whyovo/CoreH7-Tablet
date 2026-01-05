@@ -3,7 +3,7 @@
 /*------------------------------------------------------------------------*/
 
 #include "ff.h"
-
+#ifdef FATFS_ENABLE
 
 #if FF_USE_LFN == 3	/* Use dynamic memory allocation */
 
@@ -206,3 +206,4 @@ void ff_mutex_give (
 
 #endif	/* FF_FS_REENTRANT */
 
+#endif

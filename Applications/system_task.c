@@ -22,6 +22,9 @@ typedef struct
 
 // 全局变量
 SemaphoreHandle_t lvglMutex;
+// 文件系统互斥锁
+SemaphoreHandle_t fsMutex;
+
 TaskHandle_t currentAppTaskHandle = NULL;
 static App_Descriptor_t *currentAppDescriptor = NULL; // 记录当前 App 的描述符，以便调用 exit
 
@@ -89,6 +92,7 @@ void StartSystemDisplayTask(void *argument)
 
     /* 创建互斥量 */
     lvglMutex = xSemaphoreCreateMutex();
+    fsMutex = xSemaphoreCreateMutex(); // 创建 FS 锁
 
     /* 启动默认应用 (Launcher) */
     // 获取锁以确保安全，虽然此时任务还没开始调度
@@ -107,7 +111,12 @@ void StartSystemDisplayTask(void *argument)
     {
         if (xSemaphoreTake(lvglMutex, portMAX_DELAY) == pdTRUE)
         {
-            lv_task_handler();
+            // 使用 fsMutex 保护 lv_task_handler，因为 LVGL 可能会读取 SD 卡加载图片
+            if (xSemaphoreTake(fsMutex, portMAX_DELAY) == pdTRUE)
+            {
+                lv_task_handler();
+                xSemaphoreGive(fsMutex);
+            }
             xSemaphoreGive(lvglMutex);
         }
         vTaskDelay(pdMS_TO_TICKS(16));

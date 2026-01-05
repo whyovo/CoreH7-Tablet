@@ -1,4 +1,5 @@
 #include "lv_font_qspi.h"
+#include "config.h"
 #include <string.h>
 
 /*******************************************************************************
@@ -13,6 +14,15 @@ typedef struct
   uint32_t data_offset;
 } FontInfo_t;
 
+/* 声明 LVGL 内置字体 (确保在 lv_conf.h 中已启用这些字体) */
+LV_FONT_DECLARE(lv_font_montserrat_12)
+LV_FONT_DECLARE(lv_font_montserrat_16)
+LV_FONT_DECLARE(lv_font_montserrat_20)
+LV_FONT_DECLARE(lv_font_montserrat_24)
+LV_FONT_DECLARE(lv_font_montserrat_32)
+
+#ifdef FLASH_FONT_ENABLE
+
 static FontInfo_t g_font_info[5] = {
     {12, 12, 12, FONT_12x12_ADDR, 18}, // 字库头18字节
     {16, 16, 16, FONT_16x16_ADDR, 18},
@@ -23,13 +33,6 @@ static FontInfo_t g_font_info[5] = {
 
 static lv_font_t g_custom_fonts[5];
 static uint8_t g_font_init_done = 0;
-
-/* 声明 LVGL 内置字体 (确保在 lv_conf.h 中已启用这些字体) */
-LV_FONT_DECLARE(lv_font_montserrat_12)
-LV_FONT_DECLARE(lv_font_montserrat_16)
-LV_FONT_DECLARE(lv_font_montserrat_20)
-LV_FONT_DECLARE(lv_font_montserrat_24)
-LV_FONT_DECLARE(lv_font_montserrat_32)
 
 #define MAX_GLYPH_SIZE 128
 #define CACHE_CAPACITY 800
@@ -454,3 +457,32 @@ lv_font_t *lv_font_qspi_get_by_size(uint8_t font_size)
   LV_LOG_ERROR("不支持的字体大小: %d", font_size);
   return NULL;
 }
+
+#else /* 未定义 FLASH_FONT_ENABLE */
+
+void lv_font_qspi_init(void)
+{
+  /* 未启用 Flash 字库时，初始化为空操作 */
+}
+
+lv_font_t *lv_font_qspi_get_by_size(uint8_t font_size)
+{
+  /* 直接返回系统自带字体，确保程序不崩溃，但无法显示中文 */
+  switch (font_size)
+  {
+  case 12:
+    return (lv_font_t *)&lv_font_montserrat_12;
+  case 16:
+    return (lv_font_t *)&lv_font_montserrat_16;
+  case 20:
+    return (lv_font_t *)&lv_font_montserrat_20;
+  case 24:
+    return (lv_font_t *)&lv_font_montserrat_24;
+  case 32:
+    return (lv_font_t *)&lv_font_montserrat_32;
+  default:
+    return (lv_font_t *)&lv_font_montserrat_16;
+  }
+}
+
+#endif /* FLASH_FONT_ENABLE */

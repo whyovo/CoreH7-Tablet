@@ -30,6 +30,8 @@ extern "C"
     // LVGL 线程安全互斥量：任何在非 GUI 任务中操作 LVGL 的代码都必须获取此锁
     extern SemaphoreHandle_t lvglMutex;
 
+    extern SemaphoreHandle_t fsMutex; // 声明外部互斥锁
+    
     // 当前正在运行的应用任务句柄
     extern TaskHandle_t currentAppTaskHandle;
 

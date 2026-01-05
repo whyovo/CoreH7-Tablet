@@ -43,16 +43,16 @@
 #define DSPEAKER_H
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
 #include "config.h"
 #include <stdint.h>
 #ifdef DSPEAKER_ENABLE
 
-
 #define MP3_PLAY_ENABLE      //定义了就开启mp3功能，不开启就不编译mp3相关代码，减小体积
-#define WAV_PLAY_ENABLE      // 定义了就开启wav功能，不开启就不编译wav相关代码，减小体积
+#define WAV_PLAY_ENABLE // 定义了就开启wav功能，不开启就不编译wav相关代码，减小体积
 /*******************************************************************************
  *                              I2S 外设配置
  ******************************************************************************/
@@ -62,131 +62,90 @@ extern "C" {
 /*******************************************************************************
  *                              音频参数配置
  ******************************************************************************/
-#define DSPEAKER_BUFFER_SIZE                                                   \
+#define DSPEAKER_BUFFER_SIZE \
   2048 /*!< DMA缓冲区大小（采样点数，必须是2的幂次） */
 
-/*******************************************************************************
- *                              导出类型
- ******************************************************************************/
+  /*******************************************************************************
+   *                              导出类型
+   ******************************************************************************/
 
-/**
- * @brief  扬声器状态枚举
- */
-typedef enum {
-  DSPEAKER_STATE_RESET = 0, /*!< 未初始化状态 */
-  DSPEAKER_STATE_READY,     /*!< 就绪状态（已初始化但未播放） */
-  DSPEAKER_STATE_PLAYING,   /*!< 播放中（DMA运行中） */
-  DSPEAKER_STATE_ERROR      /*!< 错误状态 */
-} DSPEAKER_State;
+  /**
+   * @brief  扬声器状态枚举
+   */
+  typedef enum
+  {
+    DSPEAKER_STATE_RESET = 0, /*!< 未初始化状态 */
+    DSPEAKER_STATE_READY,     /*!< 就绪状态（已初始化但未播放） */
+    DSPEAKER_STATE_PLAYING,   /*!< 播放中（DMA运行中） */
+    DSPEAKER_STATE_ERROR      /*!< 错误状态 */
+  } DSPEAKER_State;
 
-/**
- * @brief  缓冲区需要补充数据的回调函数原型
- * @param  pBuffer: 指向缓冲区的指针（输出参数）
- * @param  size: 缓冲区大小（采样点数）
- * @param  isFirstHalf: 1=前半缓冲需要填充, 0=后半缓冲需要填充
- * @note   在DMA中断中调用，应快速填充数据
- * @return 实际填充的采样点数
- */
-typedef uint32_t (*DSPEAKER_DataRequiredCallback_t)(int16_t *pBuffer,
-                                                    uint32_t size,
-                                                    uint8_t isFirstHalf);
+  /**
+   * @brief  音频事件回调函数原型
+   * @param  event: 0=前半部分传输完成(需要填充前半部), 1=全部传输完成(需要填充后半部)
+   */
+  typedef void (*DSPEAKER_EventCallback_t)(uint8_t event);
 
-/*******************************************************************************
- *                              导出函数
- ******************************************************************************/
+  /*******************************************************************************
+   *                              导出函数
+   ******************************************************************************/
 
-/**
- * @brief  初始化数字扬声器（I2S + DMA双缓冲）
- * @note   配置I2S为主机发送模式，初始化DMA循环传输
- * @retval HAL_StatusTypeDef: HAL_OK=成功, 其他=失败
- */
-HAL_StatusTypeDef DSPEAKER_Init(void);
+  /**
+   * @brief  初始化数字扬声器
+   * @param  pBuffer: 外部传入的音频缓冲区指针 (需保证 4字节对齐)
+   * @param  size: 缓冲区总大小 (采样点数，必须是偶数)
+   */
+  HAL_StatusTypeDef DSPEAKER_Init(int16_t *pBuffer, uint32_t size);
 
-/**
- * @brief  启动扬声器播放（启动DMA发送）
- * @retval HAL_StatusTypeDef: HAL_OK=成功, 其他=失败
- */
-HAL_StatusTypeDef DSPEAKER_Start(void);
+  /**
+   * @brief  启动扬声器播放（启动DMA发送）
+   * @retval HAL_StatusTypeDef: HAL_OK=成功, 其他=失败
+   */
+  HAL_StatusTypeDef DSPEAKER_Start(void);
 
-/**
- * @brief  停止扬声器播放（停止DMA发送）
- * @retval HAL_StatusTypeDef: HAL_OK=成功, 其他=失败
- */
-HAL_StatusTypeDef DSPEAKER_Stop(void);
+  /**
+   * @brief  停止扬声器播放（停止DMA发送）
+   * @retval HAL_StatusTypeDef: HAL_OK=成功, 其他=失败
+   */
+  HAL_StatusTypeDef DSPEAKER_Stop(void);
 
-/**
- * @brief  获取当前状态
- * @retval DSPEAKER_State: 当前状态
- */
-DSPEAKER_State DSPEAKER_GetState(void);
+  /**
+   * @brief  获取当前状态
+   * @retval DSPEAKER_State: 当前状态
+   */
+  DSPEAKER_State DSPEAKER_GetState(void);
 
-/**
- * @brief  设置音量（0-100）
- * @param  volume: 音量级别 (0-100)
- * @note   此函数为预留接口，实际音量控制需硬件支持（如GPIO或PWM）
- * @retval None
- */
-void DSPEAKER_SetVolume(uint8_t volume);
+  /**
+   * @brief  设置音量（0-100）
+   * @param  volume: 音量级别 (0-100)
+   * @note   软件音量，需在填充数据时处理
+   */
+  void DSPEAKER_SetVolume(uint8_t volume);
 
-/**
- * @brief  获取当前音量
- * @retval 音量级别 (0-100)
- */
-uint8_t DSPEAKER_GetVolume(void);
+  /**
+   * @brief  获取当前音量
+   */
+  uint8_t DSPEAKER_GetVolume(void);
 
-/**
- * @brief  向播放缓冲区填充数据
- * @param  pData: 音频数据指针（PCM 16bit）
- * @param  size: 数据大小（采样点数）
- * @retval 实际填充的采样点数
- */
-uint32_t DSPEAKER_FeedData(const int16_t *pData, uint32_t size);
+  /**
+   * @brief  注册事件回调（通知应用层填充数据）
+   * @param  callback: 回调函数指针
+   * @retval None
+   */
+  void DSPEAKER_RegisterEventCallback(DSPEAKER_EventCallback_t callback);
 
-/**
- * @brief  获取缓冲区可用空间大小
- * @retval 可用空间大小（采样点数）
- */
-uint32_t DSPEAKER_GetAvailableSpace(void);
+  /**
+   * @brief  DMA传输完成回调（内部使用）
+   */
+  void DSPEAKER_DMA_TransferComplete_Callback(void);
 
-/**
- * @brief  注册缓冲区需要数据的回调函数
- * @param  callback: 回调函数指针
- * @retval None
- */
-void DSPEAKER_RegisterCallback(DSPEAKER_DataRequiredCallback_t callback);
+  /**
+   * @brief  DMA半传输完成回调（内部使用）
+   * @note   用户不应直接调用此函数
+   * @retval None
+   */
+  void DSPEAKER_DMA_HalfTransfer_Callback(void);
 
-/**
- * @brief  取消回调注册
- * @retval None
- */
-void DSPEAKER_UnregisterCallback(void);
-
-/**
- * @brief  DMA传输完成回调（内部使用，由HAL库调用）
- * @note   用户不应直接调用此函数
- * @retval None
- */
-void DSPEAKER_DMA_TransferComplete_Callback(void);
-
-/**
- * @brief  DMA半传输完成回调（内部使用，由HAL库调用）
- * @note   用户不应直接调用此函数
- * @retval None
- */
-void DSPEAKER_DMA_HalfTransfer_Callback(void);
-
-/**
- * @brief  清空播放缓冲区（填充零）
- * @retval None
- */
-void DSPEAKER_ClearBuffer(void);
-
-/**
- * @brief  等待缓冲区可用
- * @param  timeout_ms: 超时时间（毫秒），0=不超时
- * @retval HAL_OK=成功获得空间, HAL_TIMEOUT=超时
- */
-HAL_StatusTypeDef DSPEAKER_WaitForAvailable(uint32_t timeout_ms);
 #endif
 #ifdef __cplusplus
 }

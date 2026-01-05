@@ -112,49 +112,61 @@ extern "C" {
 #ifdef JPEG_ENABLE
 #include "JPEG/jpeg_app.h"
 #include "JPEG/jpeg_code.h"
-
 #endif /* jpeg_app需要开启fatfs,sdram！ */
 
 #ifdef USB_DEVICE_ENABLE
-    // #include "USB/STM32_USB_Device_Library/Core/Inc/usbd_core.h"
-    // #include "USB/STM32_USB_Device_Library/Core/Inc/usbd_ctlreq.h"
-    // #include "USB/STM32_USB_Device_Library/Core/Inc/usbd_def.h"
-    // #include "USB/STM32_USB_Device_Library/Core/Inc/usbd_ioreq.h"
-    // #include "USB/STM32_USB_Device_Library/Class/CDC/Inc/usbd_cdc.h"
-    // #include "USB/STM32_USB_Device_Library/Class/DFU/Inc/usbd_dfu.h"
-    // #include "USB/STM32_USB_Device_Library/Class/MSC/Inc/usbd_msc.h"
-    // #include "USB/STM32_USB_Device_Library/Class/MSC/Inc/usbd_msc_bot.h"
-    // #include "USB/STM32_USB_Device_Library/Class/MSC/Inc/usbd_msc_data.h"
-    // #include "USB/STM32_USB_Device_Library/Class/MSC/Inc/usbd_msc_scsi.h"
-    #include "USB/usb_device.h"
-    // #include "USB/usbd_cdc_if.h"
-    // #include "USB/usbd_conf.h"
-    // #include "USB/usbd_desc.h"
-    // #include "USB/usbd_dfu_if.h"
-    // #include "USB/usbd_storage_if.h"
+#include "USB/usb_device.h"
 #endif
 
 #ifdef USB_HOST_ENABLE
 #include "USB/usb_host.h"
 #endif
-/*******************************************************************************
- *                              导出函数
- ******************************************************************************/
 
-/**
- * @brief  初始化所有启用的外设
- * @note   应在主函数系统时钟配置后、进入主循环前调用
- * @note   会根据 LED_ENABLE / KEY_ENABLE 等宏有条件编译
- * @retval None
- */
-void init_all(void);
+#ifdef OV5640_ENABLE
+#include "DCMI/dcmi_ov5640.h"
+#include "DCMI/ov5640_lcd_rgb.h"
+#include "DCMI/ov5640_lcd_spi.h"
+#endif
 
-/**
- * @brief  主循环周期任务
- * @note   在 while(1) 中周期调用，用于驱动非阻塞任务（如按键扫描）
- * @retval None
- */
-void main_while(void);
+#ifdef RTC_ENABLE
+#include "RTC/rtc_app.h"
+#endif
+
+#ifdef UART_WIFI_ENABLE
+#include "UART/uart_wifi.h"
+#include "UART/uart_wifi_aichat.h"
+#include "UART/uart_wifi_http.h"
+#endif
+
+#ifdef UART_DEV_ENABLE
+#include "UART/uart_dev.h"
+#endif
+
+#ifdef OLED_I2C_ENABLE
+#include "I2C/oled.h"
+#endif
+
+#ifdef MPU6050_I2C_ENABLE
+#include "I2C/mpu6050.h"
+#endif
+    /*******************************************************************************
+     *                              导出函数
+     ******************************************************************************/
+
+    /**
+     * @brief  初始化所有启用的外设
+     * @note   应在主函数系统时钟配置后、进入主循环前调用
+     * @note   会根据 LED_ENABLE / KEY_ENABLE 等宏有条件编译
+     * @retval None
+     */
+    void init_all(void);
+
+    /**
+     * @brief  主循环周期任务
+     * @note   在 while(1) 中周期调用，用于驱动非阻塞任务（如按键扫描）
+     * @retval None
+     */
+    void main_while(void);
 
 #ifdef __cplusplus
 }

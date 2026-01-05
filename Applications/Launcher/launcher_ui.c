@@ -12,6 +12,7 @@
 #include "file_task.h"
 #include "reader_task.h"
 #include "music_task.h"
+#include "music_game_task.h"
 
 #include "img_aichat.h"
 
@@ -93,13 +94,8 @@ void Launcher_UI_Create(void)
 
     // 设置左对齐布局
     lv_obj_set_flex_flow(icon_grid, LV_FLEX_FLOW_ROW_WRAP);
-    // 改为 START，配合 pad_column 实现手动间距
     lv_obj_set_flex_align(icon_grid, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);
 
-    // 间距微调：
-    // 屏幕 800 - (左右内边距 35*2) = 730 可用。
-    // 4个图标 160*4 = 640。
-    // 剩余 90 像素分配给 3 个间隙，每个间隙 30。
     lv_obj_set_style_pad_all(icon_grid, 35, 0);
     lv_obj_set_style_pad_column(icon_grid, 30, 0);
     lv_obj_set_style_pad_row(icon_grid, 20, 0);
@@ -111,16 +107,17 @@ void Launcher_UI_Create(void)
         App_Descriptor_t *app_desc;
     } apps[] = {
         {&img_camera, "Camera", NULL},
-        {&img_osu, "Osu!", NULL},
-        // {&img_file, "Files", &FileBrowserApp},
-        // {&img_2048, "2048", &Game2048App},
-        {&img_file, "Files", NULL},
-        {&img_2048, "2048", NULL},
+        {&img_osu, "My Osu mania", &MusicGameApp}, // 关联 MusicGameApp
+        {&img_file, "Files", &FileBrowserApp},
+        {&img_2048, "2048", &Game2048App},
+        // {&img_file, "Files", NULL},
+        // {&img_2048, "2048", NULL},
         {&img_settings, "Settings", NULL},
         {&img_recoder, "Recorder", NULL},
-        {&img_reader, "Reader", NULL},
-        // {&img_reader, "Reader", &ReaderApp},
-        {&img_musicplay, "Music", &MusicPlayerApp},
+        // {&img_reader, "Reader", NULL},
+        {&img_reader, "Reader", &ReaderApp},
+        // {&img_musicplay, "Music", &MusicPlayerApp},
+        {&img_musicplay, "Music", NULL},
         {&img_aichat, "AI Chat", NULL},
         {NULL, NULL, NULL}};
 
@@ -136,8 +133,9 @@ void Launcher_UI_Create(void)
         lv_obj_clear_flag(item, LV_OBJ_FLAG_SCROLLABLE);
         lv_obj_set_scrollbar_mode(item, LV_SCROLLBAR_MODE_OFF);
 
-        // 点击缩放效果（256是1:1）
-        lv_obj_set_style_transform_zoom(item, 240, LV_STATE_PRESSED);
+        // 点击效果
+        // lv_obj_set_style_transform_zoom(item, 240, LV_STATE_PRESSED);
+        lv_obj_set_style_opa(item, LV_OPA_70, LV_PART_MAIN | LV_STATE_PRESSED);
         // 1. 图标
         lv_obj_t *img = lv_img_create(item);
         lv_img_set_src(img, apps[i].img);

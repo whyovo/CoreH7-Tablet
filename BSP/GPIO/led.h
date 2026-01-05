@@ -28,7 +28,8 @@
 #define LED_H
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
 #include "config.h"
@@ -41,88 +42,118 @@ extern "C" {
  */
 #define LED_LIST X(LD1, GPIOC, GPIO_PIN_13, 0)
 
-/*******************************************************************************
- *                              LED导出类型
- *******************************************************************************/
+  /*******************************************************************************
+   *                              LED导出类型
+   *******************************************************************************/
 
-/**
- * @brief  LED结构体定义
- */
-typedef struct {
-  GPIO_TypeDef *port; /*!< GPIO端口基地址 */
-  uint16_t pin;       /*!< GPIO引脚编号 */
-  uint8_t direct;     /*!< 点亮极性：1=高电平亮，0=低电平亮 */
-} LED;
+  /**
+   * @brief  LED结构体定义
+   */
+  typedef struct
+  {
+    GPIO_TypeDef *port; /*!< GPIO端口基地址 */
+    uint16_t pin;       /*!< GPIO引脚编号 */
+    uint8_t direct;     /*!< 点亮极性：1=高电平亮，0=低电平亮 */
+  } LED;
 
 /**
  * @brief  LED枚举ID（自动生成）
  */
 #define X(name, port, pin, direct) name,
-typedef enum {
-  LED_LIST LED_COUNT /*!< LED总数（用于遍历） */
-} LED_ID;
+  typedef enum
+  {
+    LED_LIST LED_COUNT /*!< LED总数（用于遍历） */
+  } LED_ID;
 #undef X
 
-/*******************************************************************************
- *                              LED数组
- *******************************************************************************/
-extern LED leds[]; /*!< LED数组，在led.c中根据LED_LIST自动生成 */
+  /*******************************************************************************
+   *                              LED数组
+   *******************************************************************************/
+  extern LED leds[]; /*!< LED数组，在led.c中根据LED_LIST自动生成 */
 
-/*******************************************************************************
- *                              基本控制函数
- *******************************************************************************/
-void LED_Init(void);
-void LED_On(LED *led);
-void LED_Off(LED *led);
-void LED_Toggle(LED *led);
+  /**
+   * @brief  获取LED结构体指针
+   * @param  id: LED ID
+   * @retval LED指针，如果ID无效返回NULL
+   */
+  LED *LED_GetPtr(LED_ID id);
 
-void LED_On_All(void);
-void LED_Off_All(void);
-void LED_Toggle_All(void);
+  /*******************************************************************************
+   *                              基本控制函数
+   *******************************************************************************/
+  void LED_Init(void);
 
-/*******************************************************************************
- *                              动画效果函数（阻塞实现）
- *******************************************************************************/
+  /* ID 访问接口（推荐） */
+  void LED_On(LED_ID id);
+  void LED_Off(LED_ID id);
+  void LED_Toggle(LED_ID id);
 
-/**
- * @brief  单个LED闪烁（阻塞）
- * @param  led: LED指针
- * @param  period_ms: 闪烁周期（毫秒），灯在半周期切换
- * @note   一次调用完成一个完整周期（on -> off），需在循环中反复调用
- * @retval None
- */
-void LED_Blink(LED *led, uint32_t period_ms);
+  /* 指针访问接口（底层/高级用法） */
+  void LED_On_Ptr(LED *led);
+  void LED_Off_Ptr(LED *led);
+  void LED_Toggle_Ptr(LED *led);
 
-/**
- * @brief  所有LED同步闪烁（阻塞）
- * @param  period_ms: 闪烁周期（毫秒）
- * @retval None
- */
-void LED_Blink_All(uint32_t period_ms);
+  void LED_On_All(void);
+  void LED_Off_All(void);
+  void LED_Toggle_All(void);
 
-/**
- * @brief  单个LED呼吸效果（阻塞）
- * @param  led: LED指针
- * @param  period_ms: 呼吸总周期（毫秒），从暗到亮再到暗
- * @note   使用软件PWM实现渐变，分100步完成一个周期
- * @retval None
- */
-void LED_Breathe(LED *led, uint32_t period_ms);
+  /*******************************************************************************
+   *                              动画效果函数（阻塞实现）
+   *******************************************************************************/
 
-/**
- * @brief  所有LED同步呼吸（阻塞）
- * @param  period_ms: 呼吸总周期（毫秒）
- * @retval None
- */
-void LED_Breathe_All(uint32_t period_ms);
+  /**
+   * @brief  单个LED闪烁（阻塞，ID版本）
+   * @param  id: LED ID
+   * @param  period_ms: 闪烁周期（毫秒）
+   * @retval None
+   */
+  void LED_Blink(LED_ID id, uint32_t period_ms);
 
-/**
- * @brief  流水灯效果（阻塞）
- * @param  step_ms: 单步停留时间（毫秒）
- * @note   依次点亮leds[]数组中的每个LED，完成一次遍历后返回
- * @retval None
- */
-void LED_ChaseStart(uint32_t step_ms);
+  /**
+   * @brief  单个LED闪烁（阻塞，指针版本）
+   * @param  led: LED指针
+   * @param  period_ms: 闪烁周期（毫秒）
+   * @retval None
+   */
+  void LED_Blink_Ptr(LED *led, uint32_t period_ms);
+
+  /**
+   * @brief  所有LED同步闪烁（阻塞）
+   * @param  period_ms: 闪烁周期（毫秒）
+   * @retval None
+   */
+  void LED_Blink_All(uint32_t period_ms);
+
+  /**
+   * @brief  单个LED呼吸效果（阻塞，ID版本）
+   * @param  id: LED ID
+   * @param  period_ms: 呼吸总周期（毫秒）
+   * @retval None
+   */
+  void LED_Breathe(LED_ID id, uint32_t period_ms);
+
+  /**
+   * @brief  单个LED呼吸效果（阻塞，指针版本）
+   * @param  led: LED指针
+   * @param  period_ms: 呼吸总周期（毫秒）
+   * @retval None
+   */
+  void LED_Breathe_Ptr(LED *led, uint32_t period_ms);
+
+  /**
+   * @brief  所有LED同步呼吸（阻塞）
+   * @param  period_ms: 呼吸总周期（毫秒）
+   * @retval None
+   */
+  void LED_Breathe_All(uint32_t period_ms);
+
+  /**
+   * @brief  流水灯效果（阻塞）
+   * @param  step_ms: 单步停留时间（毫秒）
+   * @note   依次点亮leds[]数组中的每个LED，完成一次遍历后返回
+   * @retval None
+   */
+  void LED_ChaseStart(uint32_t step_ms);
 #endif
 #ifdef __cplusplus
 }

@@ -22,7 +22,7 @@
 #include <string.h>
 #include "ff.h"			/* Basic definitions and declarations of API */
 #include "diskio.h"		/* Declarations of MAI */
-
+#ifdef FATFS_ENABLE
 /*--------------------------------------------------------------------------
 
    Module Private Definitions
@@ -7247,3 +7247,4 @@ FRESULT f_setcp (
 }
 #endif	/* FF_CODE_PAGE == 0 */
 
+#endif

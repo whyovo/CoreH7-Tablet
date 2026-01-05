@@ -1,30 +1,30 @@
 /**
  ******************************************************************************
  * @file    jpeg_code.c
- * @author  ²Ë²Ëwhy£¨BÕ¾£º²Ë²Ëwhyy£©
- * @brief   Ó²¼þJPEG±à½âÂëÇý¶¯ÊµÏÖÎÄ¼þ
+ * @author  èœèœwhyï¼ˆBç«™ï¼šèœèœwhyyï¼‰
+ * @brief   ç¡¬ä»¶JPEGç¼–è§£ç é©±åŠ¨å®žçŽ°æ–‡ä»¶
  ******************************************************************************
  * @attention
  *
- * ¹¦ÄÜËµÃ÷£º
+ * åŠŸèƒ½è¯´æ˜Žï¼š
  * ---------------------------------------------------------------
- * 1. Ê¹ÓÃSTM32H7Ó²¼þJPEG±à½âÂëÆ÷
- * 2. ¸ÃÇý¶¯ÒÆÖ²ÓÚST¹Ù·½STM32H743I-EVAL°å¿¨Àý³Ì
- * 3. Ö§³ÖJPEG½âÂëºÍ±àÂë²Ù×÷
- * 4. ±à½âÂë²Ù×÷ÐèÒªÒ»¶¨µÄ»º´æ¿Õ¼ä£¬·ñÔò»áµ¼ÖÂÊ§°Ü
+ * 1. ä½¿ç”¨STM32H7ç¡¬ä»¶JPEGç¼–è§£ç å™¨
+ * 2. è¯¥é©±åŠ¨ç§»æ¤äºŽSTå®˜æ–¹STM32H743I-EVALæ¿å¡ä¾‹ç¨‹
+ * 3. æ”¯æŒJPEGè§£ç å’Œç¼–ç æ“ä½œ
+ * 4. ç¼–è§£ç æ“ä½œéœ€è¦ä¸€å®šçš„ç¼“å­˜ç©ºé—´ï¼Œå¦åˆ™ä¼šå¯¼è‡´å¤±è´¥
  *
- * ÖØÒªËµÃ÷£º
+ * é‡è¦è¯´æ˜Žï¼š
  * ---------------------------------------------------------------
- * 1. Ó²¼þJPEG²»ÄÜ½âÂë½¥½øÊ½(Progressive)µÄÍ¼Æ¬£¡£¡£¡
- * 2. JPGÍ¼Æ¬±ØÐë±£´æÎª»ù×¼Ê½(Baseline)¸ñÊ½
- * 3. ±àÂëÊ±Ö§³ÖRGB565ºÍYCbCrÊäÈë¸ñÊ½
- * 4. ±àÂëÖÊÁ¿ºÍ²ÉÑù·½Ê½»áÓ°ÏìÊä³öÎÄ¼þ´óÐ¡ºÍÖÊÁ¿
+ * 1. ç¡¬ä»¶JPEGä¸èƒ½è§£ç æ¸è¿›å¼(Progressive)çš„å›¾ç‰‡ï¼ï¼ï¼
+ * 2. JPGå›¾ç‰‡å¿…é¡»ä¿å­˜ä¸ºåŸºå‡†å¼(Baseline)æ ¼å¼
+ * 3. ç¼–ç æ—¶æ”¯æŒRGB565å’ŒYCbCrè¾“å…¥æ ¼å¼
+ * 4. ç¼–ç è´¨é‡å’Œé‡‡æ ·æ–¹å¼ä¼šå½±å“è¾“å‡ºæ–‡ä»¶å¤§å°å’Œè´¨é‡
  *
- * ÒÀÀµÌõ¼þ£º
+ * ä¾èµ–æ¡ä»¶ï¼š
  * ---------------------------------------------------------------
- * 1. JPEGÓ²¼þÒÑ³õÊ¼»¯ÅäÖÃÍê³É
- * 2. DMA2DÓ²¼þÒÑ³õÊ¼»¯ÅäÖÃÍê³É
- * 3. SDRAMÏÔ´æÇøÓòÒÑ·ÖÅä
+ * 1. JPEGç¡¬ä»¶å·²åˆå§‹åŒ–é…ç½®å®Œæˆ
+ * 2. DMA2Dç¡¬ä»¶å·²åˆå§‹åŒ–é…ç½®å®Œæˆ
+ * 3. SDRAMæ˜¾å­˜åŒºåŸŸå·²åˆ†é…
  *
  ******************************************************************************
  */
@@ -33,71 +33,71 @@
 #include "lcd_rgb.h"
 
 #ifdef JPEG_ENABLE
-extern JPEG_HandleTypeDef hjpeg;   /*!< JPEGÓ²¼þ¾ä±ú */
-extern DMA2D_HandleTypeDef hdma2d; /*!< DMA2DÓ²¼þ¾ä±ú */
+extern JPEG_HandleTypeDef hjpeg;   /*!< JPEGç¡¬ä»¶å¥æŸ„ */
+extern DMA2D_HandleTypeDef hdma2d; /*!< DMA2Dç¡¬ä»¶å¥æŸ„ */
 
 /*******************************************************************************
- *                              ºê¶¨Òå
+ *                              å®å®šä¹‰
  ******************************************************************************/
-#define CHUNK_SIZE_IN ((uint32_t)(64 * 1024)) /*!< µ¥´Î½âÂëÊäÈëÊý¾Ý×î´ó³¤¶È */
+#define CHUNK_SIZE_IN ((uint32_t)(64 * 1024)) /*!< å•æ¬¡è§£ç è¾“å…¥æ•°æ®æœ€å¤§é•¿åº¦ */
 #define CHUNK_SIZE_OUT                                                         \
-  ((uint32_t)(64 * 1024)) /*!< µ¥´Î½âÂëÊä³öÊý¾Ý×î´ó³¤¶È            \
+  ((uint32_t)(64 * 1024)) /*!< å•æ¬¡è§£ç è¾“å‡ºæ•°æ®æœ€å¤§é•¿åº¦            \
                            */
 #define CHUNK_SIZE_ENCODE_IN                                                   \
-  ((uint32_t)(64 * 1024)) /*!< ±àÂëÊäÈë»º³åÇø´óÐ¡                     \
+  ((uint32_t)(64 * 1024)) /*!< ç¼–ç è¾“å…¥ç¼“å†²åŒºå¤§å°                     \
                            */
 #define CHUNK_SIZE_ENCODE_OUT                                                  \
-  ((uint32_t)(64 * 1024)) /*!< ±àÂëÊä³ö»º³åÇø´óÐ¡                     \
+  ((uint32_t)(64 * 1024)) /*!< ç¼–ç è¾“å‡ºç¼“å†²åŒºå¤§å°                     \
                            */
 
 /*******************************************************************************
- *                              È«¾Ö±äÁ¿¶¨Òå
+ *                              å…¨å±€å˜é‡å®šä¹‰
  ******************************************************************************/
-__IO uint8_t Jpeg_HWOperationState = 0; /*!< ²Ù×÷×´Ì¬±êÖ¾: 0=¿ªÊ¼, 1=Íê³É */
-__IO uint8_t Jpeg_IsEncoding = 0; /*!< ±àÂëÄ£Ê½±êÖ¾: 0=½âÂë, 1=±àÂë */
+__IO uint8_t Jpeg_HWOperationState = 0; /*!< æ“ä½œçŠ¶æ€æ ‡å¿—: 0=å¼€å§‹, 1=å®Œæˆ */
+__IO uint8_t Jpeg_IsEncoding = 0; /*!< ç¼–ç æ¨¡å¼æ ‡å¿—: 0=è§£ç , 1=ç¼–ç  */
 
-uint32_t FrameBufferAddress; /*!< »º³åÇøµØÖ· */
-uint32_t JPEGSourceAddress;  /*!< JPGÍ¼Æ¬Ô´µØÖ· */
-uint32_t Input_frameSize;    /*!< JPGÍ¼Æ¬×Ü´óÐ¡ */
-uint32_t Input_frameIndex;   /*!< µ±Ç°ÊäÈëÊý¾ÝË÷ÒýÆ«ÒÆ */
-uint32_t Output_frameSize;   /*!< Êä³öÊý¾Ý×Ü´óÐ¡ */
+uint32_t FrameBufferAddress; /*!< ç¼“å†²åŒºåœ°å€ */
+uint32_t JPEGSourceAddress;  /*!< JPGå›¾ç‰‡æºåœ°å€ */
+uint32_t Input_frameSize;    /*!< JPGå›¾ç‰‡æ€»å¤§å° */
+uint32_t Input_frameIndex;   /*!< å½“å‰è¾“å…¥æ•°æ®ç´¢å¼•åç§» */
+uint32_t Output_frameSize;   /*!< è¾“å‡ºæ•°æ®æ€»å¤§å° */
 
 /*******************************************************************************
- *                           ½âÂëÏà¹Øº¯ÊýÊµÏÖ
+ *                           è§£ç ç›¸å…³å‡½æ•°å®žçŽ°
  ******************************************************************************/
 
 /**
- * @brief  Æô¶¯JPEGÓ²¼þ½âÂë(DMAÄ£Ê½)
- * @param  SourceAddress: JPGÍ¼Æ¬Ô´µØÖ·
- * @param  FrameSize: JPGÍ¼Æ¬×Ü´óÐ¡(×Ö½Ú)
- * @param  DestAddress: ½âÂëÊä³ö»º³åÇøµØÖ·
- * @retval ÎÞ
- * @note   ´Ëº¯ÊýÎªÒì²½µ÷ÓÃ£¬½âÂë¹ý³ÌÍ¨¹ýÖÐ¶Ï»Øµ÷Íê³É
- * @note   ÐèÒªµ÷ÓÃJPEG_Decode_WaitingforEnd()µÈ´ý½âÂëÍê³É
+ * @brief  å¯åŠ¨JPEGç¡¬ä»¶è§£ç (DMAæ¨¡å¼)
+ * @param  SourceAddress: JPGå›¾ç‰‡æºåœ°å€
+ * @param  FrameSize: JPGå›¾ç‰‡æ€»å¤§å°(å­—èŠ‚)
+ * @param  DestAddress: è§£ç è¾“å‡ºç¼“å†²åŒºåœ°å€
+ * @retval æ— 
+ * @note   æ­¤å‡½æ•°ä¸ºå¼‚æ­¥è°ƒç”¨ï¼Œè§£ç è¿‡ç¨‹é€šè¿‡ä¸­æ–­å›žè°ƒå®Œæˆ
+ * @note   éœ€è¦è°ƒç”¨JPEG_Decode_WaitingforEnd()ç­‰å¾…è§£ç å®Œæˆ
  */
 void JPEG_Decode_DMA(uint32_t SourceAddress, uint32_t FrameSize,
                      uint32_t DestAddress) {
-  JPEGSourceAddress = SourceAddress; // ±£´æJPGÍ¼Æ¬Ô´µØÖ·
-  FrameBufferAddress = DestAddress;  // ±£´æ½âÂëÊä³ö»º³åÇøµØÖ·
-  Input_frameSize = FrameSize;       // ±£´æJPGÍ¼Æ¬×Ü´óÐ¡
+  JPEGSourceAddress = SourceAddress; // ä¿å­˜JPGå›¾ç‰‡æºåœ°å€
+  FrameBufferAddress = DestAddress;  // ä¿å­˜è§£ç è¾“å‡ºç¼“å†²åŒºåœ°å€
+  Input_frameSize = FrameSize;       // ä¿å­˜JPGå›¾ç‰‡æ€»å¤§å°
 
-  Input_frameIndex = 0;                 // ÖØÖÃÊý¾ÝË÷Òý
-  Output_frameSize = 0;                 // ÖØÖÃÊä³ö´óÐ¡
-  Jpeg_HWOperationState = JPEG_OpStart; // ÉèÖÃ½âÂë¿ªÊ¼±êÖ¾
-  Jpeg_IsEncoding = 0;                  // ÉèÖÃÎª½âÂëÄ£Ê½
+  Input_frameIndex = 0;                 // é‡ç½®æ•°æ®ç´¢å¼•
+  Output_frameSize = 0;                 // é‡ç½®è¾“å‡ºå¤§å°
+  Jpeg_HWOperationState = JPEG_OpStart; // è®¾ç½®è§£ç å¼€å§‹æ ‡å¿—
+  Jpeg_IsEncoding = 0;                  // è®¾ç½®ä¸ºè§£ç æ¨¡å¼
 
-  // Æô¶¯JPEGÓ²¼þDMA½âÂë
+  // å¯åŠ¨JPEGç¡¬ä»¶DMAè§£ç 
   HAL_JPEG_Decode_DMA(&hjpeg, (uint8_t *)JPEGSourceAddress, CHUNK_SIZE_IN,
                       (uint8_t *)FrameBufferAddress, CHUNK_SIZE_OUT);
 }
 
 /**
- * @brief  µÈ´ýJPEGÓ²¼þ½âÂëÍê³É
- * @retval JPEG_OpComplete: ½âÂëÍê³É±êÖ¾
- * @note   ¸Ãº¯ÊýÎª×èÈûÊ½µ÷ÓÃ£¬»áÒ»Ö±µÈ´ýÖÁ½âÂëÍê³É
+ * @brief  ç­‰å¾…JPEGç¡¬ä»¶è§£ç å®Œæˆ
+ * @retval JPEG_OpComplete: è§£ç å®Œæˆæ ‡å¿—
+ * @note   è¯¥å‡½æ•°ä¸ºé˜»å¡žå¼è°ƒç”¨ï¼Œä¼šä¸€ç›´ç­‰å¾…è‡³è§£ç å®Œæˆ
  */
 uint8_t JPEG_Decode_WaitingforEnd(void) {
-  // µÈ´ý½âÂëÍê³É
+  // ç­‰å¾…è§£ç å®Œæˆ
   while (Jpeg_HWOperationState == JPEG_OpStart)
     ;
 
@@ -105,13 +105,13 @@ uint8_t JPEG_Decode_WaitingforEnd(void) {
 }
 
 /**
- * @brief  Í¨¹ýDMA2D½«YCbCrÊý¾Ý×ª»»²¢Êä³öÎªRGB
- * @param  x: Í¼Æ¬ÏÔÊ¾ÆðÊ¼Ë®Æ½×ø±ê(0~479)
- * @param  y: Í¼Æ¬ÏÔÊ¾ÆðÊ¼´¹Ö±×ø±ê(0~271)
- * @param  pSrc: JPEG½âÂëºóµÃµ½µÄYCbCrÊý¾Ý»º³åÇøµØÖ·
- * @param  pDst: LTDCµ±Ç°ÏÔ´æµØÖ·
- * @retval ÎÞ
- * @note   DMA2D»á¸ù¾ÝJPEGÍ¼Æ¬µÄÉ«¶È²ÉÑù¸ñÊ½×Ô¶¯Ñ¡Ôñ×ª»»Ä£Ê½
+ * @brief  é€šè¿‡DMA2Då°†YCbCræ•°æ®è½¬æ¢å¹¶è¾“å‡ºä¸ºRGB
+ * @param  x: å›¾ç‰‡æ˜¾ç¤ºèµ·å§‹æ°´å¹³åæ ‡(0~479)
+ * @param  y: å›¾ç‰‡æ˜¾ç¤ºèµ·å§‹åž‚ç›´åæ ‡(0~271)
+ * @param  pSrc: JPEGè§£ç åŽå¾—åˆ°çš„YCbCræ•°æ®ç¼“å†²åŒºåœ°å€
+ * @param  pDst: LTDCå½“å‰æ˜¾å­˜åœ°å€
+ * @retval æ— 
+ * @note   DMA2Dä¼šæ ¹æ®JPEGå›¾ç‰‡çš„è‰²åº¦é‡‡æ ·æ ¼å¼è‡ªåŠ¨é€‰æ‹©è½¬æ¢æ¨¡å¼
  */
 void DMA2D_CopyBuffer(uint16_t x, uint16_t y, uint32_t *pSrc, uint32_t *pDst) {
   uint32_t cssMode = DMA2D_CSS_420;
@@ -119,11 +119,11 @@ void DMA2D_CopyBuffer(uint16_t x, uint16_t y, uint32_t *pSrc, uint32_t *pDst) {
   uint32_t destination = 0;
   JPEG_ConfTypeDef JPEG_Info;
 
-  // »ñÈ¡JPEGÍ¼Æ¬ÐÅÏ¢
+  // èŽ·å–JPEGå›¾ç‰‡ä¿¡æ¯
   HAL_JPEG_GetInfo(&hjpeg, &JPEG_Info);
 
-  // ¸ù¾ÝÉ«¶È²ÉÑù¸ñÊ½ÉèÖÃDMA2D×ª»»²ÎÊý
-  // Èç¹û²ÉÑù¸ñÊ½Îª YCbCr 4:2:0
+  // æ ¹æ®è‰²åº¦é‡‡æ ·æ ¼å¼è®¾ç½®DMA2Dè½¬æ¢å‚æ•°
+  // å¦‚æžœé‡‡æ ·æ ¼å¼ä¸º YCbCr 4:2:0
   if (JPEG_Info.ChromaSubsampling == JPEG_420_SUBSAMPLING) {
     cssMode = DMA2D_CSS_420;
     inputLineOffset = JPEG_Info.ImageWidth % 16;
@@ -131,7 +131,7 @@ void DMA2D_CopyBuffer(uint16_t x, uint16_t y, uint32_t *pSrc, uint32_t *pDst) {
       inputLineOffset = 16 - inputLineOffset;
     }
   }
-  // Èç¹û²ÉÑù¸ñÊ½Îª YCbCr 4:4:4
+  // å¦‚æžœé‡‡æ ·æ ¼å¼ä¸º YCbCr 4:4:4
   else if (JPEG_Info.ChromaSubsampling == JPEG_444_SUBSAMPLING) {
     cssMode = DMA2D_NO_CSS;
 
@@ -140,7 +140,7 @@ void DMA2D_CopyBuffer(uint16_t x, uint16_t y, uint32_t *pSrc, uint32_t *pDst) {
       inputLineOffset = 8 - inputLineOffset;
     }
   }
-  // Èç¹û²ÉÑù¸ñÊ½Îª YCbCr 4:2:2
+  // å¦‚æžœé‡‡æ ·æ ¼å¼ä¸º YCbCr 4:2:2
   else if (JPEG_Info.ChromaSubsampling == JPEG_422_SUBSAMPLING) {
     cssMode = DMA2D_CSS_422;
 
@@ -150,54 +150,54 @@ void DMA2D_CopyBuffer(uint16_t x, uint16_t y, uint32_t *pSrc, uint32_t *pDst) {
     }
   }
 
-  // DMA2DÄ£Ê½ÅäÖÃ
-  hdma2d.Init.Mode = DMA2D_M2M_PFC; // ´æ´¢Æ÷µ½´æ´¢Æ÷Ä£Ê½(´øPFC×ª»»)
-  hdma2d.Init.ColorMode = DMA2D_OUTPUT_RGB565; // Êä³öÑÕÉ«¸ñÊ½RGB565
-  hdma2d.Init.OutputOffset = RGB_LCD_Width - JPEG_Info.ImageWidth; // Êä³öÐÐÆ«ÒÆ
-  hdma2d.Init.AlphaInverted = DMA2D_REGULAR_ALPHA; // Õý³£Í¸Ã÷Í¨µÀ
-  hdma2d.Init.RedBlueSwap = DMA2D_RB_REGULAR;      // ²»½»»»RºÍBÑÕÉ«Í¨µÀ
+  // DMA2Dæ¨¡å¼é…ç½®
+  hdma2d.Init.Mode = DMA2D_M2M_PFC; // å­˜å‚¨å™¨åˆ°å­˜å‚¨å™¨æ¨¡å¼(å¸¦PFCè½¬æ¢)
+  hdma2d.Init.ColorMode = DMA2D_OUTPUT_RGB565; // è¾“å‡ºé¢œè‰²æ ¼å¼RGB565
+  hdma2d.Init.OutputOffset = RGB_LCD_Width - JPEG_Info.ImageWidth; // è¾“å‡ºè¡Œåç§»
+  hdma2d.Init.AlphaInverted = DMA2D_REGULAR_ALPHA; // æ­£å¸¸é€æ˜Žé€šé“
+  hdma2d.Init.RedBlueSwap = DMA2D_RB_REGULAR;      // ä¸äº¤æ¢Rå’ŒBé¢œè‰²é€šé“
 
-  hdma2d.XferCpltCallback = NULL; // DMA2DÍê³É»Øµ÷(²»Ê¹ÓÃ)
+  hdma2d.XferCpltCallback = NULL; // DMA2Då®Œæˆå›žè°ƒ(ä¸ä½¿ç”¨)
 
-  // DMA2DÇ°¾°²ãÅäÖÃ(LTDC Layer0)
-  hdma2d.LayerCfg[1].AlphaMode = DMA2D_REPLACE_ALPHA; // Í¸Ã÷¶ÈÄ£Ê½£ºÌæ»»
-  hdma2d.LayerCfg[1].InputAlpha = 0xFF; // ºã¶¨Í¸Ã÷¶È(255=²»Í¸Ã÷)
-  hdma2d.LayerCfg[1].InputColorMode = DMA2D_INPUT_YCBCR; // ÊäÈëÑÕÉ«¸ñÊ½YCBCR
-  hdma2d.LayerCfg[1].ChromaSubSampling = cssMode;   // YCBCRÉ«¶È²ÉÑù¸ñÊ½
-  hdma2d.LayerCfg[1].InputOffset = inputLineOffset; // ÊäÈëÐÐÆ«ÒÆ
-  hdma2d.LayerCfg[1].AlphaInverted = DMA2D_REGULAR_ALPHA; // Õý³£Í¸Ã÷Í¨µÀ
-  hdma2d.LayerCfg[1].RedBlueSwap = DMA2D_RB_REGULAR; // ²»½»»»RºÍBÑÕÉ«Í¨µÀ
+  // DMA2Då‰æ™¯å±‚é…ç½®(LTDC Layer0)
+  hdma2d.LayerCfg[1].AlphaMode = DMA2D_REPLACE_ALPHA; // é€æ˜Žåº¦æ¨¡å¼ï¼šæ›¿æ¢
+  hdma2d.LayerCfg[1].InputAlpha = 0xFF; // æ’å®šé€æ˜Žåº¦(255=ä¸é€æ˜Ž)
+  hdma2d.LayerCfg[1].InputColorMode = DMA2D_INPUT_YCBCR; // è¾“å…¥é¢œè‰²æ ¼å¼YCBCR
+  hdma2d.LayerCfg[1].ChromaSubSampling = cssMode;   // YCBCRè‰²åº¦é‡‡æ ·æ ¼å¼
+  hdma2d.LayerCfg[1].InputOffset = inputLineOffset; // è¾“å…¥è¡Œåç§»
+  hdma2d.LayerCfg[1].AlphaInverted = DMA2D_REGULAR_ALPHA; // æ­£å¸¸é€æ˜Žé€šé“
+  hdma2d.LayerCfg[1].RedBlueSwap = DMA2D_RB_REGULAR; // ä¸äº¤æ¢Rå’ŒBé¢œè‰²é€šé“
 
   hdma2d.Instance = DMA2D;
 
-  // ³õÊ¼»¯²¢ÅäÖÃDMA2D
+  // åˆå§‹åŒ–å¹¶é…ç½®DMA2D
   HAL_DMA2D_Init(&hdma2d);
   HAL_DMA2D_ConfigLayer(&hdma2d, 1);
 
-  // ¼ÆËãÊä³öÏÔ´æµØÖ·Æ«ÒÆ
+  // è®¡ç®—è¾“å‡ºæ˜¾å­˜åœ°å€åç§»
   destination = (uint32_t)pDst + ((y * RGB_LCD_Width) + x) * 2;
 
-  // Æô¶¯DMA2D YCbCr¡úRGB×ª»»
+  // å¯åŠ¨DMA2D YCbCrâ†’RGBè½¬æ¢
   HAL_DMA2D_Start(&hdma2d, (uint32_t)pSrc, destination, JPEG_Info.ImageWidth,
                   JPEG_Info.ImageHeight);
 
-  // ÂÖÑ¯µÈ´ýDMA2D×ª»»Íê³É
+  // è½®è¯¢ç­‰å¾…DMA2Dè½¬æ¢å®Œæˆ
   HAL_DMA2D_PollForTransfer(&hdma2d, 25);
 }
 
 /*******************************************************************************
- *                           ±àÂëÏà¹Øº¯ÊýÊµÏÖ
+ *                           ç¼–ç ç›¸å…³å‡½æ•°å®žçŽ°
  ******************************************************************************/
 
 /**
- * @brief  »ñÈ¡±àÂëºóµÄJPEGÊý¾Ý´óÐ¡
- * @retval ±àÂëºóJPEGÊý¾ÝµÄ´óÐ¡(×Ö½Ú)
- * @note   ±ØÐëÔÚ±àÂëÍê³Éºóµ÷ÓÃ´Ëº¯Êý
+ * @brief  èŽ·å–ç¼–ç åŽçš„JPEGæ•°æ®å¤§å°
+ * @retval ç¼–ç åŽJPEGæ•°æ®çš„å¤§å°(å­—èŠ‚)
+ * @note   å¿…é¡»åœ¨ç¼–ç å®ŒæˆåŽè°ƒç”¨æ­¤å‡½æ•°
  */
 uint32_t JPEG_GetEncodedSize(void) { return Output_frameSize; }
 
 /**
- * @brief  Ê¹ÓÃjpeg_utils½øÐÐRGB565µ½YCbCrµÄ×ª»»²¢±àÂë
+ * @brief  ä½¿ç”¨jpeg_utilsè¿›è¡ŒRGB565åˆ°YCbCrçš„è½¬æ¢å¹¶ç¼–ç 
  */
 int JPEG_Encode_RGB565(uint32_t ImageWidth, uint32_t ImageHeight,
                        uint32_t RGBSourceAddress, uint32_t YCbCrBufferAddress,
@@ -211,10 +211,10 @@ int JPEG_Encode_RGB565(uint32_t ImageWidth, uint32_t ImageHeight,
   uint8_t QualityFactor = 75;
   uint32_t dataCount;
 
-  // ³õÊ¼»¯ÑÕÉ«×ª»»±í
+  // åˆå§‹åŒ–é¢œè‰²è½¬æ¢è¡¨
   my_JPEG_InitColorTables();
 
-  // ¸ù¾ÝÖÊÁ¿µÈ¼¶ÉèÖÃÖÊÁ¿Òò×Ó
+  // æ ¹æ®è´¨é‡ç­‰çº§è®¾ç½®è´¨é‡å› å­
   switch (Quality) {
   case JPEG_Quality_Low:
     QualityFactor = 50;
@@ -233,12 +233,12 @@ int JPEG_Encode_RGB565(uint32_t ImageWidth, uint32_t ImageHeight,
     break;
   }
 
-  // ÉèÖÃJPEG±àÂëÅäÖÃ
+  // è®¾ç½®JPEGç¼–ç é…ç½®
   JPEG_Conf.ImageWidth = ImageWidth;
   JPEG_Conf.ImageHeight = ImageHeight;
   JPEG_Conf.ColorSpace = JPEG_YCBCR_COLORSPACE;
   
-  // ×ª»»²ÉÑù¸ñÊ½
+  // è½¬æ¢é‡‡æ ·æ ¼å¼
   switch (ChromaSubsampling) {
   case JPEG_Encode_420:
     JPEG_Conf.ChromaSubsampling = JPEG_420_SUBSAMPLING;
@@ -256,88 +256,88 @@ int JPEG_Encode_RGB565(uint32_t ImageWidth, uint32_t ImageHeight,
   
   JPEG_Conf.ImageQuality = QualityFactor;
 
-  // »ñÈ¡RGBµ½YCbCr×ª»»º¯Êý
+  // èŽ·å–RGBåˆ°YCbCrè½¬æ¢å‡½æ•°
   if (my_JPEG_GetEncodeColorConvertFunc(&JPEG_Conf, &pRGBToYCbCr_Convert_Function,
                                       &MCU_TotalNb) != HAL_OK) {
-    DEBUG_ERROR("»ñÈ¡×ª»»º¯ÊýÊ§°Ü");
+    DEBUG_ERROR("èŽ·å–è½¬æ¢å‡½æ•°å¤±è´¥");
     return -1;
   }
 
-  // ¼ÆËãÃ¿´Î´¦ÀíµÄÊý¾ÝÁ¿ (°´MCU¶ÔÆë)
-  // ¶ÔÓÚRGB565: Ã¿ÏñËØ2×Ö½Ú
+  // è®¡ç®—æ¯æ¬¡å¤„ç†çš„æ•°æ®é‡ (æŒ‰MCUå¯¹é½)
+  // å¯¹äºŽRGB565: æ¯åƒç´ 2å­—èŠ‚
   uint32_t bytesPerPixel = 2;
   
-  // ÅäÖÃJPEG±àÂëÆ÷
+  // é…ç½®JPEGç¼–ç å™¨
   HAL_JPEG_ConfigEncoding(&hjpeg, &JPEG_Conf);
 
-  // ³õÊ¼»¯±àÂë²ÎÊý
+  // åˆå§‹åŒ–ç¼–ç å‚æ•°
   FrameBufferAddress = JPEGDestAddress;
   Output_frameSize = 0;
   Jpeg_HWOperationState = JPEG_OpStart;
   Jpeg_IsEncoding = 1;
 
-  // ½«Õû¸öRGBÍ¼Ïñ×ª»»ÎªYCbCr MCU¿é
-  // ÊäÈë: RGB565Êý¾Ý, Êä³ö: YCbCr MCU¿é
+  // å°†æ•´ä¸ªRGBå›¾åƒè½¬æ¢ä¸ºYCbCr MCUå—
+  // è¾“å…¥: RGB565æ•°æ®, è¾“å‡º: YCbCr MCUå—
   dataCount = ImageWidth * ImageHeight * bytesPerPixel;
   
   MCU_BlockIndex = pRGBToYCbCr_Convert_Function(
-      (uint8_t *)RGBSourceAddress,      // RGBÊäÈë
-      (uint8_t *)YCbCrBufferAddress,    // YCbCrÊä³ö
-      0,                                 // ÆðÊ¼¿éË÷Òý
-      dataCount,                         // ÊäÈëÊý¾ÝÁ¿
-      &convertedDataCount);              // ×ª»»ºóµÄÊý¾ÝÁ¿
+      (uint8_t *)RGBSourceAddress,      // RGBè¾“å…¥
+      (uint8_t *)YCbCrBufferAddress,    // YCbCrè¾“å‡º
+      0,                                 // èµ·å§‹å—ç´¢å¼•
+      dataCount,                         // è¾“å…¥æ•°æ®é‡
+      &convertedDataCount);              // è½¬æ¢åŽçš„æ•°æ®é‡
 
   if (MCU_BlockIndex == 0) {
-    DEBUG_ERROR("RGB×ªYCbCrÊ§°Ü");
+    DEBUG_ERROR("RGBè½¬YCbCrå¤±è´¥");
     return -1;
   }
 
-  // ¼ÆËãYCbCrÊý¾Ý´óÐ¡
+  // è®¡ç®—YCbCræ•°æ®å¤§å°
   uint32_t ycbcrSize = convertedDataCount;
   
-  // ±£´æÏà¹Ø²ÎÊý¹©»Øµ÷º¯ÊýÊ¹ÓÃ
+  // ä¿å­˜ç›¸å…³å‚æ•°ä¾›å›žè°ƒå‡½æ•°ä½¿ç”¨
   JPEGSourceAddress = YCbCrBufferAddress;
   Input_frameSize = ycbcrSize;
   Input_frameIndex = 0;
 
-// Ë¢ÐÂD-Cache£¬È·±£DMAÄÜ¶ÁÈ¡µ½ÕýÈ·µÄYCbCrÊý¾Ý
+// åˆ·æ–°D-Cacheï¼Œç¡®ä¿DMAèƒ½è¯»å–åˆ°æ­£ç¡®çš„YCbCræ•°æ®
   SCB_CleanDCache_by_Addr((uint32_t*)YCbCrBufferAddress, ycbcrSize + 32);
 
-  // Æô¶¯JPEGÓ²¼þDMA±àÂë
+  // å¯åŠ¨JPEGç¡¬ä»¶DMAç¼–ç 
   HAL_JPEG_Encode_DMA(&hjpeg, (uint8_t *)YCbCrBufferAddress,
                       (ycbcrSize > CHUNK_SIZE_ENCODE_IN) ? CHUNK_SIZE_ENCODE_IN : ycbcrSize,
                       (uint8_t *)JPEGDestAddress, CHUNK_SIZE_ENCODE_OUT);
 
-  // µÈ´ý±àÂëÍê³É
+  // ç­‰å¾…ç¼–ç å®Œæˆ
   while (Jpeg_HWOperationState == JPEG_OpStart)
     ;
 
   return 0;
 }
 /*******************************************************************************
- *                              HAL»Øµ÷º¯ÊýÊµÏÖ
+ *                              HALå›žè°ƒå‡½æ•°å®žçŽ°
  ******************************************************************************/
 
 /**
- * @brief  JPEGÊý¾Ý»ñÈ¡»Øµ÷º¯Êý(±àÂëºÍ½âÂëÊ±¶¼»áµ÷ÓÃ)
- * @param  hjpeg: JPEGÓ²¼þ¾ä±úÖ¸Õë
- * @param  NbDecodedData: ±¾´ÎÒÑ´¦ÀíµÄÊý¾Ý³¤¶È
- * @retval ÎÞ
- * @note   µ±ÊäÈëÊý¾Ý¹ý¶àÊ±£¬¸Ãº¯Êý»á±»¶à´Îµ÷ÓÃÒÔ¼ÓÔØºóÐøÊý¾Ý
+ * @brief  JPEGæ•°æ®èŽ·å–å›žè°ƒå‡½æ•°(ç¼–ç å’Œè§£ç æ—¶éƒ½ä¼šè°ƒç”¨)
+ * @param  hjpeg: JPEGç¡¬ä»¶å¥æŸ„æŒ‡é’ˆ
+ * @param  NbDecodedData: æœ¬æ¬¡å·²å¤„ç†çš„æ•°æ®é•¿åº¦
+ * @retval æ— 
+ * @note   å½“è¾“å…¥æ•°æ®è¿‡å¤šæ—¶ï¼Œè¯¥å‡½æ•°ä¼šè¢«å¤šæ¬¡è°ƒç”¨ä»¥åŠ è½½åŽç»­æ•°æ®
  */
 void HAL_JPEG_GetDataCallback(JPEG_HandleTypeDef *hjpeg,
                               uint32_t NbDecodedData) {
   uint32_t inDataLength;
 
-  // ¸üÐÂÒÑ´¦ÀíÊý¾Ý³¤¶È
+  // æ›´æ–°å·²å¤„ç†æ•°æ®é•¿åº¦
   Input_frameIndex += NbDecodedData;
 
-  // Èç¹û»¹ÓÐÎ´´¦ÀíµÄÊý¾Ý
+  // å¦‚æžœè¿˜æœ‰æœªå¤„ç†çš„æ•°æ®
   if (Input_frameIndex < Input_frameSize) {
-    // ¼ÆËãÏÂÒ»¶ÎÊý¾ÝµÄÔ´µØÖ·
+    // è®¡ç®—ä¸‹ä¸€æ®µæ•°æ®çš„æºåœ°å€
     JPEGSourceAddress = JPEGSourceAddress + NbDecodedData;
 
-    // ¸ù¾ÝÊÇ±àÂë»¹ÊÇ½âÂëÑ¡ÔñºÏÊÊµÄCHUNK_SIZE
+    // æ ¹æ®æ˜¯ç¼–ç è¿˜æ˜¯è§£ç é€‰æ‹©åˆé€‚çš„CHUNK_SIZE
     uint32_t chunkSize;
     if (Jpeg_IsEncoding) {
       chunkSize = CHUNK_SIZE_ENCODE_IN;
@@ -345,7 +345,7 @@ void HAL_JPEG_GetDataCallback(JPEG_HandleTypeDef *hjpeg,
       chunkSize = CHUNK_SIZE_IN;
     }
 
-    // ¼ÆËã±¾´ÎÓ¦¶ÁÈ¡µÄÊý¾Ý³¤¶È
+    // è®¡ç®—æœ¬æ¬¡åº”è¯»å–çš„æ•°æ®é•¿åº¦
     if ((Input_frameSize - Input_frameIndex) >= chunkSize) {
       inDataLength = chunkSize;
     } else {
@@ -355,25 +355,25 @@ void HAL_JPEG_GetDataCallback(JPEG_HandleTypeDef *hjpeg,
     inDataLength = 0;
   }
 
-  // ÅäÖÃÏÂÒ»¶ÎÊäÈë»º³åÊý¾Ý
+  // é…ç½®ä¸‹ä¸€æ®µè¾“å…¥ç¼“å†²æ•°æ®
   HAL_JPEG_ConfigInputBuffer(hjpeg, (uint8_t *)JPEGSourceAddress, inDataLength);
 }
 
 /**
- * @brief  JPEGÊä³öÊý¾Ý¾ÍÐ÷»Øµ÷º¯Êý
- * @param  hjpeg: JPEGÓ²¼þ¾ä±úÖ¸Õë
- * @param  pDataOut: Êä³ö»º³åÇøµØÖ·Ö¸Õë
- * @param  OutDataLength: ±¾´ÎÊä³öÊý¾Ý³¤¶È
- * @retval ÎÞ
- * @note   µ±Êä³öÊý¾Ý´ïµ½CHUNK_SIZEÊ±£¬¸Ãº¯Êý±»µ÷ÓÃÒÔ¸üÐÂÊä³ö»º³åµØÖ·
+ * @brief  JPEGè¾“å‡ºæ•°æ®å°±ç»ªå›žè°ƒå‡½æ•°
+ * @param  hjpeg: JPEGç¡¬ä»¶å¥æŸ„æŒ‡é’ˆ
+ * @param  pDataOut: è¾“å‡ºç¼“å†²åŒºåœ°å€æŒ‡é’ˆ
+ * @param  OutDataLength: æœ¬æ¬¡è¾“å‡ºæ•°æ®é•¿åº¦
+ * @retval æ— 
+ * @note   å½“è¾“å‡ºæ•°æ®è¾¾åˆ°CHUNK_SIZEæ—¶ï¼Œè¯¥å‡½æ•°è¢«è°ƒç”¨ä»¥æ›´æ–°è¾“å‡ºç¼“å†²åœ°å€
  */
 void HAL_JPEG_DataReadyCallback(JPEG_HandleTypeDef *hjpeg, uint8_t *pDataOut,
                                 uint32_t OutDataLength) {
-  // ¸üÐÂÊä³ö»º³åÇøµØÖ·ºÍ´óÐ¡
+  // æ›´æ–°è¾“å‡ºç¼“å†²åŒºåœ°å€å’Œå¤§å°
   FrameBufferAddress += OutDataLength;
   Output_frameSize += OutDataLength;
 
-  // ¸ù¾ÝÊÇ±àÂë»¹ÊÇ½âÂëÑ¡ÔñºÏÊÊµÄCHUNK_SIZE
+  // æ ¹æ®æ˜¯ç¼–ç è¿˜æ˜¯è§£ç é€‰æ‹©åˆé€‚çš„CHUNK_SIZE
   uint32_t chunkSize;
   if (Jpeg_IsEncoding) {
     chunkSize = CHUNK_SIZE_ENCODE_OUT;
@@ -381,49 +381,49 @@ void HAL_JPEG_DataReadyCallback(JPEG_HandleTypeDef *hjpeg, uint8_t *pDataOut,
     chunkSize = CHUNK_SIZE_OUT;
   }
 
-  // ÅäÖÃÏÂÒ»¶ÎÊä³ö»º³åÇø
+  // é…ç½®ä¸‹ä¸€æ®µè¾“å‡ºç¼“å†²åŒº
   HAL_JPEG_ConfigOutputBuffer(hjpeg, (uint8_t *)FrameBufferAddress, chunkSize);
 }
 
 /**
- * @brief  JPEGÓ²¼þ´íÎó»Øµ÷º¯Êý
- * @param  hjpeg: JPEGÓ²¼þ¾ä±úÖ¸Õë
- * @retval ÎÞ
- * @note   µ±JPEG²Ù×÷¹ý³ÌÖÐ·¢Éú´íÎóÊ±´¥·¢
+ * @brief  JPEGç¡¬ä»¶é”™è¯¯å›žè°ƒå‡½æ•°
+ * @param  hjpeg: JPEGç¡¬ä»¶å¥æŸ„æŒ‡é’ˆ
+ * @retval æ— 
+ * @note   å½“JPEGæ“ä½œè¿‡ç¨‹ä¸­å‘ç”Ÿé”™è¯¯æ—¶è§¦å‘
  */
 void HAL_JPEG_ErrorCallback(JPEG_HandleTypeDef *hjpeg) {
-  // ÉèÖÃ²Ù×÷Íê³É±êÖ¾ÒÔÍË³öµÈ´ýÑ­»·
+  // è®¾ç½®æ“ä½œå®Œæˆæ ‡å¿—ä»¥é€€å‡ºç­‰å¾…å¾ªçŽ¯
   Jpeg_HWOperationState = JPEG_OpComplete;
 
-  // ÅÐ¶Ï´íÎóÀàÐÍ
+  // åˆ¤æ–­é”™è¯¯ç±»åž‹
   if (HAL_JPEG_GetError(hjpeg) == HAL_JPEG_ERROR_DMA) {
-    // DMAÊý¾Ý´«Êä´íÎó
-    DEBUG_ERROR("DMA´«Êä´íÎó");
+    // DMAæ•°æ®ä¼ è¾“é”™è¯¯
+    DEBUG_ERROR("DMAä¼ è¾“é”™è¯¯");
   }
 
-  // ´òÓ¡´íÎóÐÅÏ¢
-  DEBUG_ERROR("JPEGÓ²¼þ´íÎó");
+  // æ‰“å°é”™è¯¯ä¿¡æ¯
+  DEBUG_ERROR("JPEGç¡¬ä»¶é”™è¯¯");
 }
 
 /**
- * @brief  JPEGÓ²¼þ½âÂëÍê³É»Øµ÷º¯Êý
- * @param  hjpeg: JPEGÓ²¼þ¾ä±úÖ¸Õë
- * @retval ÎÞ
- * @note   µ±JPEGÍ¼Æ¬ÍêÈ«½âÂëºó£¬¸Ãº¯Êý±»µ÷ÓÃÒÔ±ê¼ÇÍê³É×´Ì¬
+ * @brief  JPEGç¡¬ä»¶è§£ç å®Œæˆå›žè°ƒå‡½æ•°
+ * @param  hjpeg: JPEGç¡¬ä»¶å¥æŸ„æŒ‡é’ˆ
+ * @retval æ— 
+ * @note   å½“JPEGå›¾ç‰‡å®Œå…¨è§£ç åŽï¼Œè¯¥å‡½æ•°è¢«è°ƒç”¨ä»¥æ ‡è®°å®ŒæˆçŠ¶æ€
  */
 void HAL_JPEG_DecodeCpltCallback(JPEG_HandleTypeDef *hjpeg) {
-  // ÉèÖÃ²Ù×÷Íê³É±êÖ¾
+  // è®¾ç½®æ“ä½œå®Œæˆæ ‡å¿—
   Jpeg_HWOperationState = JPEG_OpComplete;
 }
 
 /**
- * @brief  JPEGÓ²¼þ±àÂëÍê³É»Øµ÷º¯Êý
- * @param  hjpeg: JPEGÓ²¼þ¾ä±úÖ¸Õë
- * @retval ÎÞ
- * @note   µ±JPEGÍ¼Æ¬ÍêÈ«±àÂëºó£¬¸Ãº¯Êý±»µ÷ÓÃÒÔ±ê¼ÇÍê³É×´Ì¬
+ * @brief  JPEGç¡¬ä»¶ç¼–ç å®Œæˆå›žè°ƒå‡½æ•°
+ * @param  hjpeg: JPEGç¡¬ä»¶å¥æŸ„æŒ‡é’ˆ
+ * @retval æ— 
+ * @note   å½“JPEGå›¾ç‰‡å®Œå…¨ç¼–ç åŽï¼Œè¯¥å‡½æ•°è¢«è°ƒç”¨ä»¥æ ‡è®°å®ŒæˆçŠ¶æ€
  */
 void HAL_JPEG_EncodeCpltCallback(JPEG_HandleTypeDef *hjpeg) {
-  // ÉèÖÃ²Ù×÷Íê³É±êÖ¾
+  // è®¾ç½®æ“ä½œå®Œæˆæ ‡å¿—
   Jpeg_HWOperationState = JPEG_OpComplete;
 }
 

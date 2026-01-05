@@ -28,27 +28,17 @@
  *                              私有变量
  ******************************************************************************/
 
-/* DMA 双缓冲区（循环模式） */
-static int16_t s_dma_buffer[DSPEAKER_BUFFER_SIZE] __attribute__((aligned(4)));
-
-/* 缓冲区管理 */
-static uint32_t s_buffer_write_pos = 0; /* 写指针 */
-static uint32_t s_buffer_read_pos = 0;  /* 读指针（由DMA更新） */
-static uint32_t s_buffer_size = DSPEAKER_BUFFER_SIZE;
+/* 指向外部缓冲区的指针 */
+static int16_t *gp_dma_buffer = NULL;
+static uint32_t g_buffer_size = 0;
+static DSPEAKER_EventCallback_t s_event_callback = NULL;
 
 /* 状态变量 */
 static DSPEAKER_State s_state = DSPEAKER_STATE_RESET;
-static DSPEAKER_DataRequiredCallback_t s_callback = NULL;
-static uint8_t s_volume = 50; /* 默认音量50% */
+static uint8_t s_volume = 1; /* 默认音量1% */
 
 /* I2S 句柄引用（在 i2s.c 中定义） */
 extern I2S_HandleTypeDef DSPEAKER_I2S_HANDLE;
-
-/*******************************************************************************
- *                              私有函数声明
- ******************************************************************************/
-static void fill_buffer(uint8_t isFirstHalf);
-static void update_buffer_pos(void);
 
 /*******************************************************************************
  *                              导出函数实现
@@ -56,26 +46,15 @@ static void update_buffer_pos(void);
 
 /**
  * @brief  初始化数字扬声器
- * @note   假设 I2S 和 DMA 已在 CubeMX 生成的代码中配置
  */
-HAL_StatusTypeDef DSPEAKER_Init(void)
+HAL_StatusTypeDef DSPEAKER_Init(int16_t *pBuffer, uint32_t size)
 {
-    /* 检查状态 */
-    if (s_state == DSPEAKER_STATE_PLAYING)
-    {
-        DEBUG_ERROR("DSPEAKER_Init: 扬声器正在播放中，请先停止");
+    if (pBuffer == NULL || size == 0)
         return HAL_ERROR;
-    }
 
-    /* 清空缓冲区 */
-    memset(s_dma_buffer, 0, sizeof(s_dma_buffer));
-    s_buffer_write_pos = 0;
-    s_buffer_read_pos = 0;
-    s_volume = 50;
-
-    /* 设置为就绪状态 */
+    gp_dma_buffer = pBuffer;
+    g_buffer_size = size;
     s_state = DSPEAKER_STATE_READY;
-
     return HAL_OK;
 }
 
@@ -87,26 +66,12 @@ HAL_StatusTypeDef DSPEAKER_Start(void)
     HAL_StatusTypeDef status;
 
     if (s_state == DSPEAKER_STATE_PLAYING)
-    {
-        DEBUG_INFO("DSPEAKER_Start: 扬声器已在播放中");
         return HAL_OK;
-    }
-
     if (s_state == DSPEAKER_STATE_RESET)
-    {
-        DEBUG_ERROR("DSPEAKER_Start: 请先调用 DSPEAKER_Init() 初始化");
         return HAL_ERROR;
-    }
-
-    HAL_Delay(10); /* 等待芯片稳定 */
-
-    /* 清空缓冲区并预填充数据 */
-    DSPEAKER_ClearBuffer();
-    fill_buffer(1); /* 填充前半缓冲 */
-    fill_buffer(0); /* 填充后半缓冲 */
 
     /* 启动 I2S DMA 发送（循环模式） */
-    status = HAL_I2S_Transmit_DMA(&DSPEAKER_I2S_HANDLE, (uint16_t *)s_dma_buffer, DSPEAKER_BUFFER_SIZE);
+    status = HAL_I2S_Transmit_DMA(&DSPEAKER_I2S_HANDLE, (uint16_t *)gp_dma_buffer, g_buffer_size);
     if (status != HAL_OK)
     {
         DEBUG_ERROR("DSPEAKER_Start: I2S DMA 启动失败");
@@ -115,7 +80,6 @@ HAL_StatusTypeDef DSPEAKER_Start(void)
     }
 
     s_state = DSPEAKER_STATE_PLAYING;
-    DEBUG_INFO("开始播放");
     return HAL_OK;
 }
 
@@ -124,44 +88,19 @@ HAL_StatusTypeDef DSPEAKER_Start(void)
  */
 HAL_StatusTypeDef DSPEAKER_Stop(void)
 {
-    HAL_StatusTypeDef status;
-
     if (s_state != DSPEAKER_STATE_PLAYING)
-    {
-        DEBUG_INFO("DSPEAKER_Stop: 扬声器未在播放中");
         return HAL_OK;
-    }
 
-    /* 停止 I2S DMA 发送 */
-    status = HAL_I2S_DMAStop(&DSPEAKER_I2S_HANDLE);
-    if (status != HAL_OK)
-    {
-        DEBUG_ERROR("DSPEAKER_Stop: I2S DMA 停止失败");
-        s_state = DSPEAKER_STATE_ERROR;
-        return status;
-    }
-
-    /* 清空缓冲区 */
-    DSPEAKER_ClearBuffer();
-
+    HAL_I2S_DMAStop(&DSPEAKER_I2S_HANDLE);
     s_state = DSPEAKER_STATE_READY;
-    DEBUG_INFO("停止播放");
     return HAL_OK;
 }
 
-/**
- * @brief  获取当前状态
- */
 DSPEAKER_State DSPEAKER_GetState(void)
 {
     return s_state;
 }
 
-
-
-/**
- * @brief  设置音量（0-100）
- */
 void DSPEAKER_SetVolume(uint8_t volume)
 {
     if (volume > 100)
@@ -169,126 +108,14 @@ void DSPEAKER_SetVolume(uint8_t volume)
     s_volume = volume;
 }
 
-/**
- * @brief  获取当前音量
- */
 uint8_t DSPEAKER_GetVolume(void)
 {
     return s_volume;
 }
 
-/**
- * @brief  向播放缓冲区填充数据
- */
-uint32_t DSPEAKER_FeedData(const int16_t *pData, uint32_t size)
+void DSPEAKER_RegisterEventCallback(DSPEAKER_EventCallback_t callback)
 {
-    uint32_t available;
-    uint32_t to_write;
-    uint32_t written = 0;
-
-    if (s_state != DSPEAKER_STATE_PLAYING || pData == NULL || size == 0)
-        return 0;
-
-    available = DSPEAKER_GetAvailableSpace();
-
-    if (available == 0)
-    {
-        DEBUG_ERROR("DSPEAKER_FeedData: 缓冲区已满");
-        return 0;
-    }
-
-    /* 最多写入可用空间大小的数据 */
-    to_write = (size > available) ? available : size;
-
-    /* 处理循环缓冲区写入 */
-    if (s_buffer_write_pos + to_write <= s_buffer_size)
-    {
-        /* 不跨越边界 */
-        memcpy(&s_dma_buffer[s_buffer_write_pos], pData, to_write * sizeof(int16_t));
-        s_buffer_write_pos = (s_buffer_write_pos + to_write) % s_buffer_size;
-        written = to_write;
-    }
-    else
-    {
-        /* 跨越边界 */
-        uint32_t first_part = s_buffer_size - s_buffer_write_pos;
-        memcpy(&s_dma_buffer[s_buffer_write_pos], pData, first_part * sizeof(int16_t));
-        memcpy(&s_dma_buffer[0], &pData[first_part], (to_write - first_part) * sizeof(int16_t));
-        s_buffer_write_pos = (s_buffer_write_pos + to_write) % s_buffer_size;
-        written = to_write;
-    }
-
-    return written;
-}
-
-/**
- * @brief  获取缓冲区可用空间大小
- */
-uint32_t DSPEAKER_GetAvailableSpace(void)
-{
-    update_buffer_pos();
-
-    if (s_buffer_write_pos >= s_buffer_read_pos)
-    {
-        return s_buffer_read_pos + (s_buffer_size - s_buffer_write_pos) - 1;
-    }
-    else
-    {
-        return s_buffer_read_pos - s_buffer_write_pos - 1;
-    }
-}
-
-/**
- * @brief  注册缓冲区需要数据的回调函数
- */
-void DSPEAKER_RegisterCallback(DSPEAKER_DataRequiredCallback_t callback)
-{
-    if (callback == NULL)
-    {
-        DEBUG_ERROR("DSPEAKER_RegisterCallback: 回调指针为空");
-        return;
-    }
-    s_callback = callback;
-}
-
-/**
- * @brief  取消回调注册
- */
-void DSPEAKER_UnregisterCallback(void)
-{
-    s_callback = NULL;
-}
-
-/**
- * @brief  清空播放缓冲区（填充零）
- */
-void DSPEAKER_ClearBuffer(void)
-{
-    memset(s_dma_buffer, 0, sizeof(s_dma_buffer));
-    s_buffer_write_pos = 0;
-}
-
-/**
- * @brief  等待缓冲区可用
- */
-HAL_StatusTypeDef DSPEAKER_WaitForAvailable(uint32_t timeout_ms)
-{
-    uint32_t start_tick = HAL_GetTick();
-
-    while (DSPEAKER_GetAvailableSpace() == 0)
-    {
-        if (timeout_ms > 0)
-        {
-            if (HAL_GetTick() - start_tick > timeout_ms)
-            {
-                DEBUG_ERROR("DSPEAKER_WaitForAvailable: 等待超时");
-                return HAL_TIMEOUT;
-            }
-        }
-        HAL_Delay(1);
-    }
-
-    return HAL_OK;
+    s_event_callback = callback;
 }
 
 /*******************************************************************************
@@ -296,89 +123,25 @@ HAL_StatusTypeDef DSPEAKER_WaitForAvailable(uint32_t timeout_ms)
  ******************************************************************************/
 
 /**
- * @brief  DMA 半传输完成回调（后半缓冲区已发送）
+ * @brief  DMA 半传输完成回调（后半缓冲区已发送，通知填充前半部）
  */
 void DSPEAKER_DMA_HalfTransfer_Callback(void)
 {
-    if (s_state == DSPEAKER_STATE_PLAYING)
+    if (s_event_callback)
     {
-        fill_buffer(1); /* 填充前半缓冲 */
+        s_event_callback(0);
     }
 }
 
 /**
- * @brief  DMA 传输完成回调（前半缓冲区已发送）
+ * @brief  DMA 传输完成回调（前半缓冲区已发送，通知填充后半部）
  */
 void DSPEAKER_DMA_TransferComplete_Callback(void)
 {
-    if (s_state == DSPEAKER_STATE_PLAYING)
+    if (s_event_callback)
     {
-        fill_buffer(0); /* 填充后半缓冲 */
+        s_event_callback(1);
     }
-}
-
-/*******************************************************************************
- *                              私有函数实现
- ******************************************************************************/
-
-/**
- * @brief  填充缓冲区的一半
- * @param  isFirstHalf: 1=填充前半部分, 0=填充后半部分
- */
-static void fill_buffer(uint8_t isFirstHalf)
-{
-    uint32_t offset = isFirstHalf ? 0 : (DSPEAKER_BUFFER_SIZE / 2);
-    uint32_t size = DSPEAKER_BUFFER_SIZE / 2;
-    int16_t *pBuffer = &s_dma_buffer[offset]; // 获取当前操作的缓冲区指针
-
-    /* 1. 获取原始音频数据 */
-    if (s_callback != NULL)
-    {
-        s_callback(pBuffer, size, isFirstHalf);
-    }
-    else
-    {
-        /* 无数据时填充0（静音） */
-        memset(pBuffer, 0, size * sizeof(int16_t));
-        // 如果是静音，不需要下面的音量计算，直接刷Cache并返回即可
-        goto FLUSH_CACHE;
-    }
-
-    /* 2. === 应用软件音量 === */
-    /* 只有当音量不是 100% 时才计算，节省 CPU */
-    if (s_volume != 100)
-    {
-        for (uint32_t i = 0; i < size; i++)
-        {
-            /* 使用 int32_t 防止乘法溢出 */
-            int32_t temp = pBuffer[i];
-
-            /* 核心公式： 数据 = 原始数据 * 音量 / 100 */
-            temp = (temp * s_volume) / 100;
-
-            /* 重新赋值回缓冲区 */
-            pBuffer[i] = (int16_t)temp;
-        }
-    }
-
-FLUSH_CACHE:
-    /* 3. === STM32H7 D-Cache 一致性维护 === */
-    SCB_CleanDCache_by_Addr((uint32_t *)pBuffer, size * sizeof(int16_t));
-}
-
-/**
- * @brief  更新缓冲区读指针位置
- * @note   根据DMA当前传输位置推断读指针
- */
-static void update_buffer_pos(void) {
-  uint32_t dma_pos =
-      DSPEAKER_BUFFER_SIZE - __HAL_DMA_GET_COUNTER(DSPEAKER_I2S_HANDLE.hdmatx);
-
-  /* 确保在有效范围内 */
-  if (dma_pos >= DSPEAKER_BUFFER_SIZE)
-    dma_pos = 0;
-
-  s_buffer_read_pos = dma_pos;
 }
 
 /*******************************************************************************
@@ -420,5 +183,76 @@ void HAL_I2S_ErrorCallback(I2S_HandleTypeDef *hi2s)
         s_state = DSPEAKER_STATE_ERROR;
     }
 }
+//示例代码：
+/* 全局播放器实例*/
+// static AudioPlayer_t g_wav_player = {0};
+// static MP3Player_t g_mp3_player = {0};
+/* ================= 音频播放测试 ================= */
+// #if (defined(DSPEAKER_ENABLE) && defined(WAV_PLAY_ENABLE))
+//   /*
+//    * 在 SDRAM (0xC0800000) 开辟 2MB 缓冲区
+//    * 2MB = 2 * 1024 * 1024 字节
+//    * int16_t 缓冲区大小 = 字节数 / 2
+//    * 注意：请确保 MPU 配置允许访问该 SDRAM 区域
+//    */
+//   int16_t *p_audio_buffer = (int16_t *)0xC0800000;
+//   uint32_t audio_buffer_size = ( 1024 * 1024) / sizeof(int16_t);
+
+//   DEBUG_INFO("正在初始化音频播放器...");
+
+//   /* 初始化播放器并绑定 SDRAM 缓冲区 */
+//   AudioPlayer_Init(&g_wav_player, p_audio_buffer, audio_buffer_size);
+
+//   /* 打开并播放文件 (路径: 0:mymusic/1.wav) */
+//   if (AudioPlayer_OpenFile(&g_wav_player, "0:mymusic/1.wav") == HAL_OK)
+//   {
+//     DEBUG_INFO("音频文件打开成功: mymusic/1.wav");
+//     /* 0 表示无限循环 */
+//     AudioPlayer_PlayWithLoop(&g_wav_player, 0);
+//   }
+//   else
+//   {
+//     DEBUG_ERROR("音频文件打开失败: mymusic/1.wav");
+//   }
+// #endif
+// /* ================= 音频播放测试 ================= */
+// #if (defined(DSPEAKER_ENABLE) && defined(MP3_PLAY_ENABLE))
+// /*
+//  * 在 SDRAM (0xC0800000) 开辟缓冲区
+//  * 假设总共使用 2MB 空间
+//  */
+
+// /* 1. MP3 读取缓冲区 (存放压缩数据) - 分配 128KB，足够减少 SD 卡读取频率 */
+// #define MP3_READ_BUF_SIZE (1024 * 1024)
+//   uint8_t *p_mp3_read_buffer = (uint8_t *)0xC0800000;
+
+//   /* 2. PCM 音频缓冲区 (存放解码后数据) - 使用剩余空间 */
+//   /* 起始地址偏移 128KB */
+//   int16_t *p_pcm_buffer = (int16_t *)(0xC0800000 + MP3_READ_BUF_SIZE);
+
+//   /* 计算剩余空间大小 (字节) -> 转换为 int16_t 数量 */
+//   uint32_t pcm_buffer_size = (2 * 1024 * 1024 - MP3_READ_BUF_SIZE) / sizeof(int16_t);
+
+//   DEBUG_INFO("正在初始化 MP3 播放器...");
+
+//   /* 初始化播放器并绑定 SDRAM 缓冲区 */
+//   MP3Player_Init(&g_mp3_player, p_pcm_buffer, pcm_buffer_size, p_mp3_read_buffer, MP3_READ_BUF_SIZE);
+
+//   /* 打开并播放文件 (路径: 0:mymusic/1.mp3) */
+//   if (MP3Player_OpenFile(&g_mp3_player, "0:mymusic/1.mp3") == HAL_OK)
+//   {
+//     DEBUG_INFO("音频文件打开成功: mymusic/1.mp3");
+//     /* 0 表示无限循环 */
+//     MP3Player_PlayWithLoop(&g_mp3_player, 0);
+//   }
+//   else
+//   {
+//     DEBUG_ERROR("音频文件打开失败: mymusic/1.mp3");
+//   }
+// #endif
+//   /* ================================================ */
+// 在主循环里面：
+// AudioPlayer_Process(&g_wav_player);
+// MP3Player_Process(&g_mp3_player);
 
 #endif /* DSPEAKER_ENABLE */

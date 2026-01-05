@@ -42,7 +42,7 @@ extern "C" {
 #define LCD_RGB_ENABLE    /*!< LCD RGB驱动使能 */
 #define LCD_RGB_TOUCH_ENABLE /*!< LCD RGB触摸驱动使能,触摸屏使用，必须先定义LCD_RGB_ENABLE*/
 // #define QSPI_FLASH_ENABLE /*!< QSPI Flash驱动使能 */
-#define FLASH_FONT_ENABLE /*!< Flash字体驱动使能,必须优先定义QSPI_FLASH_ENABLE  */
+// #define FLASH_FONT_ENABLE /*!< Flash字体驱动使能,必须优先定义QSPI_FLASH_ENABLE  */
 // #define DMIC_ENABLE       /*!< INMP441数字麦克风驱动使能 */
 #define DSPEAKER_ENABLE   /*!< MAX98357A数字扬声器驱动使能 */
 // #define OLED_HARD_ENABLE  /*!< OLED硬件I2C驱动使能 */
@@ -51,8 +51,14 @@ extern "C" {
 #define FATFS_ENABLE /*!< SD卡的FATFS文件系统使能，必须优先定义SDMMC_ENABLE*/ 
 #define SDRAM_ENABLE      /*!< SDRAM驱动使能 */ 
 #define JPEG_ENABLE     /*!<JPEG驱动使能 */
+// #define OV5640_ENABLE /*!< OV5640摄像头驱动使能 */
 // #define USB_DEVICE_ENABLE       /*!< USB DEVICE驱动使能 */
 // #define USB_HOST_ENABLE         /*!< USB HOST驱动使能 */
+// #define RTC_ENABLE              /*!< RTC驱动使能 */
+// #define UART_WIFI_ENABLE        /*!< UART WIFI模块(ESP8266/ESP32 AT指令)驱动使能 */
+// #define UART_DEV_ENABLE         /*!< 通用UART设备(配好的蓝牙/有线)驱动使能 (UART3) */
+// #define OLED_I2C_ENABLE /*!< 使用硬/软件I2C驱动OLED  */
+// #define MPU6050_I2C_ENABLE /*!< 使用硬/软件I2C驱动MPU6050 */
 /*******************************************************************************
  *                          模块依赖关系检查
  ******************************************************************************/
@@ -89,6 +95,13 @@ extern "C" {
 #endif
 #endif
 
+/* WIFI 依赖于 UART_APP */
+#ifdef WIFI_ENABLE
+#ifndef UART_APP_ENABLE
+#error "WIFI_ENABLE requires UART_APP_ENABLE"
+#endif
+#endif
+
 #ifdef DEBUG_ENABLE
 #include "DEBUG/debug.h"
 #else /* DEBUG_ENABLE 未定义 */
@@ -96,9 +109,43 @@ extern "C" {
 #define DEBUG_INFO(msg) ((void)0)
 #define DEBUG_ERROR(msg) ((void)0)
 #endif /* DEBUG_ENABLE */
-/*******************************************************************************
- *                              平台抽象层宏
- ******************************************************************************/
+  /*******************************************************************************
+   *                              平台抽象层宏
+   ******************************************************************************/
+
+  /* --- Cache 兼容性处理 --- */
+/* 如果没有定义 __DCACHE_PRESENT (说明不是 M7 或更高内核)
+ * 或者定义了但值为 0 (说明硬件没做缓存)
+ */
+#if !defined(__DCACHE_PRESENT) || (__DCACHE_PRESENT == 0)
+/* 将 Cache 操作函数定义为空操作，防止在 F1/F4 等平台编译报错 */
+#define SCB_EnableDCache() ((void)0)
+#define SCB_DisableDCache() ((void)0)
+#define SCB_InvalidateDCache() ((void)0)
+#define SCB_CleanDCache() ((void)0)
+#define SCB_CleanInvalidateDCache() ((void)0)
+
+/* 处理带地址参数的函数，使用 (void) 转换参数以消除 "unused variable" 警告 */
+#define SCB_InvalidateDCache_by_Addr(addr, sz) \
+  do                                           \
+  {                                            \
+    (void)(addr);                              \
+    (void)(sz);                                \
+  } while (0)
+#define SCB_CleanDCache_by_Addr(addr, sz) \
+  do                                      \
+  {                                       \
+    (void)(addr);                         \
+    (void)(sz);                           \
+  } while (0)
+#define SCB_CleanInvalidateDCache_by_Addr(addr, sz) \
+  do                                                \
+  {                                                 \
+    (void)(addr);                                   \
+    (void)(sz);                                     \
+  } while (0)
+#endif
+  /* ----------------------- */
 
 #ifndef Delay_us
 /* 尝试用 HAL 定义的 SystemCoreClock，失败则给默认值 72000000 */

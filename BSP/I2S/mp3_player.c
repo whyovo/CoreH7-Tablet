@@ -6,7 +6,6 @@
  ******************************************************************************
  */
 
-
 #define MINIMP3_IMPLEMENTATION
 
 #include "mp3_player.h"
@@ -17,93 +16,286 @@
 
 #include "minimp3/minimp3_ex.h"
 
-/* MP3 解码缓冲区大小（字节） */
-#define MP3_DECODE_BUF_SIZE (16 * 1024)
-
-/* PCM 环形缓冲区大小（采样点数） */
-#ifndef MP3_PCM_BUFFER_SIZE
-#define MP3_PCM_BUFFER_SIZE (44100 * 2) /* 立体声，1秒钟 */
-#endif
+/* DMA 内部小缓冲区大小 (采样点数)  */
+#define AUDIO_DMA_BUFFER_SIZE 4096
 
 /* 全局播放器实例指针 */
 static MP3Player_t *gp_mp3_player = NULL;
 
+/* DMA 专用小缓冲区 (必须 32 字节对齐以适配 Cache 操作) */
+static int16_t s_mp3_dma_buffer[AUDIO_DMA_BUFFER_SIZE] __attribute__((aligned(32)));
+
 /**
- * @brief MP3 数据读取回调（DMA 中断中调用）
+ * @brief 内部函数：从文件读取数据并解码填充到 PCM 环形缓冲区
+ * @param player 播放器实例
+ * @param min_threshold 最小填充阈值
  */
-static uint32_t mp3_data_callback(int16_t *pBuffer, uint32_t size,
-                                  uint8_t isFirstHalf)
+static void MP3Player_RefillRingBuffer(MP3Player_t *player)
 {
-    if (gp_mp3_player == NULL || !gp_mp3_player->is_playing)
-        return size;
+    /* 1. 检查 PCM 缓冲区空间 */
+    __disable_irq();
+    uint32_t available = player->available_samples;
+    __enable_irq();
 
-    uint32_t samples_to_copy = 0;
-    // uint32_t i; /* 移除未使用的变量 */
+    uint32_t space = player->pcm_buffer_size - available;
 
-    /* 检查 PCM 缓冲中有多少数据可用 */
-    if (gp_mp3_player->pcm_data_len == 0)
+    /* 如果空间不足以存放一帧解码数据，则不解码 */
+    if (space < MINIMP3_MAX_SAMPLES_PER_FRAME * 2)
+        return;
+
+    /* 2. 确保读取缓冲区有足够数据 */
+    /* 设定一个阈值，比如 4KB。当缓冲区剩余数据小于此值时，搬运数据并读取新数据 */
+    /* 这样对于大缓冲区 (如 128KB)，只有在用完时才进行一次 memmove 和 f_read */
+    if (player->bytes_in_read_buf < MP3_READ_CHUNK_SIZE && !player->is_file_ended)
     {
-        /* PCM 缓冲为空，需要解码更多数据 */
-        /* 这在高优先级中断中不好做，所以这里只返回静音 */
-        memset(pBuffer, 0, size * sizeof(int16_t));
-        return size;
+        /* 将剩余数据移到缓冲区头部 */
+        if (player->bytes_in_read_buf > 0)
+        {
+            /* 使用 read_offset 定位当前有效数据的起始位置 */
+            memmove(player->read_buffer,
+                    &player->read_buffer[player->read_offset],
+                    player->bytes_in_read_buf);
+        }
+
+        /* 重置偏移量 */
+        player->read_offset = 0;
+
+        /* 计算需要读取的字节数 (填满整个缓冲区) */
+        UINT bytes_to_read = player->read_buffer_size - player->bytes_in_read_buf;
+        UINT bytes_read = 0;
+
+        /* 读取文件 */
+        f_read(&player->file, &player->read_buffer[player->bytes_in_read_buf], bytes_to_read, &bytes_read);
+
+        player->bytes_in_read_buf += bytes_read;
+        player->current_file_pos += bytes_read;
+
+        if (bytes_read < bytes_to_read)
+        {
+            /* 文件读完了 */
+            if (player->loop_enable)
+            {
+                if (player->loop_count == 0 || player->current_loop < player->loop_count - 1)
+                {
+                    /* 准备循环：重置文件指针 */
+                    if (player->loop_count != 0)
+                        player->current_loop++;
+
+                    /* 跳过 ID3 标签 */
+                    f_lseek(&player->file, player->data_start_offset);
+                    player->current_file_pos = player->data_start_offset;
+                    /* 下次循环会继续读取 */
+                }
+                else
+                {
+                    player->is_file_ended = 1;
+                }
+            }
+            else
+            {
+                player->is_file_ended = 1;
+            }
+        }
     }
 
-    /* 从 PCM 缓冲中复制数据到 DMA 缓冲 */
-    samples_to_copy = (gp_mp3_player->pcm_data_len > size)
-                          ? size
-                          : gp_mp3_player->pcm_data_len;
+    /* 如果没有数据可解了，直接返回 */
+    if (player->bytes_in_read_buf == 0)
+        return;
 
-    /* 处理环形缓冲区读取 */
-    if (gp_mp3_player->pcm_read_pos + samples_to_copy <=
-        gp_mp3_player->pcm_buffer_size)
+    /* 3. 解码一帧 */
+    int16_t pcm_frame[MINIMP3_MAX_SAMPLES_PER_FRAME];
+
+    /* 传入指针加上偏移量 */
+    int samples = mp3dec_decode_frame(&player->mp3d,
+                                      &player->read_buffer[player->read_offset],
+                                      player->bytes_in_read_buf,
+                                      pcm_frame,
+                                      &player->frame_info);
+
+    /* 更新读取缓冲区状态 */
+    if (samples > 0)
     {
-        /* 不跨越边界 */
-        memcpy(pBuffer, &gp_mp3_player->pcm_buffer[gp_mp3_player->pcm_read_pos],
-               samples_to_copy * sizeof(int16_t));
-        gp_mp3_player->pcm_read_pos =
-            (gp_mp3_player->pcm_read_pos + samples_to_copy) %
-            gp_mp3_player->pcm_buffer_size;
+        /* 只更新偏移量和剩余计数，不移动内存，提高效率 */
+        player->read_offset += player->frame_info.frame_bytes;
+        player->bytes_in_read_buf -= player->frame_info.frame_bytes;
+
+        /* 4. 写入 PCM 环形缓冲区 (保持原有逻辑) */
+        uint32_t total_samples = samples * player->frame_info.channels;
+
+        /* 单声道转立体声处理 */
+        if (player->frame_info.channels == 1)
+        {
+            /* 扩展为双声道 */
+            int16_t stereo_frame[MINIMP3_MAX_SAMPLES_PER_FRAME * 2];
+            for (int i = 0; i < samples; i++)
+            {
+                stereo_frame[i * 2] = pcm_frame[i];
+                stereo_frame[i * 2 + 1] = pcm_frame[i];
+            }
+            total_samples *= 2;
+
+            /* 写入逻辑 */
+            if (player->write_pos + total_samples <= player->pcm_buffer_size)
+            {
+                memcpy(&player->pcm_buffer[player->write_pos], stereo_frame, total_samples * sizeof(int16_t));
+
+                SCB_CleanDCache_by_Addr((uint32_t *)&player->pcm_buffer[player->write_pos], total_samples * sizeof(int16_t));
+                player->write_pos = (player->write_pos + total_samples) % player->pcm_buffer_size;
+            }
+            else
+            {
+                uint32_t first_part = player->pcm_buffer_size - player->write_pos;
+                memcpy(&player->pcm_buffer[player->write_pos], stereo_frame, first_part * sizeof(int16_t));
+
+                SCB_CleanDCache_by_Addr((uint32_t *)&player->pcm_buffer[player->write_pos], first_part * sizeof(int16_t));
+
+                memcpy(player->pcm_buffer, &stereo_frame[first_part], (total_samples - first_part) * sizeof(int16_t));
+
+                SCB_CleanDCache_by_Addr((uint32_t *)player->pcm_buffer, (total_samples - first_part) * sizeof(int16_t));
+
+                player->write_pos = (player->write_pos + total_samples) % player->pcm_buffer_size;
+            }
+        }
+        else
+        {
+            /* 已经是立体声，直接写入 */
+            if (player->write_pos + total_samples <= player->pcm_buffer_size)
+            {
+                memcpy(&player->pcm_buffer[player->write_pos], pcm_frame, total_samples * sizeof(int16_t));
+
+                SCB_CleanDCache_by_Addr((uint32_t *)&player->pcm_buffer[player->write_pos], total_samples * sizeof(int16_t));
+                player->write_pos = (player->write_pos + total_samples) % player->pcm_buffer_size;
+            }
+            else
+            {
+                uint32_t first_part = player->pcm_buffer_size - player->write_pos;
+                memcpy(&player->pcm_buffer[player->write_pos], pcm_frame, first_part * sizeof(int16_t));
+
+                SCB_CleanDCache_by_Addr((uint32_t *)&player->pcm_buffer[player->write_pos], first_part * sizeof(int16_t));
+
+                memcpy(player->pcm_buffer, &pcm_frame[first_part], (total_samples - first_part) * sizeof(int16_t));
+
+                SCB_CleanDCache_by_Addr((uint32_t *)player->pcm_buffer, (total_samples - first_part) * sizeof(int16_t));
+
+                player->write_pos = (player->write_pos + total_samples) % player->pcm_buffer_size;
+            }
+        }
+
+        __disable_irq();
+        player->available_samples += total_samples;
+        __enable_irq();
+
+        player->current_sample += samples;
+    }
+    else if (player->frame_info.frame_bytes > 0)
+    {
+        /* 有帧头但没样本，跳过 */
+        player->read_offset += player->frame_info.frame_bytes;
+        player->bytes_in_read_buf -= player->frame_info.frame_bytes;
     }
     else
     {
-        /* 跨越边界 */
-        uint32_t first_part = gp_mp3_player->pcm_buffer_size -
-                              gp_mp3_player->pcm_read_pos;
-        memcpy(pBuffer, &gp_mp3_player->pcm_buffer[gp_mp3_player->pcm_read_pos],
-               first_part * sizeof(int16_t));
-        memcpy(&pBuffer[first_part], gp_mp3_player->pcm_buffer,
-               (samples_to_copy - first_part) * sizeof(int16_t));
-        gp_mp3_player->pcm_read_pos =
-            (gp_mp3_player->pcm_read_pos + samples_to_copy) %
-            gp_mp3_player->pcm_buffer_size;
+        /* 数据不足以解析一帧 */
+        if (player->is_file_ended && player->bytes_in_read_buf > 0)
+        {
+            player->bytes_in_read_buf = 0;
+        }
     }
+}
 
-    gp_mp3_player->pcm_data_len -= samples_to_copy;
-    gp_mp3_player->current_sample += samples_to_copy;
+/**
+ * @brief DMA 回调：从 PCM 环形缓冲搬运到 DMA 双缓冲
+ */
+static void mp3_player_event_callback(uint8_t event)
+{
+    if (gp_mp3_player == NULL || !gp_mp3_player->is_playing)
+        return;
 
-    /* 填充剩余部分为 0 */
-    if (samples_to_copy < size)
+    uint32_t dma_offset = (event == 0) ? 0 : (AUDIO_DMA_BUFFER_SIZE / 2);
+    uint32_t len = AUDIO_DMA_BUFFER_SIZE / 2;
+
+    /* 计算实际可用数据 */
+    uint32_t valid_samples = gp_mp3_player->available_samples;
+    if (valid_samples > len)
+        valid_samples = len;
+
+    if (valid_samples > 0)
     {
-        memset(&pBuffer[samples_to_copy], 0,
-               (size - samples_to_copy) * sizeof(int16_t));
+        uint32_t samples_to_end = gp_mp3_player->pcm_buffer_size - gp_mp3_player->play_pos;
+
+        if (samples_to_end >= valid_samples)
+        {
+            memcpy(&s_mp3_dma_buffer[dma_offset], &gp_mp3_player->pcm_buffer[gp_mp3_player->play_pos], valid_samples * sizeof(int16_t));
+            gp_mp3_player->play_pos += valid_samples;
+        }
+        else
+        {
+            memcpy(&s_mp3_dma_buffer[dma_offset], &gp_mp3_player->pcm_buffer[gp_mp3_player->play_pos], samples_to_end * sizeof(int16_t));
+            memcpy(&s_mp3_dma_buffer[dma_offset + samples_to_end], gp_mp3_player->pcm_buffer, (valid_samples - samples_to_end) * sizeof(int16_t));
+            gp_mp3_player->play_pos = valid_samples - samples_to_end;
+        }
+
+        if (gp_mp3_player->play_pos >= gp_mp3_player->pcm_buffer_size)
+            gp_mp3_player->play_pos = 0;
+
+        __disable_irq();
+        gp_mp3_player->available_samples -= valid_samples;
+        __enable_irq();
     }
 
-    return size;
+    /* 补零 */
+    if (valid_samples < len)
+    {
+        memset(&s_mp3_dma_buffer[dma_offset + valid_samples], 0, (len - valid_samples) * sizeof(int16_t));
+    }
+
+    /* 音量处理 */
+    uint8_t vol = DSPEAKER_GetVolume();
+    if (vol < 100)
+    {
+        int16_t *target = &s_mp3_dma_buffer[dma_offset];
+        for (uint32_t i = 0; i < len; i++)
+        {
+            target[i] = (int16_t)((target[i] * vol) / 100);
+        }
+    }
+
+    /* 刷新 Cache */
+    SCB_CleanDCache_by_Addr((uint32_t *)&s_mp3_dma_buffer[dma_offset], len * sizeof(int16_t));
+
+    /* 通知主循环 */
+    MP3_PLAYER_NOTIFY_EVENT();
+}
+
+/**
+ * @brief 初始化播放器
+ */
+void MP3Player_Init(MP3Player_t *player, int16_t *pcm_buffer, uint32_t pcm_size, uint8_t *read_buffer, uint32_t read_size)
+{
+    if (player == NULL)
+        return;
+
+    memset(player, 0, sizeof(MP3Player_t));
+
+    /* 绑定 PCM 缓冲区 */
+    player->pcm_buffer = pcm_buffer;
+    player->pcm_buffer_size = pcm_size;
+
+    /* 绑定 读取 缓冲区 */
+    player->read_buffer = read_buffer;
+    player->read_buffer_size = read_size;
+
+    /* 初始化 DSPEAKER，使用内部小缓冲区 */
+    DSPEAKER_Init(s_mp3_dma_buffer, AUDIO_DMA_BUFFER_SIZE);
+    DSPEAKER_RegisterEventCallback(mp3_player_event_callback);
 }
 
 /**
  * @brief 打开并解析 MP3 文件
  */
-HAL_StatusTypeDef MP3Player_OpenFile(MP3Player_t *player,
-                                     const char *filename)
+HAL_StatusTypeDef MP3Player_OpenFile(MP3Player_t *player, const char *filename)
 {
-    mp3dec_t mp3d;
-    mp3dec_frame_info_t frame_info;
-    UINT bytes_read;
-    // uint32_t total_samples = 0; /* 移除未使用的局部变量 */
-    int samples;
-    char buf[256];
+    char buf[64];
 
     if (player == NULL || filename == NULL)
         return HAL_ERROR;
@@ -112,113 +304,79 @@ HAL_StatusTypeDef MP3Player_OpenFile(MP3Player_t *player,
     FRESULT res = f_open(&player->file, filename, FA_READ);
     if (res != FR_OK)
     {
-        snprintf(buf, sizeof(buf), "打开 MP3 文件失败: %s", filename);
+        snprintf(buf, sizeof(buf), "打开 MP3 失败: %d", res);
         DEBUG_ERROR(buf);
         return HAL_ERROR;
     }
 
-    /* 获取文件大小 */
     player->file_size = f_size(&player->file);
-    if (player->file_size == 0)
+    player->current_file_pos = 0;
+    player->bytes_in_read_buf = 0;
+    player->read_offset = 0; // 重置偏移
+    player->is_file_ended = 0;
+    player->data_start_offset = 0; // 默认从头开始
+
+    /* === ID3v2 标签检测与跳过 === */
+    UINT br;
+    uint8_t id3_header[10];
+    f_read(&player->file, id3_header, 10, &br);
+
+    if (br == 10 && memcmp(id3_header, "ID3", 3) == 0)
     {
-        DEBUG_ERROR("MP3 文件大小为 0");
-        f_close(&player->file);
-        return HAL_ERROR;
+        /* 计算标签大小 (Synchsafe integers: 4 bytes, 7 bits each) */
+        uint32_t tag_size = ((id3_header[6] & 0x7F) << 21) |
+                            ((id3_header[7] & 0x7F) << 14) |
+                            ((id3_header[8] & 0x7F) << 7) |
+                            (id3_header[9] & 0x7F);
+
+        /* 加上头部的 10 字节 */
+        player->data_start_offset = tag_size + 10;
+        snprintf(buf, sizeof(buf), "检测到 ID3v2, 偏移: %lu", player->data_start_offset);
+        DEBUG_INFO(buf);
     }
 
-    /* 检查文件大小是否超过 SDRAM 缓冲区 */
-    if (player->file_size > MP3_FILE_BUFFER_SIZE)
+    /* 定位到音频数据开始处 */
+    f_lseek(&player->file, player->data_start_offset);
+    player->current_file_pos = player->data_start_offset;
+
+    /* 初始化解码器 */
+    mp3dec_init(&player->mp3d);
+
+    /* 预读一小段来检测格式 */
+    /*使用 read_buffer_size 或 4KB，取较小值，避免读太多 */
+    UINT read_chunk = (player->read_buffer_size > 4096) ? 4096 : player->read_buffer_size;
+    f_read(&player->file, player->read_buffer, read_chunk, &br);
+
+    player->bytes_in_read_buf = br;
+    player->read_offset = 0;
+    player->current_file_pos += br;
+
+    /* 尝试解码一帧获取信息 */
+    int16_t pcm[MINIMP3_MAX_SAMPLES_PER_FRAME];
+    /* 使用偏移量 */
+    int samples = mp3dec_decode_frame(&player->mp3d, player->read_buffer, br, pcm, &player->frame_info);
+
+    if (samples > 0)
     {
-        snprintf(buf, sizeof(buf), "MP3 文件过大: %u KB > %u KB",
-                 player->file_size / 1024, MP3_FILE_BUFFER_SIZE / 1024);
-        DEBUG_ERROR(buf);
-        f_close(&player->file);
-        return HAL_ERROR;
+        player->sample_rate = player->frame_info.hz;
+        player->channels = player->frame_info.channels;
+        snprintf(buf, sizeof(buf), "MP3: %dHz %dch %dkbps", player->sample_rate, player->channels, player->frame_info.bitrate_kbps);
+        DEBUG_INFO(buf);
+    }
+    else
+    {
+        DEBUG_ERROR("MP3 格式检测失败，尝试继续");
+        /* 即使检测失败，也尝试重置状态准备播放，万一只是第一帧坏了 */
     }
 
-    /* 使用 SDRAM 中预分配的缓冲区（不使用 malloc） */
-    player->file_buffer = (uint8_t *)MP3_FILE_BUFFER_ADDR;
+    /* 重置文件指针到音频数据开头，准备正式播放 */
+    f_lseek(&player->file, player->data_start_offset);
+    player->current_file_pos = player->data_start_offset;
+    player->bytes_in_read_buf = 0;
+    player->read_offset = 0;
+    mp3dec_init(&player->mp3d); // 重置解码器状态
 
-    /* 读取整个文件到 SDRAM */
-    res = f_read(&player->file, player->file_buffer, player->file_size,
-                 &bytes_read);
-    if (res != FR_OK || bytes_read != player->file_size)
-    {
-        DEBUG_ERROR("读取 MP3 文件失败");
-        f_close(&player->file);
-        return HAL_ERROR;
-    }
-
-    /* 关闭文件（已读入内存）*/
-    f_close(&player->file);
-
-    snprintf(buf, sizeof(buf), "MP3 文件读入 SDRAM: %u KB", player->file_size / 1024);
-    DEBUG_INFO(buf);
-
-    /* 初始化 MP3 解码器 */
-    mp3dec_init(&mp3d);
-
-    /* 解析：读取第一帧获取采样率和声道 */
-    int frame_size = 0;
-    int free_format_bytes = 0;
-    const uint8_t *frame_ptr = player->file_buffer;
-    int sample_rate = 0;
-    int channels = 0;
-
-    for (int i = 0; i < player->file_size - 4; i++)
-    {
-        frame_size = 0;
-        int j = mp3d_find_frame(&frame_ptr[i], player->file_size - i,
-                                &free_format_bytes, &frame_size);
-        if (frame_size > 0)
-        {
-            frame_ptr = &frame_ptr[i + j];
-            samples = mp3dec_decode_frame(&mp3d, frame_ptr, frame_size, NULL, &frame_info);
-            if (samples > 0)
-            {
-                sample_rate = frame_info.hz;
-                channels = frame_info.channels;
-                player->channels = channels;
-                player->sample_rate = sample_rate;
-                snprintf(buf, sizeof(buf), "MP3: %d Hz, %d 声道", sample_rate, channels);
-                DEBUG_INFO(buf);
-                break;
-            }
-        }
-    }
-
-    if (sample_rate == 0)
-    {
-        DEBUG_ERROR("无法读取 MP3 信息");
-        return HAL_ERROR;
-    }
-
-    /* 计算实际需要的 PCM 缓冲大小 */
-    /* 使用固定的 512KB SDRAM 缓冲 */
-    uint32_t pcm_buffer_size = MP3_PCM_BUFFER_SIZE / sizeof(int16_t); /* 转换为采样点数 */
-
-    player->pcm_buffer_size = pcm_buffer_size;
-    player->pcm_buffer = (int16_t *)MP3_PCM_BUFFER_ADDR;
-
-    snprintf(buf, sizeof(buf), "PCM 缓冲区: %u 采样点 (%u KB)",
-             player->pcm_buffer_size,
-             player->pcm_buffer_size * sizeof(int16_t) / 1024);
-    DEBUG_INFO(buf);
-
-    /* 计算总采样数（粗略估计） */
-    player->total_samples =
-        (uint64_t)player->file_size * player->sample_rate * 8 / (128 * 1024);
-
-    player->pcm_read_pos = 0;
-    player->pcm_write_pos = 0;
-    player->pcm_data_len = 0;
-    player->current_sample = 0;
-    player->is_playing = 0;
-    player->loop_enable = 0;
-    player->loop_count = 1;
-    player->current_loop = 0;
     player->state = MP3_STATE_IDLE;
-
     return HAL_OK;
 }
 
@@ -235,7 +393,6 @@ void MP3Player_CloseFile(MP3Player_t *player)
         MP3Player_Stop(player);
     }
 
-    /* 注意：不释放 SDRAM 缓冲区（它是静态的） */
     f_close(&player->file);
     gp_mp3_player = NULL;
 }
@@ -243,249 +400,155 @@ void MP3Player_CloseFile(MP3Player_t *player)
 /**
  * @brief 开始播放（支持循环）
  */
-HAL_StatusTypeDef MP3Player_PlayWithLoop(MP3Player_t *player,
-                                         uint32_t loop_count)
+HAL_StatusTypeDef MP3Player_PlayWithLoop(MP3Player_t *player, uint32_t loop_count)
 {
-    HAL_StatusTypeDef status;
-
-    if (player == NULL || player->file_buffer == NULL)
+    if (player == NULL || player->pcm_buffer == NULL)
         return HAL_ERROR;
 
-    /* 重置播放位置 */
-    player->pcm_read_pos = 0;
-    player->pcm_write_pos = 0;
-    player->pcm_data_len = 0;
+    /* 重置播放状态 */
+    player->play_pos = 0;
+    player->write_pos = 0;
+    player->available_samples = 0;
     player->current_sample = 0;
+    player->is_file_ended = 0;
 
-    /* 设置循环参数 */
-    if (loop_count == 0)
-    {
-        player->loop_enable = 1;
-        player->loop_count = 0; /* 无限循环 */
-    }
-    else if (loop_count == 1)
-    {
-        player->loop_enable = 0; /* 单次播放 */
-    }
-    else
-    {
-        player->loop_enable = 1;
-        player->loop_count = loop_count;
-    }
+    /* 重置文件读取 */
+    f_lseek(&player->file, player->data_start_offset);
+    player->current_file_pos = player->data_start_offset;
+    player->bytes_in_read_buf = 0;
+    player->read_offset = 0;
+    mp3dec_init(&player->mp3d);
 
+    /* 设置循环 */
+    player->loop_enable = (loop_count != 1);
+    player->loop_count = loop_count;
     player->current_loop = 0;
+
     player->state = MP3_STATE_PLAYING;
-
-    /* 注册全局指针和回调 */
     gp_mp3_player = player;
-    DSPEAKER_RegisterCallback(mp3_data_callback);
 
-    /* 启动扬声器 */
-    status = DSPEAKER_Start();
-    if (status == HAL_OK)
+    /* 预填充 PCM 缓冲区 (解码一些数据) */
+    uint32_t prefill_count = 0;
+    while (player->available_samples < player->pcm_buffer_size / 2 && prefill_count < 50)
+    {
+        MP3Player_RefillRingBuffer(player);
+        if (player->is_file_ended)
+            break;
+        prefill_count++;
+    }
+
+    /* 预填充 DMA 缓冲区 */
+    memset(s_mp3_dma_buffer, 0, sizeof(s_mp3_dma_buffer));
+    mp3_player_event_callback(0);
+    mp3_player_event_callback(1);
+
+    /* 启动硬件 */
+    DSPEAKER_RegisterEventCallback(mp3_player_event_callback);
+    if (DSPEAKER_Start() == HAL_OK)
     {
         player->is_playing = 1;
-    }
-    else
-    {
-        DEBUG_ERROR("扬声器启动失败");
-        player->state = MP3_STATE_ERROR;
+        return HAL_OK;
     }
 
-    return status;
+    return HAL_ERROR;
 }
 
-/**
- * @brief 开始播放（单次）
- */
 HAL_StatusTypeDef MP3Player_Play(MP3Player_t *player)
 {
     return MP3Player_PlayWithLoop(player, 1);
 }
 
-/**
- * @brief 停止播放
- */
 void MP3Player_Stop(MP3Player_t *player)
 {
     if (player == NULL)
         return;
 
     DSPEAKER_Stop();
-    DSPEAKER_UnregisterCallback();
+    DSPEAKER_RegisterEventCallback(NULL);
     player->is_playing = 0;
     player->state = MP3_STATE_IDLE;
     gp_mp3_player = NULL;
 }
 
-/**
- * @brief 暂停播放
- */
 void MP3Player_Pause(MP3Player_t *player)
 {
     if (player == NULL || !player->is_playing)
         return;
-
     DSPEAKER_Stop();
     player->is_playing = 0;
     player->state = MP3_STATE_PAUSED;
 }
 
-/**
- * @brief 恢复播放
- */
 void MP3Player_Resume(MP3Player_t *player)
 {
     if (player == NULL || player->state != MP3_STATE_PAUSED)
         return;
-
     gp_mp3_player = player;
-    DSPEAKER_RegisterCallback(mp3_data_callback);
+    DSPEAKER_RegisterEventCallback(mp3_player_event_callback);
     DSPEAKER_Start();
     player->is_playing = 1;
     player->state = MP3_STATE_PLAYING;
 }
 
-/**
- * @brief 获取播放状态
- */
 uint8_t MP3Player_IsPlaying(MP3Player_t *player)
 {
-    if (player == NULL)
-        return 0;
-
-    return player->is_playing && (DSPEAKER_GetState() == DSPEAKER_STATE_PLAYING);
+    return player && player->is_playing;
 }
 
-/**
- * @brief 获取当前循环次数
- */
 uint32_t MP3Player_GetLoopCount(MP3Player_t *player)
 {
-    if (player == NULL)
-        return 0;
-
-    return player->current_loop + 1;
+    return player ? player->current_loop + 1 : 0;
 }
 
-/**
- * @brief 获取播放进度（采样点）
- */
 uint32_t MP3Player_GetCurrentSample(MP3Player_t *player)
 {
-    if (player == NULL)
-        return 0;
-
-    return player->current_sample;
+    return player ? player->current_sample : 0;
 }
 
-/**
- * @brief 获取总采样点数
- */
 uint32_t MP3Player_GetTotalSamples(MP3Player_t *player)
 {
-    if (player == NULL)
+    /* 估算值：总大小(字节) * 8 / (码率(kbps) * 1000) * 采样率 */
+    if (!player || player->sample_rate == 0 || player->frame_info.bitrate_kbps == 0)
         return 0;
 
-    return player->total_samples;
+    // 使用 bitrate_kbps，并注意单位转换
+    return (uint64_t)player->file_size * 8 * player->sample_rate / (player->frame_info.bitrate_kbps * 1000);
 }
 
 /**
- * @brief MP3 解码后台任务（需要在主循环中调用）
- * @note 此函数解码 MP3 文件并填充 PCM 缓冲区
+ * @brief MP3 处理主任务
  */
-void MP3Player_DecodeTask(MP3Player_t *player)
+void MP3Player_Process(MP3Player_t *player)
 {
-    static mp3dec_t mp3d_static = {0};
-    static uint32_t file_offset = 0;
-    static int is_initialized = 0;
-
-    if (player == NULL || !player->is_playing || player->file_buffer == NULL)
+    if (player == NULL || !player->is_playing)
         return;
 
-    /* 初始化解码器 */
-    if (!is_initialized)
+    /* 如果文件结束且缓冲区空，停止播放 */
+    if (player->is_file_ended && player->available_samples == 0)
     {
-        mp3dec_init(&mp3d_static);
-        file_offset = 0;
-        is_initialized = 1;
-    }
-
-    /* 如果 PCM 缓冲还有足够数据，不需要解码 */
-    if (player->pcm_data_len > player->pcm_buffer_size / 2)
+        MP3Player_Stop(player);
         return;
-
-    /* 解码一帧 */
-    mp3dec_frame_info_t frame_info;
-    int16_t pcm_buf[MINIMP3_MAX_SAMPLES_PER_FRAME];
-
-    int samples = mp3dec_decode_frame(&mp3d_static, &player->file_buffer[file_offset],
-                                      player->file_size - file_offset, pcm_buf,
-                                      &frame_info);
-
-    if (samples > 0)
-    {
-        file_offset += frame_info.frame_bytes;
-
-        /* 写入 PCM 缓冲 */
-        uint32_t write_samples = samples * frame_info.channels;
-
-        if (player->pcm_write_pos + write_samples <= player->pcm_buffer_size)
-        {
-            /* 不跨越边界 */
-            memcpy(&player->pcm_buffer[player->pcm_write_pos], pcm_buf,
-                   write_samples * sizeof(int16_t));
-            player->pcm_write_pos =
-                (player->pcm_write_pos + write_samples) % player->pcm_buffer_size;
-        }
-        else
-        {
-            /* 跨越边界 */
-            uint32_t first_part =
-                player->pcm_buffer_size - player->pcm_write_pos;
-            memcpy(&player->pcm_buffer[player->pcm_write_pos], pcm_buf,
-                   first_part * sizeof(int16_t));
-            memcpy(player->pcm_buffer, &pcm_buf[first_part],
-                   (write_samples - first_part) * sizeof(int16_t));
-            player->pcm_write_pos =
-                (player->pcm_write_pos + write_samples) % player->pcm_buffer_size;
-        }
-
-        player->pcm_data_len += write_samples;
     }
-    else
+
+    /* 只要 PCM 缓冲区不满，就尝试解码填充 */
+    /* 限制单次循环解码次数，防止阻塞太久 */
+    int decode_ops = 0;
+    while (player->available_samples < player->pcm_buffer_size - MINIMP3_MAX_SAMPLES_PER_FRAME * 2)
     {
-        /* 文件结束或解码出错 */
-        if (player->loop_enable)
-        {
-            if (player->loop_count == 0)
-            {
-                /* 无限循环 */
-                file_offset = 0;
-                mp3dec_init(&mp3d_static);
-                player->current_loop++;
-            }
-            else if (player->current_loop < player->loop_count - 1)
-            {
-                /* 继续循环 */
-                file_offset = 0;
-                mp3dec_init(&mp3d_static);
-                player->current_loop++;
-            }
-            else
-            {
-                /* 播放完成 */
-                player->is_playing = 0;
-                player->state = MP3_STATE_IDLE;
-                is_initialized = 0;
-            }
-        }
-        else
-        {
-            player->is_playing = 0;
-            player->state = MP3_STATE_IDLE;
-            is_initialized = 0;
-        }
+        MP3Player_RefillRingBuffer(player);
+
+        decode_ops++;
+        if (decode_ops > 5)
+            break; /* 每次 Process 最多解 5 帧，避免卡顿 */
+
+        if (player->is_file_ended)
+            break;
+    }
+
+    /* 如果缓冲区满了，挂起等待 ISR 唤醒 */
+    if (player->available_samples >= player->pcm_buffer_size - MINIMP3_MAX_SAMPLES_PER_FRAME * 4)
+    {
+        MP3_PLAYER_WAIT_EVENT();
     }
 }
 
